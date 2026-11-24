@@ -1,9 +1,9 @@
 <nc-dialog-shell *transloco="let t" [title]="t('share.title')" [lead]="t('share.blurb')">
-  <ul class="mb-2 divide-y divide-line">
+  <ul class="mb-2 divide-y-3 divide-line">
     @for (person of people(); track person.id) {
       <li class="flex items-center gap-1 py-1">
         <nc-user-avatar [userId]="person.id" [name]="person.username" [size]="24" />
-        <span class="text-ui text-ink">{{ person.username }}</span>
+        <span class="font-mono text-ui text-ink">{{ person.username }}</span>
         @if (person.isCreator) {
           <span class="label text-gold-ink">{{ t('share.creator') }}</span>
         }
@@ -23,7 +23,6 @@
   </ul>
   @if (isCreator()) {
     <nc-person-search
-      size="md"
       [placeholder]="t('share.invite')"
       [exclude]="memberIds()"
       (picked)="invite($event)" />

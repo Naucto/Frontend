@@ -1,5 +1,7 @@
-import { editorUrl, mockEditor } from './editor-mocks';
+import { uuidOf } from '../packages/api-client/testing';
+import { editorUrl, mockEditor, PROJECT_ID } from './editor-mocks';
 import { expect, test } from './fixtures';
+import { mockHub } from './mocks/hub';
 import { mockSignedIn } from './mocks/session';
 
 /**
@@ -16,7 +18,7 @@ const VIEWPORTS = [
   { name: 'ultrawide', width: 2560, height: 1440 },
 ] as const;
 
-const ROUTES = ['/hub', '/learn', '/friends', '/sign-in', '/u/nobody'] as const;
+const ROUTES = ['/hub', '/learn', '/friends', '/sign-in', '/u/nobody', '/collections'] as const;
 
 for (const vp of VIEWPORTS) {
   test.describe(`${vp.name} (${String(vp.width)}px)`, () => {
@@ -24,9 +26,13 @@ for (const vp of VIEWPORTS) {
 
     for (const route of ROUTES) {
       test(`${route} does not scroll sideways`, async ({ page }) => {
+        await mockHub(page);
         await page.goto(route);
         // Wait for the shell rather than networkidle: several of these pages poll.
         await page.locator('body').waitFor();
+        if (route === '/hub') {
+          await page.locator('nc-collection-box').waitFor();
+        }
         const overflow = await page.evaluate(() => {
           const documentElement = document.documentElement;
           return {
@@ -49,13 +55,45 @@ test.describe('editor gate', () => {
    * sign-in, never a 404.
    */
   test('a phone keeps its way into the editor, and is not 404ed out of it', async ({ page }) => {
-    await page.goto('/edit/1');
-    await expect(page).toHaveURL(/\/sign-in\?next=%2Fedit%2F1/);
+    await page.goto(`/edit/${uuidOf(1)}`);
+    await expect(page).toHaveURL(new RegExp(`/sign-in\\?next=%2Fedit%2F${uuidOf(1)}`));
     await expect(page.getByRole('heading', { name: /insert game/i })).toBeVisible();
+  });
+
+  test('the notice that stands for the editor keeps its words and its link inside the screen', async ({
+    page,
+  }) => {
+    await mockEditor(page);
+    await page.goto(editorUrl('game'));
+
+    const notice = page.locator('nc-open-on-desktop');
+    await expect(
+      notice.getByRole('heading', { name: 'The editor needs a bigger screen' }),
+    ).toBeVisible();
+    const pieces = [
+      notice.locator('p'),
+      notice.locator('span', { hasText: `/edit/${PROJECT_ID}` }),
+      notice.getByRole('button', { name: 'Copy link' }),
+      notice.getByRole('link', { name: 'Play it instead' }),
+      notice.getByRole('link', { name: 'Back to the hub' }),
+    ];
+    for (const piece of pieces) {
+      const box = await piece.boundingBox();
+      expect(box?.x).toBeGreaterThanOrEqual(0);
+      expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(390);
+    }
   });
 });
 
-for (const width of [1100, 1280]) {
+/** A signed-in bar is the full one: on a tablet the search keeps room to type a few words in. */
+const BARS = [
+  { width: 768, least: 160 },
+  { width: 900, least: 240 },
+  { width: 1100, least: 240 },
+  { width: 1280, least: 240 },
+] as const;
+
+for (const { width, least } of BARS) {
   test.describe(`top bar search (${String(width)}px)`, () => {
     test.use({ viewport: { width, height: 800 } });
 
@@ -73,7 +111,25 @@ for (const width of [1100, 1280]) {
 
       expect(nav.x + nav.width).toBeLessThanOrEqual(search.x);
       expect(search.x + search.width).toBeLessThanOrEqual(actions.x);
-      expect(search.width).toBeGreaterThanOrEqual(240);
+      expect(search.width).toBeGreaterThanOrEqual(least);
+    });
+
+    /** The panel is as wide as three disks need even where the box is not, and stays on screen. */
+    test('drops a panel that keeps its width and stays inside the window', async ({ page }) => {
+      await mockSignedIn(page);
+      await page.goto('/hub');
+
+      await page.getByRole('combobox', { name: 'Search games, people, tags…' }).click();
+      const panel = await page.locator('nc-suggest-panel').boundingBox();
+      if (!panel) {
+        throw new Error('the search panel is not laid out');
+      }
+
+      // Under a box of odd width the panel's edges fall on half pixels, which the engine keeps in
+      // 64ths: the width comes back a 64th short.
+      expect(Math.round(panel.width)).toBeGreaterThanOrEqual(480);
+      expect(panel.x).toBeGreaterThanOrEqual(0);
+      expect(panel.x + panel.width).toBeLessThanOrEqual(width);
     });
   });
 }
@@ -117,7 +173,7 @@ for (const width of [1024, 1152, 1280, 1440, 1920]) {
       const steps = page.getByRole('textbox', { name: 'Steps' });
       await expect(steps).toBeVisible();
       const box = steps.locator('xpath=ancestor::nc-number-field');
-      await expect(box.locator('.label')).toHaveText('Steps');
+      await expect(box.getByText('Steps', { exact: true })).toBeVisible();
       const [field, bar] = await Promise.all([
         box.boundingBox(),
         steps.locator('xpath=ancestor::header').boundingBox(),

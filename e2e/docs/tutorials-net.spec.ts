@@ -3,9 +3,8 @@ import { copyFileSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { test } from '@playwright/test';
-
-import { mockEditor } from '../editor-mocks';
+import { editorUrl, mockEditor } from '../editor-mocks';
+import { test } from '../fixtures';
 import { shoot } from './frame';
 
 /**
@@ -39,7 +38,7 @@ test.describe('network tutorials', () => {
   for (const theme of THEMES) {
     test(`pong: the Host a session dialog (${theme})`, async ({ page }) => {
       await mockEditor(page, { theme, content });
-      await page.goto('/edit/7/code');
+      await page.goto(editorUrl('code'));
       await page.locator('nc-game-screen canvas').first().waitFor();
       await page.getByRole('button', { name: 'Play' }).first().click();
       await page.waitForTimeout(600);
@@ -52,14 +51,14 @@ test.describe('network tutorials', () => {
       await shoot(page, OUT, 'pong-host-dialog', theme, dialog);
     });
 
-    test(`permissions: SHARED STATE with winner declared (${theme})`, async ({ page }) => {
+    test(`permissions: RULES with winner declared (${theme})`, async ({ page }) => {
       await mockEditor(page, { theme, content });
-      await page.goto('/edit/7/net');
-      await page.getByRole('button', { name: 'Declare a path' }).click();
+      await page.goto(editorUrl('net'));
+      await page.getByRole('button', { name: 'Path', exact: true }).click();
       await page.getByPlaceholder('key').fill('winner');
       await page.keyboard.press('Enter');
       const winner = page.getByRole('row').filter({ hasText: 'winner' });
-      await winner.getByTitle('Clients can write this path').click();
+      await winner.getByRole('checkbox', { name: 'Clients can write this path' }).click();
       await page.mouse.move(0, 0);
       await page.waitForTimeout(500);
       await shoot(

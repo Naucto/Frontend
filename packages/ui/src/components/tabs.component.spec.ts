@@ -23,14 +23,26 @@ describe('TabsComponent', () => {
 });
 
 /** The small strip sits on the thing it chooses between, and its tabs are names somebody typed. */
-it('draws a small strip with no rule under it, in ordinary sentence case', async () => {
+it('draws a small strip in ordinary sentence case', async () => {
   await render(TabsComponent, { inputs: { tabs, value: 'account', variant: 'small' } });
-  const tab = screen.getByRole('tab', { name: 'Account' });
-  const list = screen.getByRole('tablist');
 
-  expect(tab.className).not.toContain('uppercase');
-  expect(tab.className).toContain('aria-selected:border-gold');
-  expect(list.className).not.toContain('border-b');
+  expect(screen.getByRole('tab', { name: 'Account' }).className).not.toContain('uppercase');
+});
+
+/** One tab is the frame that opens into what it chooses; the others stand a pixel off the rule. */
+it('opens the chosen tab through the rule and leaves the others on it', async () => {
+  await render(TabsComponent, { inputs: { tabs, value: 'account' } });
+  const chosen = screen.getByRole('tab', { name: 'Account' });
+  const idle = screen.getByRole('tab', { name: 'Editor' });
+
+  expect(chosen).toHaveClass('bevel-open-b', 'bevel-hi-active-ink', 'bevel-fill-raised');
+  expect(chosen).not.toHaveClass('mb-[3px]');
+  expect(idle).toHaveClass(
+    'bevel-open-b',
+    'bevel-fill-panel',
+    'mb-[3px]',
+    'not-aria-disabled:hover:h-[37px]',
+  );
 });
 
 it('gives the per-tab buttons no room until they show', async () => {
@@ -111,4 +123,40 @@ describe('TabsComponent, overflowing', () => {
     expect(list.querySelector('.flex-1')).toBeNull();
     expect(list.className).toContain('overflow-x-auto');
   });
+});
+
+/** A disabled strip is read and nothing else: no tab is chosen, renamed, removed or dragged. */
+it('chooses nothing and offers no pencil or trash when disabled', async () => {
+  const edit = vi.fn();
+  const { fixture } = await render(TabsComponent, {
+    inputs: { tabs, value: 'account', editable: true, removable: true, disabled: true },
+    on: { edit },
+  });
+  const idle = screen.getByRole('tab', { name: 'Editor' });
+
+  await userEvent.click(idle);
+  await userEvent.dblClick(idle);
+
+  expect(fixture.componentInstance.value()).toBe('account');
+  expect(edit).not.toHaveBeenCalled();
+  expect(idle).toHaveAttribute('aria-disabled', 'true');
+  expect(idle).toHaveAttribute('tabindex', '-1');
+  expect(screen.queryByRole('button', { name: 'Rename' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
+});
+
+/** The pencil and the double-click are one affordance: a strip that offers no rename has neither. */
+it('renames on a double-click only where the strip is editable', async () => {
+  const edit = vi.fn();
+  const { rerender } = await render(TabsComponent, {
+    inputs: { tabs, value: 'account' },
+    on: { edit },
+  });
+
+  await userEvent.dblClick(screen.getByRole('tab', { name: 'Editor' }));
+  expect(edit).not.toHaveBeenCalled();
+
+  await rerender({ inputs: { tabs, value: 'account', editable: true }, on: { edit } });
+  await userEvent.dblClick(screen.getByRole('tab', { name: 'Editor' }));
+  expect(edit).toHaveBeenCalledWith('editor');
 });

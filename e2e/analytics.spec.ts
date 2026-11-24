@@ -1,7 +1,8 @@
 import type { BrowserContext, Page, Request } from '@playwright/test';
 
+import { uuidOf } from '../packages/api-client/testing';
 import { expect, test } from './fixtures';
-import { serveGame } from './mocks/game';
+import { PLAY, release, serveGame } from './mocks/game';
 import { answer, mockSignedIn } from './mocks/session';
 
 interface Sent {
@@ -13,7 +14,7 @@ interface Sent {
 type Replies = Partial<Record<string, (body: Record<string, unknown>) => unknown>>;
 
 const PROCEED = { rotateVisitor: false, rotateSession: false, disabled: false };
-const INGEST = /\/(analytics\/(events|play|beat|ping|link)|projects\/releases\/\d+\/view)$/;
+const INGEST = /\/(analytics\/(events|play|beat|ping|link)|projects\/releases\/[^/]+\/view)$/;
 
 const SUMMARY = {
   tracked: true,
@@ -128,14 +129,14 @@ test.describe('consent and usage analytics', () => {
     await analyticsOn(page);
     const sent = await collect(page);
     await page.goto('/hub');
-    await page
-      .getByRole('region', { name: 'Usage analytics' })
-      .getByRole('button', { name: 'Accept' })
-      .click();
+    const banner = page.getByRole('region', { name: 'Usage analytics' });
+    await banner.getByRole('button', { name: 'Accept' }).click();
+    // The banner goes in the pass that queues this page's view: a flush before it sends nothing.
+    await expect(banner).toBeHidden();
     await flush(page);
-    await page.goto('/play/1');
+    await page.goto(`/play/${uuidOf(1)}`);
     await flush(page);
-    await page.goto('/play/2');
+    await page.goto(`/play/${uuidOf(2)}`);
     await flush(page);
 
     await expect
@@ -160,7 +161,7 @@ test.describe('consent and usage analytics', () => {
     await analyticsOn(page);
     await consent(context, true);
     const sent = await collect(page);
-    await page.goto('/play/42');
+    await page.goto(PLAY);
 
     await page.getByRole('button', { name: 'Play' }).first().click();
     await expect.poll(() => paths(sent, '/analytics/play').length).toBe(1);
@@ -168,10 +169,10 @@ test.describe('consent and usage analytics', () => {
     expect(paths(sent, '/analytics/play')[0]?.body).toMatchObject({
       visitorId: visitor,
       phase: 'START',
-      play: { releaseId: 42, continued: false },
+      play: { releaseId: release.id, continued: false },
     });
     await expect
-      .poll(() => paths(sent, '/projects/releases/42/view').map(({ body }) => body))
+      .poll(() => paths(sent, `/projects/releases/${release.id}/view`).map(({ body }) => body))
       .toEqual([{ visitorId: visitor }]);
 
     await flush(page);
@@ -257,7 +258,7 @@ test.describe('consent and usage analytics', () => {
     page,
     context,
   }) => {
-    await mockSignedIn(page, { id: 1 });
+    await mockSignedIn(page, { id: uuidOf(1) });
     await analyticsOn(page);
     await consent(context, true);
     const sent = await collect(page);
@@ -269,9 +270,9 @@ test.describe('consent and usage analytics', () => {
     await page.unroute('**/auth/refresh');
     const refreshed = page.waitForRequest('**/auth/refresh');
     await page.route('**/auth/refresh', answer(401, {}));
-    await page.evaluate(() => {
-      new BroadcastChannel('naucto-analytics').postMessage({ type: 'account-changed', userId: 2 });
-    });
+    await page.evaluate((userId) => {
+      new BroadcastChannel('naucto-analytics').postMessage({ type: 'account-changed', userId });
+    }, uuidOf(2));
 
     await refreshed;
     await expect(page.getByRole('dialog')).toContainText('You have been signed out');

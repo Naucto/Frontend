@@ -4,21 +4,19 @@ import { RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   type FriendDto,
-  type FriendRequestDto,
-  friendsControllerAccept,
-  friendsControllerDecline,
   friendsControllerList,
   friendsControllerRecentPlayers,
-  friendsControllerRequests,
   friendsControllerSend,
   type RecentPlayerDto,
 } from '@naucto/api-client';
 import { type PresenceDto } from '@naucto/api-client';
 import {
   ButtonDirective,
+  ChipComponent,
   DialogService,
   EmptyStateComponent,
   IconComponent,
+  MarkComponent,
   RelativeTimePipe,
   SegmentedComponent,
   ToastService,
@@ -29,6 +27,7 @@ import { unwrap } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
 import { PresenceStore } from '../../core/presence/presence.store';
 import { presenceLine } from '../../core/presence/presence-line';
+import { answerFriendRequest, injectFriendRequests } from '../../shared/queries/friends.queries';
 import { qk } from '../../shared/queries/query-keys';
 import { UserAvatarComponent } from '../../shared/user-avatar.component';
 import { AddFriendDialog } from './add-friend.dialog';
@@ -36,31 +35,34 @@ import { AddFriendDialog } from './add-friend.dialog';
 type Friend = FriendDto & { presence: PresenceDto | null };
 
 /**
- * Left border and game-name colour of a row, by what the person is doing; the two always carry the
+ * Left rule and game-name colour of a row, by what the person is doing; the two always carry the
  * same accent.
  */
 const ACCENT: Record<string, { rule: string; name: string }> = {
-  PLAYING: { rule: 'border-l-jade', name: 'text-jade-ink' },
-  BUILDING: { rule: 'border-l-gold', name: 'text-gold-ink' },
-  HOSTING: { rule: 'border-l-sky', name: 'text-sky-ink' },
+  PLAYING: { rule: 'bg-jade', name: 'text-jade-ink' },
+  BUILDING: { rule: 'bg-gold', name: 'text-gold-ink' },
+  HOSTING: { rule: 'bg-sky', name: 'text-sky-ink' },
 };
 
 /** Friends: who is online and what they are doing, requests, and people you played with. */
 @Component({
   selector: 'nc-friends-page',
   imports: [
+    ChipComponent,
     DatePipe,
     RouterLink,
     TranslocoDirective,
     ButtonDirective,
     EmptyStateComponent,
     IconComponent,
+    MarkComponent,
     RelativeTimePipe,
     SegmentedComponent,
     UserAvatarComponent,
   ],
   templateUrl: './friends.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'xl:px-[72px]' },
 })
 export default class FriendsPage {
   private readonly auth = inject(AuthStore);
@@ -72,18 +74,14 @@ export default class FriendsPage {
   protected readonly ACCENT = ACCENT;
   protected readonly tab = signal<'online' | 'all'>('online');
   /** The request being answered, so a second click cannot answer a row that is already leaving. */
-  protected readonly answering = signal<number | null>(null);
+  protected readonly answering = signal<string | null>(null);
 
   private readonly friendsQuery = injectQuery(() => ({
     queryKey: qk.friends(),
     queryFn: async () => unwrap(await friendsControllerList()),
     enabled: this.auth.isAuthenticated(),
   }));
-  private readonly requestsQuery = injectQuery(() => ({
-    queryKey: qk.friendRequests(),
-    queryFn: async () => unwrap(await friendsControllerRequests()),
-    enabled: this.auth.isAuthenticated(),
-  }));
+  private readonly requestsQuery = injectFriendRequests(() => this.auth.isAuthenticated());
   private readonly recentQuery = injectQuery(() => ({
     queryKey: qk.recentPlayers(),
     queryFn: async () => unwrap(await friendsControllerRecentPlayers()),
@@ -103,9 +101,7 @@ export default class FriendsPage {
       .sort((a, b) => Number(a.presence?.kind === 'IDLE') - Number(b.presence?.kind === 'IDLE')),
   );
   protected readonly offline = computed(() => this.friends().filter((friend) => !friend.presence));
-  protected readonly requests = computed<FriendRequestDto[]>(() =>
-    (this.requestsQuery.data() ?? []).filter((request) => request.to.id === this.auth.userId()),
-  );
+  protected readonly requests = computed(() => this.requestsQuery.data() ?? []);
   protected readonly recent = computed<RecentPlayerDto[]>(() => this.recentQuery.data() ?? []);
   protected readonly tabs = computed(() => [
     {
@@ -147,7 +143,7 @@ export default class FriendsPage {
       verb: this.transloco.translate(line.verbKey),
       name: line.name,
       nameClass: ACCENT[presence.kind]?.name ?? 'text-ink-body',
-      tail: line.tail ? `· ${this.transloco.translate(line.tail.key, line.tail.params)}` : '',
+      tail: line.tail ? this.transloco.translate(line.tail.key, line.tail.params) : '',
     };
   }
 
@@ -155,18 +151,32 @@ export default class FriendsPage {
    * The one action a row offers, if any. BUILDING has none: you cannot drop into someone's editor
    * from here, and the design draws that row without a button.
    */
-  protected playable(
-    friend: Friend,
-  ): { releaseId: number; variant: 'run' | 'sky'; label: string } | null {
+  protected playable(friend: Friend): {
+    releaseId: string;
+    /** The session a slot is taken in, which the game page then joins. */
+    session: string | null;
+    variant: 'run' | 'sky';
+    label: string;
+  } | null {
     const presence = friend.presence;
     if (!presence?.releaseId) {
       return null;
     }
     if (presence.kind === 'PLAYING') {
-      return { releaseId: presence.releaseId, variant: 'run', label: 'friends.join' };
+      return {
+        releaseId: presence.releaseId,
+        session: null,
+        variant: 'run',
+        label: 'friends.join',
+      };
     }
     if (presence.kind === 'HOSTING') {
-      return { releaseId: presence.releaseId, variant: 'sky', label: 'friends.takeSlot' };
+      return {
+        releaseId: presence.releaseId,
+        session: presence.sessionId,
+        variant: 'sky',
+        label: 'friends.takeSlot',
+      };
     }
     return null;
   }
@@ -181,7 +191,7 @@ export default class FriendsPage {
       });
   }
 
-  protected addUser(userId: number): void {
+  protected addUser(userId: string): void {
     void friendsControllerSend({ body: { userId } })
       .then(unwrap)
       .then(() => {
@@ -198,11 +208,10 @@ export default class FriendsPage {
    * disappears on success, so a silent error leaves the sender listed and the reader believing they
    * answered.
    */
-  private async answer(id: number, call: () => Promise<unknown>): Promise<void> {
+  protected async answer(id: string, accept: boolean): Promise<void> {
     this.answering.set(id);
     try {
-      await call();
-      await this.qc.invalidateQueries({ queryKey: qk.friends() });
+      await answerFriendRequest(this.qc, id, accept);
     } catch (error: unknown) {
       this.toasts.show(
         error instanceof Error ? error.message : 'Could not answer that request',
@@ -211,17 +220,5 @@ export default class FriendsPage {
     } finally {
       this.answering.set(null);
     }
-  }
-
-  protected async accept(id: number): Promise<void> {
-    await this.answer(id, async () => {
-      unwrap(await friendsControllerAccept({ path: { id } }));
-    });
-  }
-
-  protected async decline(id: number): Promise<void> {
-    await this.answer(id, async () => {
-      unwrap(await friendsControllerDecline({ path: { id } }));
-    });
   }
 }

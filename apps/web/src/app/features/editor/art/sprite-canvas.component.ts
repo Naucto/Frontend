@@ -46,8 +46,15 @@ import {
 } from '../../../shared/pixel/pixel-tools';
 import { type SheetPainter } from '../../../shared/pixel/sheet-painter';
 import { type PixelClip } from '../state/clipboard.store';
+import { EditorModeService } from '../state/editor-mode.service';
 import { type Collaborator } from '../work-session/session-presence.service';
-import { ArtStore, type ArtTool, type PixelRect, type SpriteRect } from './art.store';
+import {
+  ART_LOOKING_TOOLS,
+  ArtStore,
+  type ArtTool,
+  type PixelRect,
+  type SpriteRect,
+} from './art.store';
 
 /**
  * Screen pixels per art pixel, at the ends. The whole sheet is drawn at once rather than the part
@@ -221,6 +228,7 @@ export class SpriteCanvasComponent {
   private readonly wrap = viewChild.required<ElementRef<HTMLElement>>('wrap');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly theme = inject(ThemeService);
+  private readonly mode = inject(EditorModeService);
   /** The well, as the ResizeObserver last measured it. */
   private readonly well = signal({ w: 0, h: 0 });
   /**
@@ -510,6 +518,9 @@ export class SpriteCanvasComponent {
 
   /** Writes the placed layer into the sheet, as one undo step. Silent when there is none. */
   settleFloating(): void {
+    if (!this.mode.canWrite()) {
+      return;
+    }
     const rect = this.floating.settle();
     if (rect) {
       this.selection.set(rect);
@@ -527,9 +538,13 @@ export class SpriteCanvasComponent {
     if (!this.inBounds(cell)) {
       return;
     }
+    const tool = this.tool();
+    // A sheet that is only looked at takes the tools that look, whatever the tool it is handed.
+    if (!this.mode.canWrite() && !ART_LOOKING_TOOLS.includes(tool)) {
+      return;
+    }
     this.canvas().nativeElement.setPointerCapture(event.pointerId);
     const colour = event.button === 2 ? 0 : this.colour();
-    const tool = this.tool();
     const layer = this.floating.placed();
     if (layer && tool === 'move' && withinBounds(layer.rect, cell)) {
       this.drag = { tool, start: cell, last: cell, colour, carrying: true };
@@ -667,6 +682,9 @@ export class SpriteCanvasComponent {
    * tools may reach; nothing is written until it is settled.
    */
   pasteClip(clip: PixelClip): void {
+    if (!this.mode.canWrite()) {
+      return;
+    }
     // A second paste settles the first rather than dropping it: work already placed is work.
     this.settleFloating();
     // The middle of what is on screen, not of the sheet: at a zoom where most of the sheet is
@@ -693,7 +711,7 @@ export class SpriteCanvasComponent {
   /** Clears the selected pixels (Delete / Backspace). */
   clearSelection(): void {
     const sel = this.selection();
-    if (!sel) {
+    if (!sel || !this.mode.canWrite()) {
       return;
     }
     this.paint(
@@ -711,7 +729,7 @@ export class SpriteCanvasComponent {
     // not in it until it is settled.
     this.settleFloating();
     const sel = this.selection();
-    if (!sel) {
+    if (!sel || !this.mode.canWrite()) {
       return;
     }
     this.selection.set(this.floating.transform(sel, op));

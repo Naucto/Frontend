@@ -1,9 +1,20 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { IconComponent, type IconName } from '@naucto/ui';
+import { DisclosureComponent, IconComponent, type IconName } from '@naucto/ui';
 
 import { readJson, STORAGE_KEYS, writeJson } from '../../core/storage/local-storage';
 import { type DocPage, DocsService } from './docs.service';
+
+/**
+ * A row of the tree: no frame until the pointer is on it, then it lights and presses like anything
+ * else that is chosen from a list.
+ */
+const ROW =
+  'raised-sm bevel-bare flex w-full items-center text-left select-none ' +
+  'hover:bevel-lit hover:bevel-fill-raised hover:text-active-ink active:bevel-down';
+
+/** The page being read, or the place on it: held down, as a latched button is. */
+const CURRENT = 'bevel-down bevel-lit bevel-fill-raised text-active-ink';
 
 /**
  * The documentation tree: sections → pages, and under the page being read, what is on it.
@@ -14,7 +25,7 @@ import { type DocPage, DocsService } from './docs.service';
  */
 @Component({
   selector: 'nc-doc-tree',
-  imports: [TranslocoDirective, IconComponent],
+  imports: [TranslocoDirective, DisclosureComponent, IconComponent],
   templateUrl: './doc-tree.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,6 +37,8 @@ export class DocTreeComponent {
   /** A slug, with `#anchor` when a child of the page was chosen. */
   readonly open = output<string>();
   protected readonly docs = inject(DocsService);
+  protected readonly ROW = ROW;
+  protected readonly CURRENT = CURRENT;
   protected readonly collapsed = signal(
     new Set(readJson<string[]>(STORAGE_KEYS.docsCollapsed, [])),
   );

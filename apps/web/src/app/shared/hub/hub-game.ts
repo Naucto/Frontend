@@ -1,0 +1,45 @@
+import type { DiskStyle } from '../game-card/disk-style';
+
+/** What the hub's pieces show of a game, under the names the API gives a game's fields. */
+export interface HubGame {
+  id: string;
+  name: string;
+  shortDesc: string;
+  tags: readonly string[];
+  viewCount: number;
+  likes: number;
+  commentCount?: number;
+  creator: { id: string; username: string };
+  coverUrl?: string | null;
+  /** A short silent recording of the game being played. */
+  clipUrl?: string | null;
+  /** How its author dressed the disk; without it the disk keeps a plastic of its own. */
+  disk?: DiskStyle | null;
+  /** Since when moderation withholds it. Only its owner's own shelves are handed such a game. */
+  hiddenAt?: string | null;
+}
+
+export interface SessionPlayer {
+  /** Who they are across the app, which is what their colour is drawn from. */
+  id: string;
+  username: string;
+  /** What they are called, when it is not their username. */
+  nickname?: string;
+}
+
+/** A game being played that still has room, or that the viewer is in. */
+export interface HubSession {
+  sessionUuid: string;
+  startedAt: string;
+  projectId: string;
+  projectName: string;
+  coverUrl: string | null;
+  /** How the game's author dressed its disk; without it the disk keeps a plastic of its own. */
+  disk?: DiskStyle | null;
+  hostUsername: string;
+  /** Who is in, host first; a crowded session names only its first players. */
+  roster: readonly SessionPlayer[];
+  playerCount: number;
+  /** How many it holds, players included. */
+  maxPlayers: number;
+}

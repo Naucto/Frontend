@@ -1,21 +1,26 @@
 import type { Page } from '@playwright/test';
 
+import { uuidOf } from '../packages/api-client/testing';
 import { mockSignedIn } from './mocks/session';
 
 /** The one project every editor spec opens, and the one history endpoint for each of its ids. */
-export const PROJECT_ID = 7;
+export const PROJECT_ID = uuidOf(7);
 
 export type EditorTab = 'game' | 'code' | 'art' | 'map' | 'sound' | 'net';
 
 /** `/edit/<PROJECT_ID>/<tab>`, so a spec names the tab and never the id. */
-export const editorUrl = (tab: EditorTab): string => `/edit/${String(PROJECT_ID)}/${tab}`;
+export const editorUrl = (tab: EditorTab): string => `/edit/${PROJECT_ID}/${tab}`;
+
+/** Where a new game's code and assets wait in the session storage for the editor of project 7. */
+export const SEED_KEY = `naucto.seed.${PROJECT_ID}`;
 
 /** A glob for one of project 7's own endpoints, e.g. `projectRoute('checkpoints/*')`. */
 export const projectRoute = (path = ''): string =>
-  `**/projects/${String(PROJECT_ID)}${path ? `/${path}` : ''}`;
+  `**/projects/${PROJECT_ID}${path ? `/${path}` : ''}`;
 
-const HOST_ID = 1;
-const COLLABORATOR_ID = 4;
+const HOST_ID = uuidOf(1);
+const COLLABORATOR_ID = uuidOf(4);
+const MODERATOR_ID = uuidOf(9);
 
 const project = {
   id: PROJECT_ID,
@@ -23,7 +28,11 @@ const project = {
   shortDesc: 'A tiny run-and-jump built as a tutorial.',
   longDesc: 'Move the moon with the arrow keys or a gamepad.',
   tags: ['action', 'adventure'],
+  palette: [] as string[],
   iconUrl: null,
+  coverUrl: null,
+  clipUrl: null as string | null,
+  disk: null as Record<string, string> | null,
   status: 'IN_PROGRESS',
   monetization: 'NONE',
   price: null,
@@ -35,7 +44,7 @@ const project = {
   uniquePlayers: 0,
   likes: 0,
   forkCount: 4,
-  forkedFromId: 3,
+  forkedFromId: uuidOf(3),
   collaborators: [
     { id: HOST_ID, username: 'alexis' },
     { id: COLLABORATOR_ID, username: 'priax' },
@@ -57,7 +66,11 @@ interface HistoryEntry {
  * and is called `name` in the header, which a capture of a tutorial's game sets to the page's title.
  * `versions`/`checkpoints` seed the two histories the versions popover reads, and `onSave` runs on
  * every write of the content — a spec that needs to overwrite or track an endpoint of its own still can,
- * by routing it after this call.
+ * by routing it after this call. Answers the project as the routes hold it: a spec that stores a
+ * clip or a disk writes it there, and the next read of the project says so. With `staff`, the one
+ * signed in is a moderator who does not collaborate on the game: the project refuses them, the
+ * moderation preview answers with its last save, and any write they send about a project or a
+ * work session is counted by `onWrite`.
  */
 export async function mockEditor(
   page: Page,
@@ -70,8 +83,10 @@ export async function mockEditor(
     versions = [],
     checkpoints = [],
     onSave,
+    staff = false,
+    onWrite,
   }: {
-    hostId?: number;
+    hostId?: string;
     maxCheckpoints?: number;
     theme?: 'dark' | 'light';
     content?: Buffer;
@@ -79,19 +94,26 @@ export async function mockEditor(
     versions?: HistoryEntry[];
     checkpoints?: HistoryEntry[];
     onSave?: () => void;
+    staff?: boolean;
+    onWrite?: (request: string) => void;
   } = {},
-): Promise<void> {
+): Promise<typeof project> {
   await page.addInitScript((value) => {
     localStorage.setItem('naucto.theme', value);
   }, theme);
-  await mockSignedIn(page, { id: HOST_ID, username: 'alexis' });
+  await mockSignedIn(
+    page,
+    staff
+      ? { id: MODERATOR_ID, username: 'modo', role: 'Moderator' }
+      : { id: HOST_ID, username: 'alexis' },
+  );
   await page.route('**/notifications/webrtc-offer', (route) =>
     route.fulfill({ json: { data: { signaling: ['ws://127.0.0.1:9'] } } }),
   );
-  await page.route(`**/work-sessions/join/${String(PROJECT_ID)}`, (route) =>
+  await page.route(`**/work-sessions/join/${PROJECT_ID}`, (route) =>
     route.fulfill({
       json: {
-        roomId: `room-${String(PROJECT_ID)}`,
+        roomId: `room-${PROJECT_ID}`,
         hostId,
         webrtcOffer: {
           signaling: ['ws://127.0.0.1:9'],
@@ -101,7 +123,7 @@ export async function mockEditor(
       },
     }),
   );
-  await page.route(`**/work-sessions/leave/${String(PROJECT_ID)}`, (route) =>
+  await page.route(`**/work-sessions/leave/${PROJECT_ID}`, (route) =>
     route.fulfill({ status: 204, body: '' }),
   );
   await page.route(projectRoute('content'), (route) => {
@@ -119,10 +141,43 @@ export async function mockEditor(
   await page.route('**/projects/limits', (route) =>
     route.fulfill({ json: { maxCheckpoints, maxAutosaves: 5 } }),
   );
-  await page.route(`**/users/public/${String(COLLABORATOR_ID)}/profile`, (route) =>
+  await page.route(`**/users/public/${COLLABORATOR_ID}/profile`, (route) =>
     route.fulfill({
       json: { data: { id: COLLABORATOR_ID, username: 'priax', profileImageUrl: '/img/logo.svg' } },
     }),
   );
-  await page.route(projectRoute(), (route) => route.fulfill({ json: { ...project, name } }));
+  // What a save or a refresh reads back is what the last write left, as on the real server.
+  const stored = { ...project, name };
+  await page.route(projectRoute(), (route) => {
+    if (route.request().method() === 'PUT') {
+      Object.assign(stored, route.request().postDataJSON());
+    }
+    return route.fulfill({ json: stored });
+  });
+  if (staff) {
+    // Routed last, so they answer before the routes above: the server lets a moderator read any
+    // game through the preview and nothing else of it.
+    await page.route(/\/(projects|work-sessions)\//, (route) => {
+      const request = route.request();
+      if (request.method() !== 'GET') {
+        onWrite?.(`${request.method()} ${new URL(request.url()).pathname}`);
+      }
+      return route.fallback();
+    });
+    await page.route(projectRoute('**'), (route) =>
+      route.fulfill({ status: 403, json: { message: 'Forbidden' } }),
+    );
+    await page.route(projectRoute(), (route) =>
+      route.fulfill({ status: 403, json: { message: 'Forbidden' } }),
+    );
+    await page.route(`**/moderation/projects/${PROJECT_ID}/preview`, (route) =>
+      route.fulfill({ json: { ...stored, hasRelease: false } }),
+    );
+    await page.route(`**/moderation/projects/${PROJECT_ID}/preview/content**`, (route) =>
+      content.length
+        ? route.fulfill({ status: 200, body: content, contentType: 'application/octet-stream' })
+        : route.fulfill({ status: 204, body: '' }),
+    );
+  }
+  return stored;
 }

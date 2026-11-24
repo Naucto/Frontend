@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { type PresenceDto } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { QueryClient } from '@tanstack/angular-query-experimental';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -34,27 +35,27 @@ describe('PresenceStore announcements', () => {
   });
 
   it('puts the presence fields at the top level, not under payload', () => {
-    TestBed.inject(PresenceStore).announce({ kind: 'HOSTING', projectId: 13 });
+    TestBed.inject(PresenceStore).announce({ kind: 'HOSTING', projectId: uuidOf(13) });
 
-    expect(sent).toEqual([{ type: 'presence:set', kind: 'HOSTING', projectId: 13 }]);
+    expect(sent).toEqual([{ type: 'presence:set', kind: 'HOSTING', projectId: uuidOf(13) }]);
     expect(sent[0]).not.toHaveProperty('payload');
   });
 
   it('restates the last announcement the same way when the socket re-authenticates', () => {
     const store = TestBed.inject(PresenceStore);
-    store.announce({ kind: 'PLAYING', releaseId: 6 });
+    store.announce({ kind: 'PLAYING', releaseId: uuidOf(6) });
     sent.length = 0;
 
     store.handle({ type: 'notifications:init', payload: [] });
 
-    expect(sent).toEqual([{ type: 'presence:set', kind: 'PLAYING', releaseId: 6 }]);
+    expect(sent).toEqual([{ type: 'presence:set', kind: 'PLAYING', releaseId: uuidOf(6) }]);
   });
 });
 
 describe('PresenceStore live state', () => {
-  const at = (userId: number, kind: 'PLAYING' | 'IDLE' = 'PLAYING'): PresenceDto => ({
-    userId,
-    username: `user${String(userId)}`,
+  const at = (number: number, kind: 'PLAYING' | 'IDLE' = 'PLAYING'): PresenceDto => ({
+    userId: uuidOf(number),
+    username: `user${String(number)}`,
     nickname: null,
     kind,
     releaseId: null,
@@ -88,8 +89,8 @@ describe('PresenceStore live state', () => {
 
     presenceStore.handle({ type: 'presence:snapshot', payload: [at(1)] });
 
-    expect(presenceStore.of(1)?.kind).toBe('PLAYING');
-    expect(presenceStore.of(2)).toBeNull();
+    expect(presenceStore.of(uuidOf(1))?.kind).toBe('PLAYING');
+    expect(presenceStore.of(uuidOf(2))).toBeNull();
   });
 
   it('applies a change and an offline frame to the one friend they name', () => {
@@ -97,9 +98,9 @@ describe('PresenceStore live state', () => {
     presenceStore.handle({ type: 'presence:snapshot', payload: [at(1), at(2)] });
 
     presenceStore.handle({ type: 'presence:changed', payload: at(1, 'IDLE') });
-    presenceStore.handle({ type: 'presence:offline', payload: { userId: 2 } });
+    presenceStore.handle({ type: 'presence:offline', payload: { userId: uuidOf(2) } });
 
-    expect(presenceStore.of(1)?.kind).toBe('IDLE');
-    expect(presenceStore.of(2)).toBeNull();
+    expect(presenceStore.of(uuidOf(1))?.kind).toBe('IDLE');
+    expect(presenceStore.of(uuidOf(2))).toBeNull();
   });
 });

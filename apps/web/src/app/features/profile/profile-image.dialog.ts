@@ -2,14 +2,19 @@ import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
   type ElementRef,
   inject,
   signal,
   viewChild,
 } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { ButtonDirective, DialogShellComponent, IconComponent } from '@naucto/ui';
+import {
+  ButtonDirective,
+  ChipComponent,
+  DialogShellComponent,
+  IconComponent,
+  NoticeComponent,
+} from '@naucto/ui';
 
 /** Which zone the dialog is filling, which is all that differs between its two windows. */
 export type ProfileImageZone = 'picture' | 'banner';
@@ -24,20 +29,30 @@ export interface ProfileImageResult {
 }
 
 /**
- * The window each zone is cropped through: square for the picture, the banner's own display ratio
- * for the banner.
+ * The window each zone is cropped through: square for the picture, and for the banner the box it
+ * fills on a 1920 px page, which is 2:1. A page of another width covers that box with it, so a
+ * narrower one cuts its sides and nothing is ever stretched.
  */
 const WINDOW: Record<ProfileImageZone, { ratio: number; out: { w: number; h: number } }> = {
   picture: { ratio: 1, out: { w: 256, h: 256 } },
-  banner: { ratio: 1918 / 220, out: { w: 1918, h: 220 } },
+  banner: { ratio: 2, out: { w: 1920, h: 960 } },
 };
 
 const MAX_BYTES = 2 * 1024 * 1024;
-const ACCEPT = 'image/png,image/jpeg,image/gif';
+/**
+ * The types the picker takes, by the name the dialog shows for each: the chips, the file input and
+ * the refusal all read this list, so what it shows is what it takes.
+ */
+const FORMATS = [
+  { type: 'image/png', name: 'PNG' },
+  { type: 'image/jpeg', name: 'JPG' },
+  { type: 'image/gif', name: 'GIF' },
+  { type: 'image/webp', name: 'WebP' },
+] as const;
+const ACCEPT = FORMATS.map((format) => format.type).join(',');
+const FORMAT_NAMES = FORMATS.map((format) => format.name);
 /** Below this the handles would sit on top of each other and the rectangle stops reading as one. */
 const MIN_SIDE = 32;
-/** Past this, the rectangle is too short for a corner handle to sit in without covering the next. */
-const SIDE_HANDLES_ABOVE = 3;
 
 /** The selection, in the coordinates of the image as it is displayed. */
 interface Crop {
@@ -47,11 +62,18 @@ interface Crop {
   h: number;
 }
 
-type Grip = 'move' | 'nw' | 'ne' | 'sw' | 'se' | 'w' | 'e';
+type Grip = 'move' | 'nw' | 'ne' | 'sw' | 'se';
 
 @Component({
   selector: 'nc-profile-image-dialog',
-  imports: [TranslocoDirective, ButtonDirective, DialogShellComponent, IconComponent],
+  imports: [
+    TranslocoDirective,
+    ButtonDirective,
+    ChipComponent,
+    DialogShellComponent,
+    IconComponent,
+    NoticeComponent,
+  ],
   templateUrl: './profile-image.dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -60,8 +82,7 @@ export class ProfileImageDialogComponent {
   protected readonly ref = inject<DialogRef<ProfileImageResult | undefined>>(DialogRef);
   private readonly win = WINDOW[this.data.zone];
   protected readonly accept = ACCEPT;
-  /** Tall enough that a square selection has somewhere to move; the banner needs no more. */
-  protected readonly frameHeight = this.data.zone === 'picture' ? 300 : 260;
+  protected readonly formats = FORMAT_NAMES;
 
   private readonly frame = viewChild.required<ElementRef<HTMLElement>>('frame');
   private readonly img = viewChild<ElementRef<HTMLImageElement>>('img');
@@ -74,24 +95,12 @@ export class ProfileImageDialogComponent {
   protected readonly fit = signal<Crop>({ x: 0, y: 0, w: 0, h: 0 });
   protected readonly crop = signal<Crop>({ x: 0, y: 0, w: 0, h: 0 });
 
-  protected readonly grips = computed<{ grip: Grip; left: string; top: string; cursor: string }[]>(
-    () => {
-      const edge = '-4px';
-      const mid = 'calc(50% - 4px)';
-      const far = 'calc(100% - 5px)';
-      return this.win.ratio > SIDE_HANDLES_ABOVE
-        ? [
-            { grip: 'w', left: edge, top: mid, cursor: 'cursor-ew-resize' },
-            { grip: 'e', left: far, top: mid, cursor: 'cursor-ew-resize' },
-          ]
-        : [
-            { grip: 'nw', left: edge, top: edge, cursor: 'cursor-nwse-resize' },
-            { grip: 'ne', left: far, top: edge, cursor: 'cursor-nesw-resize' },
-            { grip: 'sw', left: edge, top: far, cursor: 'cursor-nesw-resize' },
-            { grip: 'se', left: far, top: far, cursor: 'cursor-nwse-resize' },
-          ];
-    },
-  );
+  protected readonly grips: { grip: Grip; left: string; top: string; cursor: string }[] = [
+    { grip: 'nw', left: '-4px', top: '-4px', cursor: 'cursor-nwse-resize' },
+    { grip: 'ne', left: 'calc(100% - 5px)', top: '-4px', cursor: 'cursor-nesw-resize' },
+    { grip: 'sw', left: '-4px', top: 'calc(100% - 5px)', cursor: 'cursor-nesw-resize' },
+    { grip: 'se', left: 'calc(100% - 5px)', top: 'calc(100% - 5px)', cursor: 'cursor-nwse-resize' },
+  ];
 
   protected reset(): void {
     const el = this.img()?.nativeElement;
@@ -148,25 +157,19 @@ export class ProfileImageDialogComponent {
    */
   private resized(start: Crop, grip: Grip, dx: number): Crop {
     const fit = this.fit();
-    const west = grip === 'nw' || grip === 'sw' || grip === 'w';
+    const west = grip === 'nw' || grip === 'sw';
     const north = grip === 'nw' || grip === 'ne';
     const anchorX = west ? start.x + start.w : start.x;
     const anchorY = north ? start.y + start.h : start.y;
 
     const room = west ? anchorX - fit.x : fit.x + fit.w - anchorX;
-    const vertical =
-      grip === 'w' || grip === 'e' ? Infinity : north ? anchorY - fit.y : fit.y + fit.h - anchorY;
+    const vertical = north ? anchorY - fit.y : fit.y + fit.h - anchorY;
     const wanted = start.w + (west ? -dx : dx);
     const width = Math.min(Math.max(wanted, MIN_SIDE), room, vertical * this.win.ratio, fit.w);
     const height = width / this.win.ratio;
 
     const x = west ? anchorX - width : anchorX;
-    const y =
-      grip === 'w' || grip === 'e'
-        ? Math.min(Math.max(start.y + (start.h - height) / 2, fit.y), fit.y + fit.h - height)
-        : north
-          ? anchorY - height
-          : anchorY;
+    const y = north ? anchorY - height : anchorY;
 
     return { x, y, w: width, h: height };
   }
@@ -187,8 +190,9 @@ export class ProfileImageDialogComponent {
   }
 
   private accepted(file: File): void {
-    if (!ACCEPT.split(',').includes(file.type)) {
-      this.error.set('That file type is not one of PNG, JPG or GIF.');
+    if (!FORMATS.some((format) => format.type === file.type)) {
+      const names = `${FORMAT_NAMES.slice(0, -1).join(', ')} or ${FORMAT_NAMES.at(-1) ?? ''}`;
+      this.error.set(`That file type is not one of ${names}.`);
       return;
     }
     if (file.size > MAX_BYTES) {

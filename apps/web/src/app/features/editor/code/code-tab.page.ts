@@ -14,12 +14,15 @@ import {
   ButtonDirective,
   DialogService,
   IconComponent,
+  LooksOnlyDirective,
+  MarkComponent,
   type TabItem,
   TabsComponent,
 } from '@naucto/ui';
 
 import { RuntimeHostService } from '../../../shared/game-screen/runtime-host.service';
 import { ySignal } from '../../../shared/yjs/y-signal';
+import { EditorModeService } from '../state/editor-mode.service';
 import { EditorRuntimeService } from '../state/editor-runtime.service';
 import { SessionPresenceService } from '../work-session/session-presence.service';
 import { SessionSaveService } from '../work-session/session-save.service';
@@ -41,6 +44,8 @@ import { localSignatures } from './signature-help';
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
+    LooksOnlyDirective,
+    MarkComponent,
     SearchBarComponent,
     CodeEditorComponent,
   ],
@@ -72,6 +77,7 @@ export default class CodeTabPage implements OnInit {
     return this.saves.dirty() ? 'text-orange-ink' : 'text-jade-ink';
   });
   protected readonly session = inject(WorkSessionService);
+  protected readonly mode = inject(EditorModeService);
   protected readonly presence = inject(SessionPresenceService);
   private readonly saves = inject(SessionSaveService);
   protected readonly runtime = inject(RuntimeHostService);
@@ -186,8 +192,10 @@ export default class CodeTabPage implements OnInit {
           return;
         }
         const file = this.session.game.addFile(result.name);
-        this.session.game.setFileColour(file.id, result.colour);
-        this.activeId.set(file.id);
+        if (file) {
+          this.session.game.setFileColour(file.id, result.colour);
+          this.activeId.set(file.id);
+        }
       });
   }
 

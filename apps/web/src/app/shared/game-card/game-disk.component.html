@@ -1,0 +1,49 @@
+<ng-container *transloco="let t">
+  @if (dense()) {
+    <a
+      [routerLink]="link()"
+      class="group raised-sm bevel-bare flex items-center gap-1.5 p-[6px] hover:bevel-lit hover:bevel-fill-raised active:bevel-down">
+      <nc-floppy
+        class="w-[52px] shrink-0"
+        [disk]="disk()"
+        [cover]="cover()"
+        [interactive]="false" />
+      <span class="grid min-w-0 flex-1 grid-cols-1 gap-0.5">
+        <span class="flex items-center gap-1">
+          <span class="min-w-0 flex-1 truncate text-body text-ink group-hover:text-gold-ink">
+            {{ game().name }}
+          </span>
+          @if (game().hiddenAt) {
+            <nc-chip tone="hot">{{ t('games.hidden') }}</nc-chip>
+          } @else if (isDraft()) {
+            <nc-chip>{{ t('games.draft') }}</nc-chip>
+          }
+        </span>
+        <span class="label truncate">{{ game().creator.username }}</span>
+        <span class="flex gap-1.5">
+          <nc-stat icon="play" [value]="game().viewCount" />
+          <nc-stat icon="heart-filled" [value]="game().likes" tone="hot" />
+          <nc-stat icon="git-branch" [value]="game().forkCount ?? 0" />
+        </span>
+      </span>
+    </a>
+  } @else {
+    <a [routerLink]="link()" class="block">
+      <nc-floppy
+        info="bandBottom"
+        [disk]="disk()"
+        [cover]="cover()"
+        [by]="game().creator.username"
+        [likes]="game().likes"
+        [comments]="game().commentCount ?? null"
+        [action]="isDraft() ? 'edit' : 'play'">
+        @if (game().hiddenAt) {
+          <nc-chip tone="hot">{{ t('games.hidden') }}</nc-chip>
+        } @else if (isDraft()) {
+          <nc-chip>{{ t('games.draft') }}</nc-chip>
+        }
+      </nc-floppy>
+      <nc-disk-name>{{ game().name }}</nc-disk-name>
+    </a>
+  }
+</ng-container>

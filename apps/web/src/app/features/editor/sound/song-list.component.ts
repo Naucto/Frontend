@@ -3,6 +3,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { type Pattern, type Song } from '@naucto/engine';
 import {
   HelpDotComponent,
+  LooksOnlyDirective,
   NumberFieldComponent,
   type NumberFieldTone,
   TransportComponent,
@@ -44,7 +45,13 @@ interface Cell {
  */
 @Component({
   selector: 'nc-song-list',
-  imports: [TranslocoDirective, HelpDotComponent, NumberFieldComponent, TransportComponent],
+  imports: [
+    TranslocoDirective,
+    HelpDotComponent,
+    LooksOnlyDirective,
+    NumberFieldComponent,
+    TransportComponent,
+  ],
   templateUrl: './song-list.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -67,7 +74,7 @@ export class SongListComponent {
 
   protected readonly NO_CEILING = Infinity;
   protected readonly columnTrack = `repeat(${String(COLUMNS)}, minmax(0, 1fr))`;
-  protected readonly height = `calc(${String(ROWS)} * var(--nc-control-h-xs) + ${String(
+  protected readonly height = `calc(${String(ROWS)} * var(--nc-h-sm) + ${String(
     (ROWS - 1) * 2 + TAIL,
   )}px)`;
 

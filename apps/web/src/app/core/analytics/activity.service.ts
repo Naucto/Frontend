@@ -4,7 +4,7 @@ import type { AnalyticsLiveState } from '@naucto/api-client';
 export interface Activity {
   state: AnalyticsLiveState;
   /** The published game involved, if any. */
-  releaseId?: number;
+  releaseId?: string;
 }
 
 const RANK: Record<AnalyticsLiveState, number> = {

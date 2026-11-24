@@ -1,18 +1,66 @@
-<div *transloco="let t">
-  <nc-label class="mb-1">{{ t('game.howToPlay') }}</nc-label>
-  <dl class="grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1">
-    @for (row of rows(); track row.action) {
-      <dt class="flex gap-0.5">
-        @for (key of row.keys; track key) {
-          <nc-keycap>{{ key }}</nc-keycap>
-        }
-      </dt>
-      <dd class="text-meta text-ink-2">{{ row.label }}</dd>
-    }
-    <dt>
-      <nc-keycap>{{ t('settings.gamepad') }}</nc-keycap>
-    </dt>
-    <dd class="text-meta text-ink-2">{{ t('game.gamepad') }}</dd>
-  </dl>
-  <p class="mt-1 text-label text-ink-4">{{ t('game.readFromMap') }}</p>
-</div>
+<section *transloco="let t" class="@container">
+  <nc-disclosure
+    variant="title"
+    [level]="2"
+    [title]="t('game.howToPlay')"
+    [open]="open()"
+    (openChange)="toggle()">
+    <div
+      class="mt-1.5 grid items-start gap-2"
+      [class]="tables().length > 1 ? '@[960px]:grid-cols-2' : 'max-w-[640px]'">
+      @for (rows of tables(); track $index) {
+        <table ncTable dense>
+          <thead>
+            <tr>
+              <th scope="col">{{ t('game.howTo.action') }}</th>
+              @for (column of columns(); track $index) {
+                <th scope="col">
+                  @if (column.player !== undefined) {
+                    <nc-chip [tone]="tones[column.player] ?? 'neutral'">
+                      {{ t('controls.player', { n: column.player + 1 }) }}
+                    </nc-chip>
+                    <span class="sr-only">{{ t(column.head) }}</span>
+                  } @else {
+                    {{ t(column.head) }}
+                  }
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rows; track row.action.id) {
+              <tr>
+                <th scope="row">
+                  {{ row.action.label }}
+                  @if (row.action.description) {
+                    <small>{{ row.action.description }}</small>
+                  }
+                </th>
+                @for (cell of row.cells; track $index) {
+                  <td>
+                    <span class="flex items-center gap-0.5" [class]="cell.layout">
+                      @for (plugged of cell.inputs; track $index) {
+                        <span class="flex items-center gap-0.5 whitespace-nowrap">
+                          @if (!$first) {
+                            <span class="text-meta text-ink-3">{{ t('input.or') }}</span>
+                          }
+                          <nc-input-cap [input]="plugged" size="sm" />
+                        </span>
+                      } @empty {
+                        @if (touch) {
+                          <span class="label whitespace-nowrap text-ink-4">
+                            {{ t('game.howTo.notOnTouch') }}
+                          </span>
+                        }
+                      }
+                    </span>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </nc-disclosure>
+</section>

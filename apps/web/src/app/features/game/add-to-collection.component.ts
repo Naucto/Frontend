@@ -1,0 +1,120 @@
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import type { CollectionDto, MyCollectionDto } from '@naucto/api-client';
+import {
+  ButtonDirective,
+  CheckboxComponent,
+  ChipComponent,
+  DialogService,
+  IconComponent,
+  OptionDirective,
+  PopoverDirective,
+  PopoverPanelComponent,
+  ToastService,
+} from '@naucto/ui';
+
+import { ApiError } from '../../core/api/api-errors';
+import { AuthStore } from '../../core/auth/auth.store';
+import {
+  CollectionDialogComponent,
+  type CollectionDialogData,
+} from '../../shared/collections/collection.dialog';
+import { VisibilityChipComponent } from '../../shared/collections/visibility-chip.component';
+import { GoodStandingAction } from '../../shared/moderation/good-standing-action';
+import {
+  injectMyCollections,
+  injectSetInCollection,
+  limitOf,
+} from '../../shared/queries/collections.queries';
+
+/** The refusals the checklist answers in its own words, as the keys that say them. */
+const REFUSALS: Record<string, string> = {
+  COLLECTION_HIDDEN: 'collections.add.collectionHidden',
+  PROJECT_HIDDEN: 'collections.add.gameHidden',
+};
+
+/**
+ * The game page's way into the reader's collections: a button that says how many of them hold the
+ * game and opens them as a checklist, where a tick adds the game and an untick takes it out, at
+ * once. A reader with no account is asked to sign in first, and a suspended one is told why the
+ * checklist stays shut.
+ */
+@Component({
+  selector: 'nc-add-to-collection',
+  imports: [
+    TranslocoDirective,
+    ButtonDirective,
+    CheckboxComponent,
+    ChipComponent,
+    IconComponent,
+    OptionDirective,
+    PopoverDirective,
+    PopoverPanelComponent,
+    VisibilityChipComponent,
+  ],
+  templateUrl: './add-to-collection.component.html',
+  host: { class: 'grid' },
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class AddToCollectionComponent {
+  readonly projectId = input.required<string>();
+
+  protected readonly auth = inject(AuthStore);
+  private readonly standing = inject(GoodStandingAction);
+  private readonly dialogs = inject(DialogService);
+  private readonly toasts = inject(ToastService);
+  private readonly i18n = inject(TranslocoService);
+
+  protected readonly mine = injectMyCollections(() => this.projectId());
+  private readonly membership = injectSetInCollection();
+
+  protected readonly open = signal(false);
+  protected readonly holding = computed(
+    () => (this.mine.data() ?? []).filter((collection) => collection.contains).length,
+  );
+
+  /**
+   * The press of a reader the checklist is not offered to. Signing in swaps the button for the one
+   * that holds the checklist, which then opens; a suspended account gets the reason instead.
+   */
+  protected ask(): void {
+    this.standing.run(() => {
+      this.open.set(true);
+    });
+  }
+
+  protected async set(
+    collection: Pick<MyCollectionDto, 'id' | 'title'>,
+    holds: boolean,
+  ): Promise<void> {
+    try {
+      await this.membership.mutateAsync({
+        id: collection.id,
+        projectId: this.projectId(),
+        holds,
+      });
+    } catch (error: unknown) {
+      const max = limitOf(error, 'COLLECTION_GAMES_LIMIT');
+      const refusal = error instanceof ApiError && error.code ? REFUSALS[error.code] : undefined;
+      this.toasts.show(
+        max === null
+          ? this.i18n.translate(refusal ?? 'collections.add.failed', { title: collection.title })
+          : this.i18n.translate('collections.add.full', { title: collection.title, n: max }),
+        'error',
+      );
+    }
+  }
+
+  protected create(): void {
+    this.dialogs
+      .open<CollectionDialogComponent, CollectionDialogData, CollectionDto>(
+        CollectionDialogComponent,
+        { width: '520px', data: {} },
+      )
+      .closed.subscribe((created) => {
+        if (created) {
+          void this.set(created, true);
+        }
+      });
+  }
+}

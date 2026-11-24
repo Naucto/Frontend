@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { uuidOf } from '@naucto/api-client/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AuthStore } from '../auth/auth.store';
@@ -99,10 +100,10 @@ describe('HeartbeatService', () => {
   });
 
   it('reports the current activity and its game', () => {
-    TestBed.inject(ActivityService).claim({ state: 'PLAYING', releaseId: 9 });
+    TestBed.inject(ActivityService).claim({ state: 'PLAYING', releaseId: uuidOf(9) });
     start();
 
-    expect(posted[0]?.body).toMatchObject({ state: 'PLAYING', releaseId: 9 });
+    expect(posted[0]?.body).toMatchObject({ state: 'PLAYING', releaseId: uuidOf(9) });
   });
 
   it('pings without any identifier when there is no consent, every minute', async () => {

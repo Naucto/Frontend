@@ -11,9 +11,3 @@ export function modifierLabel(): string {
 
   return /mac|iphone|ipad|ipod/i.test(platform ?? '') ? '⌘' : 'CTRL';
 }
-
-export function shortcutLabel(key: string): string {
-  const mod = modifierLabel();
-
-  return mod === '⌘' ? `${mod}${key}` : `${mod} ${key}`;
-}

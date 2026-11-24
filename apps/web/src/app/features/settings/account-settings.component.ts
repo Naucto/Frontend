@@ -23,6 +23,7 @@ import {
   InputDirective,
   SegmentedComponent,
   SettingRowComponent,
+  SettingsGroupComponent,
   ToastService,
   ToggleComponent,
 } from '@naucto/ui';
@@ -47,6 +48,7 @@ const POLICIES: SessionJoinPolicy[] = ['ANYONE', 'FRIENDS', 'CODE_ONLY'];
     InputDirective,
     SegmentedComponent,
     SettingRowComponent,
+    SettingsGroupComponent,
     ToggleComponent,
   ],
   templateUrl: './account-settings.component.html',

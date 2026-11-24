@@ -1,5 +1,6 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { client } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { render, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,7 +10,17 @@ import { type FlagContentData, FlagContentDialog } from './flag-content.dialog';
 
 const realFetch = globalThis.fetch;
 
-const COMMENT: FlagContentData = { targetType: 'COMMENT', targetId: 7, label: 'buy cheap coins' };
+const COMMENT: FlagContentData = {
+  targetType: 'COMMENT',
+  targetId: uuidOf(7),
+  label: 'buy cheap coins',
+};
+
+/** Opens the reason list and takes one reason from it. */
+async function pick(reason: string): Promise<void> {
+  await userEvent.click(await screen.findByRole('combobox', { name: 'What is wrong with it?' }));
+  await userEvent.click(await screen.findByRole('option', { name: reason }));
+}
 
 describe('FlagContentDialog', () => {
   let sent: { path: string; json: Record<string, unknown> }[];
@@ -34,7 +45,7 @@ describe('FlagContentDialog', () => {
 
   beforeEach(() => {
     sent = [];
-    answer = () => json(201, { id: 3 });
+    answer = () => json(201, { id: uuidOf(3) });
     close.mockReset();
     client.setConfig({ baseUrl: 'https://api.test', throwOnError: false });
     globalThis.fetch = async (input: RequestInfo | URL): Promise<Response> => {
@@ -59,13 +70,26 @@ describe('FlagContentDialog', () => {
     const send = screen.getByRole('button', { name: 'Send report' });
     expect(send).toBeDisabled();
 
-    await userEvent.selectOptions(screen.getByLabelText('What is wrong with it?'), 'SPAM');
+    await pick('Spam or advertising');
     expect(send).toBeEnabled();
+  });
+
+  it('holds one reason at a time, and counts the details as the kit writes a count', async () => {
+    await open();
+    await pick('Spam or advertising');
+    await pick('Hate');
+    expect(screen.getByRole('combobox', { name: 'What is wrong with it?' }).textContent).toContain(
+      'Hate',
+    );
+
+    expect(screen.getByText('0 of 1000')).toBeTruthy();
+    await userEvent.type(screen.getByLabelText('Anything the moderators should know'), 'Twice');
+    expect(screen.getByText('5 of 1000')).toBeTruthy();
   });
 
   it('sends the target, the reason and the trimmed details, and closes as sent', async () => {
     await open();
-    await userEvent.selectOptions(await screen.findByLabelText('What is wrong with it?'), 'SPAM');
+    await pick('Spam or advertising');
     await userEvent.type(
       screen.getByLabelText('Anything the moderators should know'),
       '  Third time today  ',
@@ -78,20 +102,25 @@ describe('FlagContentDialog', () => {
     expect(sent).toEqual([
       {
         path: '/moderation/flags',
-        json: { targetType: 'COMMENT', targetId: 7, reason: 'SPAM', details: 'Third time today' },
+        json: {
+          targetType: 'COMMENT',
+          targetId: uuidOf(7),
+          reason: 'SPAM',
+          details: 'Third time today',
+        },
       },
     ]);
   });
 
   it('leaves the details out when nothing was written', async () => {
-    await open({ targetType: 'USER', targetId: 4, label: '@bob' });
-    await userEvent.selectOptions(await screen.findByLabelText('What is wrong with it?'), 'HATE');
+    await open({ targetType: 'USER', targetId: uuidOf(4), label: '@bob' });
+    await pick('Hate');
     await userEvent.click(screen.getByRole('button', { name: 'Send report' }));
 
     await vi.waitFor(() => {
       expect(close).toHaveBeenCalledWith(true);
     });
-    expect(sent[0]?.json).toEqual({ targetType: 'USER', targetId: 4, reason: 'HATE' });
+    expect(sent[0]?.json).toEqual({ targetType: 'USER', targetId: uuidOf(4), reason: 'HATE' });
   });
 
   it.each([
@@ -101,7 +130,7 @@ describe('FlagContentDialog', () => {
   ])('answers a %s refusal in its own words and stays open', async (code, message) => {
     answer = () => json(409, { code, message: 'refused' });
     await open();
-    await userEvent.selectOptions(await screen.findByLabelText('What is wrong with it?'), 'SPAM');
+    await pick('Spam or advertising');
     await userEvent.click(screen.getByRole('button', { name: 'Send report' }));
 
     expect(await screen.findByText(message)).toBeTruthy();

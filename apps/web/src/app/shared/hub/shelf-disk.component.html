@@ -1,0 +1,25 @@
+<a
+  class="relative block"
+  [routerLink]="link()"
+  [attr.aria-label]="game().name"
+  [attr.aria-expanded]="flyoutId() ? open() : null"
+  [attr.aria-controls]="flyoutId()"
+  [attr.aria-describedby]="open() ? flyoutId() : null">
+  <nc-floppy
+    info="bandBottom"
+    [disk]="disk()"
+    [cover]="game().coverUrl ?? null"
+    [preview]="game().clipUrl ?? null"
+    [by]="game().creator.username"
+    [likes]="game().likes"
+    [comments]="game().commentCount ?? null"
+    [action]="action()"
+    [open]="open()">
+    @if (game().hiddenAt) {
+      <nc-chip *transloco="let t" tone="hot">{{ t('games.hidden') }}</nc-chip>
+    }
+  </nc-floppy>
+  @if (named()) {
+    <nc-disk-name>{{ game().name }}</nc-disk-name>
+  }
+</a>

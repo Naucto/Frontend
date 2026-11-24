@@ -1,9 +1,13 @@
 import { readFileSync } from 'node:fs';
 
-import { type Locator, type Page, test } from '@playwright/test';
+import { type Locator, type Page } from '@playwright/test';
 
-import { mockEditor } from '../editor-mocks';
-import { shoot } from './frame';
+import { editorUrl, mockEditor, projectRoute } from '../editor-mocks';
+import { test } from '../fixtures';
+import { PLAY, release } from '../mocks/game';
+import { setGamepads } from '../mocks/gamepads';
+import { answer } from '../mocks/session';
+import { grabFrame, shoot } from './frame';
 
 /**
  * The pictures the documentation shows of each editor, taken from one seeded game so that they
@@ -43,6 +47,33 @@ const CHARACTER = [
   '..#..#..',
 ];
 
+const COVER_FILE = 'node_modules/.cache/docs-shots/cover.png';
+
+/**
+ * Starts the game in the GAME tab's sidebar and grabs its frame as the cover, the way an author
+ * does: the mock keeps no picture, so the frame is read off the console and served back as the
+ * cover the project then says it has.
+ */
+async function playAndGrabCover(page: Page): Promise<void> {
+  await page.locator('nc-game-publishing').getByRole('button', { name: 'Play' }).first().click();
+  await page.waitForTimeout(1500);
+  await grabFrame(page, COVER_FILE);
+  await page.route('**/e2e/cover.png', (route) =>
+    route.fulfill({ status: 200, body: readFileSync(COVER_FILE), contentType: 'image/png' }),
+  );
+  await page.route(projectRoute('image'), (route) =>
+    route.request().method() === 'GET'
+      ? route.fulfill({ json: { url: 'http://localhost:3001/e2e/cover.png' } })
+      : route.fulfill({ status: 204, body: '' }),
+  );
+  await page.getByRole('button', { name: 'Grab frame' }).click();
+  const saved = page.getByText('Cover updated');
+  await saved.waitFor();
+  await saved.waitFor({ state: 'hidden' });
+  // Off the button, which would be pictured lit.
+  await page.mouse.move(0, 0);
+}
+
 const section = (page: Page, title: string): Locator =>
   page
     .locator('nc-section')
@@ -62,14 +93,14 @@ for (const theme of THEMES) {
       // the region on sprite 1, Lock off. The later route wins, so this stands in for the
       // Platformer of `beforeEach`.
       await mockEditor(page, { theme, name: 'Untitled game' });
-      await page.goto('/edit/7/art');
+      await page.goto(editorUrl('art'));
       await page.getByRole('img', { name: 'Sprite canvas' }).waitFor();
       await page.waitForTimeout(500);
       await shoot(page, OUT, 'art', theme);
     });
 
     test('art', async ({ page }) => {
-      await page.goto('/edit/7/art');
+      await page.goto(editorUrl('art'));
       await page.getByRole('img', { name: 'Sprite canvas' }).waitFor();
       await page.waitForTimeout(500);
       await shoot(page, OUT, 'art-tools', theme, page.locator('nc-tool-group').first());
@@ -109,7 +140,7 @@ for (const theme of THEMES) {
     });
 
     test('map', async ({ page }) => {
-      await page.goto('/edit/7/map');
+      await page.goto(editorUrl('map'));
       await page.getByRole('img', { name: 'Map canvas' }).waitFor();
       await page.waitForTimeout(500);
       await shoot(page, OUT, 'map', theme);
@@ -136,7 +167,7 @@ for (const theme of THEMES) {
 
     test('getting started: the sprite and the code', async ({ page }) => {
       await mockEditor(page, { theme, name: 'Untitled game' });
-      await page.goto('/edit/7/art');
+      await page.goto(editorUrl('art'));
       const canvas = page.getByRole('img', { name: 'Sprite canvas' });
       await canvas.waitFor();
       await page.locator('nc-sheet-view svg').first().focus();
@@ -185,7 +216,7 @@ for (const theme of THEMES) {
 
     test('code: the first run', async ({ page }) => {
       await mockEditor(page, { theme, name: 'Untitled game' });
-      await page.goto('/edit/7/code');
+      await page.goto(editorUrl('code'));
       await page.getByRole('tab', { name: 'main', exact: true }).waitFor();
       await page.getByRole('button', { name: 'Play' }).first().click();
       await page.locator('nc-console-column').getByText('Welcome to Naucto!').waitFor();
@@ -194,7 +225,7 @@ for (const theme of THEMES) {
     });
 
     test('code', async ({ page }) => {
-      await page.goto('/edit/7/code');
+      await page.goto(editorUrl('code'));
       await page.getByRole('tab', { name: 'main', exact: true }).waitFor();
       await page.waitForTimeout(500);
       await shoot(page, OUT, 'code-console', theme, page.locator('nc-console-column'));
@@ -260,7 +291,7 @@ for (const theme of THEMES) {
     });
 
     test('sound', async ({ page }) => {
-      await page.goto('/edit/7/sound');
+      await page.goto(editorUrl('sound'));
       await page.getByRole('img', { name: 'Piano roll' }).waitFor();
       await page.waitForTimeout(500);
       await shoot(page, OUT, 'sound', theme);
@@ -272,7 +303,7 @@ for (const theme of THEMES) {
       await page.waitForTimeout(200);
       await shoot(page, OUT, 'sound-sfx', theme, page.locator('nc-slot-grid').first());
       // Five places filled with pattern 0 and one left empty: the orange hole the music stops at.
-      const cells = page.locator('nc-song-list [role="group"] input');
+      const cells = page.locator('nc-song-list [role="group"] nc-number-field input');
       for (const i of [0, 1, 2, 4, 5]) {
         await cells.nth(i).fill('0');
         await cells.nth(i).press('Enter');
@@ -296,25 +327,38 @@ for (const theme of THEMES) {
     });
 
     test('net', async ({ page }) => {
-      await page.goto('/edit/7/net');
-      await page.getByRole('button', { name: 'Declare a path' }).click();
-      await page.getByPlaceholder('key').fill('score');
-      await page.keyboard.press('Enter');
-      await page.getByTitle('Add child node').first().click();
-      await page.getByPlaceholder('key').fill('winner');
-      await page.keyboard.press('Enter');
-      const winner = page.getByRole('row').filter({ hasText: 'winner' });
-      await winner.getByTitle('Clients can write this path').click();
+      await page.goto(editorUrl('net'));
+      const declare = async (parent: string | null, key: string): Promise<void> => {
+        if (parent === null) {
+          await page.getByRole('button', { name: 'Path', exact: true }).click();
+        } else {
+          await page
+            .locator(`tr:has(td[title="${parent}"])`)
+            .getByRole('button', { name: 'Add child node' })
+            .click();
+        }
+        await page.getByPlaceholder('key').fill(key);
+        await page.keyboard.press('Enter');
+      };
+      await declare(null, 'players');
+      await declare('players', 'score');
+      await declare(null, 'winner');
+      // players gets a rule of its own, read but not written, which score then inherits.
+      await page
+        .locator('tr:has(td[title="players"])')
+        .getByRole('checkbox', { name: 'Clients can write this path' })
+        .click();
       await page.waitForTimeout(500);
       await shoot(page, OUT, 'net', theme);
       await shoot(page, OUT, 'net-state', theme, page.locator('nc-net-tab-page section').first());
       await shoot(page, OUT, 'net-session', theme, page.locator('nc-panel-column').first());
-      await shoot(page, OUT, 'net-rig', theme, section(page, 'Test rig'));
+      await page.locator('nc-panel-column').getByRole('button', { name: 'Debug' }).click();
+      await shoot(page, OUT, 'net-rig', theme, page.locator('nc-panel-column nc-disclosure'));
     });
 
     test('game', async ({ page }) => {
       // A history worth showing: the mock's empty lists would picture the panel with nothing in it.
-      await page.route('**/projects/7/versions', (route) =>
+      await page.route(projectRoute('versions'), (route) =>
         route.fulfill({
           json: {
             versions: [
@@ -325,7 +369,7 @@ for (const theme of THEMES) {
           },
         }),
       );
-      await page.route('**/projects/7/checkpoints', (route) =>
+      await page.route(projectRoute('checkpoints'), (route) =>
         route.fulfill({
           json: [
             { name: 'v2 double jump', date: '2026-09-18T16:00:00.000Z' },
@@ -333,11 +377,11 @@ for (const theme of THEMES) {
           ],
         }),
       );
-      await page.goto('/edit/7/game');
+      await page.goto(editorUrl('game'));
       await page.getByRole('textbox', { name: 'Name' }).waitFor();
-      await page.waitForTimeout(500);
+      await playAndGrabCover(page);
       await shoot(page, OUT, 'game', theme);
-      await page.getByRole('button', { name: 'Platformer' }).click();
+      await page.locator('nc-versions-popover').getByRole('button', { name: 'Platformer' }).click();
       const panel = page.locator('nc-popover-panel');
       await shoot(page, OUT, 'game-versions', theme, panel);
       await panel.getByRole('button', { name: 'Save a version' }).click();
@@ -358,8 +402,50 @@ for (const theme of THEMES) {
       await page.keyboard.press('Escape');
     });
 
+    test('game: the clip while it records, the disk and the inputs', async ({ page }) => {
+      await page.goto(editorUrl('game'));
+      await page.getByRole('textbox', { name: 'Name' }).waitFor();
+      await playAndGrabCover(page);
+      const clip = page.getByRole('region', { name: 'Clip' });
+      await clip.getByRole('button', { name: 'Record' }).click();
+      await clip.getByRole('button', { name: 'Stop' }).waitFor();
+      await page.waitForTimeout(2000);
+      await shoot(page, OUT, 'game-clip', theme);
+      await clip.getByRole('button', { name: 'Stop' }).click();
+
+      await page.getByRole('tab', { name: 'Disk' }).click();
+      await page.locator('nc-game-disk-bench').waitFor();
+      await page.waitForTimeout(500);
+      await shoot(page, OUT, 'game-disk', theme);
+
+      await page.getByRole('tab', { name: /^Inputs/ }).click();
+      const actions = page.locator('nc-game-inputs');
+      await actions.locator('button[aria-expanded]').first().click();
+      await page.waitForTimeout(300);
+      await shoot(page, OUT, 'game-inputs', theme);
+    });
+
+    test('how to play, on the page of a game', async ({ page }) => {
+      await page.route(`**/projects/releases/${release.id}`, answer(200, release));
+      await page.route(`**/projects/releases/${release.id}/content-url`, (route) =>
+        route.fulfill({ json: { signedUrl: 'http://localhost:3001/e2e/game.bin' } }),
+      );
+      await page.route('**/e2e/game.bin', (route) =>
+        route.fulfill({
+          status: 200,
+          body: readFileSync(CONTENT_FILE),
+          contentType: 'application/octet-stream',
+        }),
+      );
+      await page.goto(PLAY);
+      const howToPlay = page.locator('nc-how-to-play');
+      await howToPlay.getByRole('table').first().waitFor();
+      await page.waitForTimeout(300);
+      await shoot(page, OUT, 'how-to-play', theme, howToPlay);
+    });
+
     test('the floating viewer', async ({ page }) => {
-      await page.goto('/edit/7/code');
+      await page.goto(editorUrl('code'));
       await page.getByRole('tab', { name: 'main', exact: true }).waitFor();
       await page.getByRole('button', { name: 'Play' }).first().click();
       await page.getByRole('button', { name: 'Pop the viewer out' }).click();
@@ -370,10 +456,14 @@ for (const theme of THEMES) {
     });
 
     test('settings: controls', async ({ page }) => {
+      await setGamepads(page, [
+        { id: 'Xbox Wireless Controller', held: [0, 5], axes: [0.9, -0.8, 0, 0] },
+        { id: 'DualSense Wireless Controller', held: [14] },
+      ]);
       await page.goto('/settings/controls');
-      await page.locator('nc-controls-settings').waitFor();
+      await page.locator('nc-controls nc-pad-art').first().waitFor();
       await page.waitForTimeout(300);
-      await shoot(page, OUT, 'settings-controls', theme, page.locator('nc-controls-settings'));
+      await shoot(page, OUT, 'settings-controls', theme, page.locator('nc-controls'));
     });
   });
 }

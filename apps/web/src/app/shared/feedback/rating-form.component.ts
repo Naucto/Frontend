@@ -12,7 +12,6 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { type RatingOrigin, RatingReason, ReportRole } from '@naucto/api-client';
 import {
-  ButtonDirective,
   FieldComponent,
   InputDirective,
   LOW_RATING_MAX,
@@ -33,7 +32,7 @@ export const RATING_REASONS = Object.values(RatingReason);
 
 /** What was sent, and whether the person went on to report a bug from it. */
 export interface RatingSent {
-  id: number;
+  id: string;
   reportBug: boolean;
   improve: string;
 }
@@ -41,13 +40,13 @@ export interface RatingSent {
 /**
  * The platform rating: whether the person mostly plays or creates, a score out of ten, then two
  * optional comments, and for a low score the reasons. Sending with only the score is as welcome as
- * sending everything.
+ * sending everything. It draws no buttons: the dialog around it puts them in its footer and calls
+ * `send`.
  */
 @Component({
   selector: 'nc-rating-form',
   imports: [
     TranslocoDirective,
-    ButtonDirective,
     FieldComponent,
     InputDirective,
     NoticeComponent,
@@ -63,7 +62,7 @@ export class RatingFormComponent {
   /** The answer offered to "mostly play or create", from what the person was just doing. */
   readonly role = input.required<ReportRole>();
   readonly origin = input.required<RatingOrigin>();
-  readonly releaseId = input<number | null>(null);
+  readonly releaseId = input<string | null>(null);
   readonly sent = output<RatingSent>();
 
   private readonly submit = injectSubmitRating();
@@ -80,14 +79,15 @@ export class RatingFormComponent {
     })),
   );
   protected readonly chosenRole = linkedSignal(() => this.role());
-  protected readonly score = signal<number | null>(null);
+  /** Read by whatever holds the form's buttons, which sit outside it in the dialog's footer. */
+  readonly score = signal<number | null>(null);
   protected readonly chosenReasons = signal<ReadonlySet<RatingReason>>(new Set());
   protected readonly liked = signal('');
   protected readonly improve = signal('');
   protected readonly failed = signal(false);
-  protected readonly pending = this.submit.isPending;
+  readonly pending = this.submit.isPending;
 
-  protected readonly low = computed(() => {
+  readonly low = computed(() => {
     const score = this.score();
     return score !== null && score <= LOW_RATING_MAX;
   });
@@ -112,7 +112,7 @@ export class RatingFormComponent {
     }
   }
 
-  protected async send(reportBug: boolean): Promise<void> {
+  async send(reportBug: boolean): Promise<void> {
     const score = this.score();
     if (score === null || this.pending()) {
       return;

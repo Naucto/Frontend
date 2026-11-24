@@ -1,6 +1,6 @@
 <form
   *transloco="let t"
-  class="flex flex-col gap-1.5"
+  class="flex flex-col gap-[14px]"
   (submit)="$event.preventDefault(); send(false)"
   (keydown)="onKey($event)">
   <nc-field [label]="t('feedback.rating.role')">
@@ -22,7 +22,7 @@
   @if (score() !== null) {
     @if (low()) {
       <nc-field [label]="t('feedback.rating.whatWentWrong')">
-        <div class="flex flex-wrap gap-0.5">
+        <div class="flex flex-wrap gap-[6px]">
           @for (reason of reasons; track reason) {
             <nc-toggle-button
               accent="sky"
@@ -35,11 +35,15 @@
       </nc-field>
     }
 
-    <div class="flex flex-col gap-1.5" [class.flex-col-reverse]="!praiseFirst()">
+    <div class="flex flex-col gap-[14px]" [class.flex-col-reverse]="!praiseFirst()">
       <nc-field
         [label]="t('feedback.rating.liked')"
         for="rating-liked"
-        [counter]="liked().length > commentMax * 0.8 ? liked().length + '/' + commentMax : ''">
+        [counter]="
+          liked().length > commentMax * 0.8
+            ? t('count', { n: liked().length, max: commentMax })
+            : ''
+        ">
         <textarea
           ncInput
           id="rating-liked"
@@ -53,7 +57,11 @@
       <nc-field
         [label]="low() ? t('feedback.rating.why') : t('feedback.rating.improve')"
         for="rating-improve"
-        [counter]="improve().length > commentMax * 0.8 ? improve().length + '/' + commentMax : ''">
+        [counter]="
+          improve().length > commentMax * 0.8
+            ? t('count', { n: improve().length, max: commentMax })
+            : ''
+        ">
         <textarea
           ncInput
           id="rating-improve"
@@ -71,28 +79,4 @@
   @if (failed()) {
     <nc-notice tone="danger">{{ t('feedback.rating.failed') }}</nc-notice>
   }
-
-  <div class="flex flex-wrap items-center justify-end gap-1">
-    <ng-content select="[secondary]" />
-    <span class="flex-1"></span>
-    @if (low()) {
-      <button
-        ncButton
-        variant="secondary"
-        size="sm"
-        type="button"
-        [disabled]="pending()"
-        (click)="send(true)">
-        {{ t('feedback.rating.reportBug') }}
-      </button>
-    }
-    <button
-      ncButton
-      variant="primary"
-      size="sm"
-      type="submit"
-      [disabled]="score() === null || pending()">
-      {{ pending() ? t('feedback.sending') : t('feedback.rating.send') }}
-    </button>
-  </div>
 </form>

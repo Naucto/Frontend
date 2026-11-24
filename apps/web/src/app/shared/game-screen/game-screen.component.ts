@@ -8,6 +8,7 @@ import {
   effect,
   inject,
   input,
+  linkedSignal,
   Optional,
   output,
   signal,
@@ -16,19 +17,26 @@ import {
   viewChild,
 } from '@angular/core';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { type Game } from '@naucto/engine';
+import { type Game, type TouchControl, touchControlsOf } from '@naucto/engine';
 import {
   ButtonDirective,
+  ChipComponent,
   DialogService,
   ErrorStateComponent,
   IconComponent,
-  PopoverDirective,
-  PopoverPanelComponent,
+  JoinedDirective,
+  ToastService,
 } from '@naucto/ui';
 
-import { NetUiBridgeService } from '../../core/net/net-bridge.service';
+import { ApiError } from '../../core/api/api-errors';
+import {
+  type NetRequest,
+  NetUiBridgeService,
+  type SessionInvite,
+} from '../../core/net/net-bridge.service';
 import { netPermissionsOf } from '../../core/net/net-permissions';
 import { ThemeService } from '../../core/theme/theme.service';
+import { coarsePointer } from '../input/coarse-pointer';
 import { GoodStandingAction } from '../moderation/good-standing-action';
 import { HostDialogComponent, type HostDialogData } from '../netplay/host.dialog';
 import { JoinDialogComponent } from '../netplay/join.dialog';
@@ -42,10 +50,10 @@ import { VirtualPadComponent } from './virtual-pad.component';
 @Component({
   selector: 'nc-game-screen',
   imports: [
+    ChipComponent,
     ButtonDirective,
     IconComponent,
-    PopoverDirective,
-    PopoverPanelComponent,
+    JoinedDirective,
     VirtualPadComponent,
     ErrorStateComponent,
     TranslocoDirective,
@@ -115,50 +123,53 @@ export class GameScreenComponent {
   readonly debug = input(false, { transform: booleanAttribute });
   readonly autoPlay = input(false);
   /** Backend project id, needed to host or join netplay sessions. */
-  readonly projectId = input<number | null>(null);
-  /** Test rig: when the mounted game calls `net.join()`, join this session straight away instead of asking the player which one. */
-  readonly autoJoin = input<{ uuid: string; code: string | null } | null>(null);
+  readonly projectId = input<string | null>(null);
+  /**
+   * The session this screen was opened on. The mounted game reads it with `net.invite()`, and its
+   * `net.join()` enters it straight away instead of asking the player which one.
+   */
+  readonly invite = input<SessionInvite | null>(null);
   /** Rooms hosted from this screen are the editor testing its own game, not the game being played. */
   readonly editorTest = input(false, { transform: booleanAttribute });
   readonly mounted = output();
+  readonly inviteJoined = output();
+  /** The invite leads nowhere any more: its session was left, ended, or would not let the player in. */
+  readonly inviteClosed = output();
   /** True while this screen — not some other one on the page — owns the fullscreen element. */
   protected readonly isFullscreen = signal(false);
   protected readonly frameClass = computed(() =>
-    this.overlay()
-      ? 'game-frame @container relative'
-      : 'game-frame @container relative mx-auto max-w-[1600px]',
+    this.overlay() ? 'game-frame relative' : 'game-frame relative mx-auto max-w-[1600px]',
   );
   /** The band under the screen, or the scrim across it. */
   protected readonly transportClass = computed(() => {
     if (this.overlay() || this.isFullscreen()) {
       return (
-        'absolute inset-x-0 bottom-0 flex h-[36px] items-center gap-0.75 px-1.25 ' +
+        'absolute inset-x-0 bottom-0 flex h-(--nc-h-lg) items-center gap-[3px] px-0.75 ' +
         'bg-[image:var(--nc-scrim-video)]'
       );
     }
     const shape = this.compact()
-      ? 'h-[36px] gap-1.5 border-y border-line px-1.75'
-      : 'h-[44px] gap-1 rounded-b-sm border border-t-0 border-line px-1';
-    return `mx-auto -mt-px flex max-w-[1600px] items-center bg-panel ${shape}`;
+      ? 'h-(--nc-h-lg) gap-0.75 border-y-3 border-line px-0.75'
+      : 'h-(--nc-h-xl) gap-1 border-3 border-t-0 border-line px-1';
+    return `mx-auto -mt-[3px] flex max-w-[1600px] items-center bg-panel ${shape}`;
   });
   protected readonly host = inject(RuntimeHostService);
   protected readonly bridge = inject(NetUiBridgeService);
   private readonly dialogs = inject(DialogService);
   private readonly standing = inject(GoodStandingAction);
   private readonly theme = inject(ThemeService);
-  protected readonly canvasLabel = inject(TranslocoService).translate('game.screen.canvas');
+  private readonly toasts = inject(ToastService);
+  private readonly transloco = inject(TranslocoService);
+  protected readonly canvasLabel = this.transloco.translate('game.screen.canvas');
+  /**
+   * The invite while its session may still be entered. It ends here, before whoever gave it hears,
+   * the moment the session is left, ended or refuses the player: the game may ask again within the
+   * same step.
+   */
+  private readonly open = linkedSignal(() => this.invite());
+  /** Play was pressed while the session this screen was opened on was still unknown. */
+  private readonly starting = signal(false);
   protected readonly showCpu = computed(() => this.debug());
-  /** The error as the Console would print it: where, then what. */
-  protected readonly errorLine = computed(() => {
-    const error = this.host.error();
-    if (!error) {
-      return '';
-    }
-    const at = error.file
-      ? `${error.file}${error.line === undefined ? '' : `:${String(error.line)}`} · `
-      : '';
-    return `${at}${error.phase}: ${error.message}`;
-  });
   /**
    * Hidden while idle: there is nothing to count until the game runs, and the play overlay already
    * says it is waiting.
@@ -166,26 +177,15 @@ export class GameScreenComponent {
   protected readonly fpsVisible = computed(
     () => this.showFps() && this.theme.showFps() && this.host.state() !== 'idle',
   );
-  /**
-   * The player slots, occupied or not. Never fewer than two, so a game nobody has joined does not
-   * read as single-player; an empty seat takes the pad glyph because the keyboard is the first
-   * player's.
-   */
-  protected readonly players = computed(() => {
-    const pads = this.host.gamepadCount();
-    const taken = Math.max(2, pads > 1 ? pads : 2);
-    return Array.from({ length: taken }, (_, i) => ({
-      slot: i + 1,
-      pad: i === 0 ? pads > 0 : true,
-      here: i === 0 || pads > i,
-    }));
-  });
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly frame = viewChild.required<ElementRef<HTMLElement>>('frame');
   private readonly padZone = viewChild<VirtualPadComponent>('padZone');
   private readonly padOverlay = viewChild<VirtualPadComponent>('padOverlay');
-  protected readonly showPad = coarsePointer();
-  protected readonly padList = signal<{ index: number; id: string; player: number }[]>([]);
+  /**
+   * The controls of the on-screen pad: those the mounted game uses, followed as its actions
+   * change, and none on a device with a fine pointer, where the pad is not drawn.
+   */
+  protected readonly padControls = signal<readonly TouchControl[]>([]);
 
   constructor() {
     // Also fires when the viewer leaves fullscreen by Escape or the browser's own control, which
@@ -216,6 +216,9 @@ export class GameScreenComponent {
         this.host.mount(canvas, game, {
           netUi: this.bridge,
           netPermissions: netPermissionsOf(game),
+          // Nothing while in a session: what the game reads says whether its next `net.join()`
+          // goes straight in.
+          netInvite: () => (this.bridge.session() ? null : (this.open()?.session ?? null)),
         });
         this.mounted.emit();
         if (this.autoPlay()) {
@@ -223,10 +226,21 @@ export class GameScreenComponent {
         }
       });
     });
+    effect((onCleanup) => {
+      const game = this.game();
+      if (!game || !coarsePointer()) {
+        return;
+      }
+      const read = (): void => {
+        this.padControls.set(touchControlsOf(game.actions));
+      };
+      read();
+      onCleanup(game.onActionsChange(read));
+    });
     // Both layouts are in the DOM at once (CSS picks one), so both are attached: TouchSource
     // hit-tests, and the hidden one can never be hit.
     effect((onCleanup) => {
-      if (!this.game() || !this.showPad) {
+      if (!this.game()) {
         return;
       }
       const roots = [this.padZone()?.element, this.padOverlay()?.element].filter(
@@ -255,35 +269,12 @@ export class GameScreenComponent {
         // game that made it waits on it forever.
         this.standing.run(
           () => {
-            const target = this.autoJoin();
-            if (target && req.kind === 'join') {
-              void this.bridge
-                .joinSession(target.uuid, target.code ?? undefined, true)
-                .catch(() => {
-                  this.bridge.cancel();
-                });
-              return;
+            const invite = this.open();
+            if (invite && req.kind === 'join') {
+              this.enter(invite, req, projectId);
+            } else {
+              this.ask(req, projectId);
             }
-            const ref =
-              req.kind === 'host'
-                ? this.dialogs.open(HostDialogComponent, {
-                    width: '400px',
-                    data: {
-                      bridge: this.bridge,
-                      projectId,
-                      options: req.hostOptions ?? { maxPlayers: 2 },
-                      editorTest: this.editorTest(),
-                    } satisfies HostDialogData,
-                  })
-                : this.dialogs.open(JoinDialogComponent, {
-                    width: '400px',
-                    data: { bridge: this.bridge, projectId },
-                  });
-            ref.closed.subscribe((ok) => {
-              if (!ok) {
-                this.bridge.cancel();
-              }
-            });
           },
           () => {
             this.bridge.cancel();
@@ -291,6 +282,78 @@ export class GameScreenComponent {
         );
       });
     });
+    // The editor's second client has only its host's room to go to, so its invite never ends.
+    this.bridge.onDeparted((uuid) => {
+      if (uuid === this.open()?.uuid && !this.editorTest()) {
+        this.close();
+      }
+    });
+    effect(() => {
+      const invite = this.open();
+      if (this.starting() && (!invite || invite.session !== undefined)) {
+        untracked(() => {
+          this.starting.set(false);
+          this.start();
+        });
+      }
+    });
+  }
+
+  private close(): void {
+    this.open.set(null);
+    this.inviteClosed.emit();
+  }
+
+  private ask(req: NetRequest, projectId: string): void {
+    const ref =
+      req.kind === 'host'
+        ? this.dialogs.open(HostDialogComponent, {
+            width: '400px',
+            data: {
+              bridge: this.bridge,
+              projectId,
+              options: req.hostOptions ?? { maxPlayers: 2 },
+              editorTest: this.editorTest(),
+            } satisfies HostDialogData,
+          })
+        : this.dialogs.open(JoinDialogComponent, {
+            width: '400px',
+            data: { bridge: this.bridge, projectId },
+          });
+    ref.closed.subscribe((ok) => {
+      if (!ok) {
+        this.bridge.cancel();
+      }
+    });
+  }
+
+  /**
+   * Joins the session the screen was opened on. One that will not have the player says why and
+   * gives way to the dialog, where another can be picked; for the editor's second client the
+   * request ends there.
+   */
+  private enter(invite: SessionInvite, req: NetRequest, projectId: string): void {
+    this.bridge.joinSession(invite.uuid, invite.code ?? undefined, this.editorTest()).then(
+      () => {
+        this.inviteJoined.emit();
+      },
+      (error: unknown) => {
+        this.toasts.show(
+          error instanceof ApiError && error.status === 404
+            ? this.transloco.translate('net.invite.ended')
+            : error instanceof Error
+              ? error.message
+              : this.transloco.translate('net.join.failed'),
+          'error',
+        );
+        if (this.editorTest()) {
+          this.bridge.cancel();
+        } else {
+          this.close();
+          this.ask(req, projectId);
+        }
+      },
+    );
   }
 
   get runtime(): RuntimeHostService {
@@ -301,13 +364,16 @@ export class GameScreenComponent {
     return this.bridge;
   }
 
-  protected refreshPads(): void {
-    this.padList.set(this.host.gamepads());
-  }
-
-  protected assign(index: number, player: number): void {
-    this.host.assignGamepad(index, player);
-    this.refreshPads();
+  /**
+   * Closing hands the keyboard back to the game: the dialog returns focus to the gear, and the
+   * canvas is what listens.
+   */
+  protected openControls(): void {
+    void import('../controls/controls.dialog').then((loaded) => {
+      this.dialogs.open(loaded.ControlsDialogComponent, { width: '860px' }).closed.subscribe(() => {
+        this.focus();
+      });
+    });
   }
 
   focus(): void {
@@ -318,9 +384,35 @@ export class GameScreenComponent {
    * Starting the game hands it the keyboard: the canvas is what listens, and the click left focus
    * on the button.
    */
-  play(): void {
+  private start(): void {
     this.host.play();
     this.focus();
+  }
+
+  /**
+   * A game opened on a session reads that session in `_init`, so it starts once the session is
+   * known, which takes an account in good standing. Without one the game starts without it.
+   */
+  play(): void {
+    const invite = this.open();
+    if (invite && invite.session === undefined) {
+      this.standing.run(
+        () => {
+          this.starting.set(true);
+        },
+        () => {
+          this.start();
+        },
+      );
+      return;
+    }
+    this.start();
+  }
+
+  /** Starts the game without the session the screen was opened on. */
+  playAlone(): void {
+    this.close();
+    this.start();
   }
 
   resume(): void {
@@ -346,9 +438,4 @@ export class GameScreenComponent {
       void frame.requestFullscreen();
     }
   }
-}
-
-/** No fine pointer means a touch device — the pad is the only way to play. */
-function coarsePointer(): boolean {
-  return typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
 }

@@ -1,10 +1,8 @@
 <div #frame [class]="frameClass()">
   <div
     class="relative mx-auto flex max-w-[1600px] items-center justify-center overflow-hidden bg-black"
-    [class.rounded-t-sm]="!overlay() && !compact()"
-    [class.border]="!overlay() && !compact()"
+    [class.border-3]="!overlay() && !compact()"
     [class.border-line]="!overlay() && !compact()"
-    [class.rounded-b-sm]="!transport() && !overlay() && !compact()"
     [class.aspect-video]="fit() === 'width'">
     <canvas
       #canvas
@@ -16,21 +14,26 @@
       [style.imageRendering]="'pixelated'"></canvas>
     @if (fpsVisible()) {
       <span
-        class="absolute top-1.5 left-1.5 rounded-xs border border-line-strong bg-page/80 px-1 py-0.5 font-mono text-[10px] text-jade-ink">
-        {{ host.fps() }} FPS
+        class="absolute top-1.5 left-1.5 flex gap-1.5 border-3 border-line-strong bg-page/80 px-1 py-0.5 text-micro text-jade-ink">
+        <span>{{ host.fps() }} FPS</span>
         @if (showCpu()) {
-          · {{ host.cpu() }}% CPU
+          <span>{{ host.cpu() }}% CPU</span>
         }
       </span>
     }
     @if (host.state() === 'idle') {
       <button
         type="button"
-        class="absolute inset-0 flex items-center justify-center bg-page/60 text-ink hover:text-gold-ink"
+        class="@container absolute inset-0 flex items-center justify-center bg-page/60 text-ink hover:text-gold-ink"
         (click)="play()"
         *transloco="let t"
         [attr.aria-label]="t('game.screen.play')">
-        <nc-icon name="play" [size]="48" />
+        <span class="contents @min-[640px]:hidden">
+          <nc-icon name="play" [size]="24" />
+        </span>
+        <span class="hidden @min-[640px]:contents">
+          <nc-icon name="play" [size]="24" doubled />
+        </span>
       </button>
     }
     <!-- A player has no console to read: outside the editor the screen says it stopped. -->
@@ -40,131 +43,108 @@
         class="absolute inset-0 flex items-center justify-center overflow-hidden bg-page/80">
         <nc-error-state
           [title]="t('game.haltedTitle')"
-          [hint]="errorLine()"
           [retryLabel]="t('game.haltedRestart')"
-          (retry)="restart()" />
+          (retry)="restart()">
+          @if (host.error(); as error) {
+            <p
+              hint
+              class="flex max-w-[36ch] flex-wrap items-center justify-center gap-0.75 text-small text-ink-3">
+              @if (error.file) {
+                <nc-chip kind="tag" tone="hot" wash>
+                  {{ error.file }}{{ error.line === undefined ? '' : ':' + error.line }}
+                </nc-chip>
+              }
+              <span>{{ error.phase }}: {{ error.message }}</span>
+            </p>
+          }
+        </nc-error-state>
       </div>
     }
     <span class="scanlines pointer-events-none absolute inset-0"></span>
-    @if (showPad) {
-      <nc-virtual-pad #padOverlay [overlay]="true" class="hidden landscape:block" />
+    @if (padControls().length) {
+      <nc-virtual-pad
+        #padOverlay
+        [controls]="padControls()"
+        [overlay]="true"
+        class="hidden landscape:block" />
     }
   </div>
-  @if (showPad) {
-    <nc-virtual-pad #padZone class="block landscape:hidden" />
+  @if (padControls().length) {
+    <nc-virtual-pad #padZone [controls]="padControls()" class="block landscape:hidden" />
   }
   @if (transport()) {
     <div [class]="transportClass()" *transloco="let t">
-      <span
-        class="flex items-center"
-        [class]="compact() ? 'gap-px' : 'gap-0.5 rounded-sm border border-line bg-inset p-0.5'">
+      <span ncJoined>
         @if (host.state() === 'running') {
           <button
             ncButton
-            variant="ghost"
-            size="sm"
+            variant="run"
+            size="lg"
             iconOnly
+            pressed
             [attr.aria-label]="t('game.screen.pause')"
             (click)="host.pause()">
-            <nc-icon name="pause" [size]="12" />
+            <nc-icon name="pause" />
           </button>
         } @else {
           <!-- In a transport the design draws play as a bare hot glyph, not a filled button. -->
           <button
             ncButton
             variant="ghost"
-            size="sm"
+            size="lg"
             iconOnly
             [attr.aria-label]="t('game.screen.play')"
             (click)="host.state() === 'paused' ? resume() : play()">
-            <nc-icon name="play" [size]="12" class="text-hot-ink" />
+            <nc-icon name="play" class="text-hot-ink" />
           </button>
         }
         <button
           ncButton
           variant="ghost"
-          size="sm"
+          size="lg"
           iconOnly
           [attr.aria-label]="t('game.screen.restart')"
           (click)="restart()">
-          <nc-icon name="reload" [size]="12" />
+          <nc-icon name="reload" />
         </button>
         @if (debug()) {
           <button
             ncButton
             variant="ghost"
-            size="sm"
+            size="lg"
             iconOnly
             [attr.aria-label]="t('game.screen.step')"
             [disabled]="host.state() === 'idle' || host.state() === 'halted'"
             (click)="host.step()">
-            <nc-icon name="next" [size]="12" />
+            <nc-icon name="next" />
           </button>
         }
       </span>
-      @if (!compact()) {
-        <span class="ml-1 hidden font-mono text-label whitespace-nowrap text-ink-4 md:inline">
-          320×180 · {{ t(fit() === 'width' ? 'game.screen.fitWidth' : 'game.screen.fitInteger') }}
-        </span>
-      }
-      <!-- Projected before the spacer: left of the break is what the game runs on, right of it who
-           is running it. -->
+      <!-- Projected before the spacer: left of the break is what the game runs on, right of it
+           what the device plays it with. -->
       <ng-content select="[transport-extra]" />
       <span class="flex-1"></span>
-      @for (player of players(); track player.slot) {
-        <span
-          class="flex items-center gap-0.5 font-mono text-label whitespace-nowrap @max-[299px]:hidden"
-          [class]="player.here ? 'text-ink-3' : 'text-ink-4'">
-          <nc-icon [name]="player.pad ? 'gamepad' : 'keyboard'" [size]="12" />
-          P{{ player.slot }}
-        </span>
-      }
-      <button
-        ncButton
-        variant="ghost"
-        size="sm"
-        [ncPopover]="pads"
-        popoverAlign="end"
-        (popoverOpenChange)="refreshPads()"
-        [attr.aria-label]="t('game.screen.gamepads')"
-        iconOnly>
-        <nc-icon name="gamepad" [size]="12" />
-      </button>
-      <ng-template #pads>
-        <nc-popover-panel [title]="t('game.screen.gamepads')" class="w-[280px]">
-          <div class="p-1.5">
-            @for (pad of padList(); track pad.index) {
-              <div class="flex items-center gap-1 py-0.5">
-                <span class="min-w-0 flex-1 truncate text-meta text-ink">{{ pad.id }}</span>
-                @for (slot of [0, 1, 2, 3]; track slot) {
-                  <button
-                    type="button"
-                    class="label rounded-xs border px-0.5"
-                    [class]="
-                      pad.player === slot
-                        ? 'border-gold text-gold-ink'
-                        : 'border-line text-ink-3 hover:text-ink'
-                    "
-                    (click)="assign(pad.index, slot)">
-                    P{{ slot + 1 }}
-                  </button>
-                }
-              </div>
-            } @empty {
-              <p class="text-meta text-ink-3">{{ t('game.screen.noGamepad') }}</p>
-            }
-          </div>
-        </nc-popover-panel>
-      </ng-template>
-      <button
-        ncButton
-        variant="ghost"
-        size="sm"
-        iconOnly
-        [attr.aria-label]="t('game.screen.fullscreen')"
-        (click)="fullscreen()">
-        <nc-icon name="fullscreen" [size]="12" />
-      </button>
+      <span ncJoined>
+        <button
+          ncButton
+          variant="ghost"
+          size="lg"
+          iconOnly
+          aria-haspopup="dialog"
+          [attr.aria-label]="t('game.screen.controls')"
+          (click)="openControls()">
+          <nc-icon name="gear" />
+        </button>
+        <button
+          ncButton
+          variant="ghost"
+          size="lg"
+          iconOnly
+          [attr.aria-label]="t('game.screen.fullscreen')"
+          (click)="fullscreen()">
+          <nc-icon name="fullscreen" />
+        </button>
+      </span>
     </div>
   }
 </div>

@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { type CanActivateFn, type CanMatchFn, Router } from '@angular/router';
+import { type CanActivateFn, Router } from '@angular/router';
 
 import { AuthStore } from './auth.store';
 
@@ -11,12 +11,6 @@ export const authGuard: CanActivateFn = (_route, state) => {
   }
   return inject(Router).createUrlTree(['/sign-in'], { queryParams: { next: state.url } });
 };
-
-/**
- * Matches a route for moderators and admins only. Anyone else falls through to the routes below
- * it, so a staff address answers them as an address that does not exist.
- */
-export const staffGuard: CanMatchFn = () => inject(AuthStore).isStaff();
 
 /** Keeps signed-in users away from sign-in/register. */
 export const guestGuard: CanActivateFn = () => {

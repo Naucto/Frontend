@@ -14,8 +14,8 @@ import {
   GAME_SCHEMA_VERSION,
   isFromFutureSchema,
   KEYS,
-  LOCAL_ORIGIN,
   migrateGame,
+  MIGRATION_ORIGIN,
   type MigrationWarning,
   needsMigration,
 } from '@naucto/engine';
@@ -25,25 +25,31 @@ import * as Y from 'yjs';
 import { unwrap } from '../../../core/api/api-errors';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { AppConfigService } from '../../../core/config/app-config';
+import { CrashReporter } from '../../../core/reports/crash-reporter.service';
 import { type GameSeed, SEED_KEY } from '../../../shared/docs/seed-new-game';
 import { StaffPreviewService } from '../../../shared/moderation/staff-preview.service';
+import { EditorModeService } from '../state/editor-mode.service';
 import { HostElectionService } from './host-election.service';
 import { SessionPresenceService } from './session-presence.service';
-import { type SavedSession, SessionSaveService } from './session-save.service';
+import { LOAD_ORIGIN, type SavedSession, SessionSaveService } from './session-save.service';
 
 export type SessionStatus = 'joining' | 'loading' | 'upgrading' | 'ready' | 'error' | 'closed';
 
+/** The statuses of a session still being opened, when what is written is the load's and no edit. */
+const OPENING: readonly SessionStatus[] = ['joining', 'loading', 'upgrading'];
+
 /**
- * Whose game a read-only session shows: someone else's, read as staff through the preview routes,
- * or the reader's own, read through the ordinary ones while their account is suspended.
+ * Whose game a session loaded once shows: someone else's, read as staff through the preview
+ * routes, or the reader's own, read through the ordinary ones while their account is suspended.
  */
 export type PreviewKind = 'staff' | 'own';
 
 /**
- * One editing session on one project: joins the work session, loads and migrates the game
- * document, connects y-webrtc, and opens and closes the saving, host election and presence that
- * ride on it. Provided by the editor shell so all tabs share it; closing the shell leaves the
- * session.
+ * One session on one project, opened the way the account may have it. A collaborator gets the
+ * live one: it joins the work session, loads and migrates the game document, connects y-webrtc,
+ * and opens and closes the saving, host election and presence that ride on it. Anyone who may
+ * only look gets the last save, loaded once, with the editor's mode held to read-only. Provided
+ * by the editor shell so all tabs share it; closing the shell leaves the session.
  */
 @Injectable()
 export class WorkSessionService implements SavedSession {
@@ -54,24 +60,35 @@ export class WorkSessionService implements SavedSession {
   private readonly election = inject(HostElectionService);
   private readonly presence = inject(SessionPresenceService);
   private readonly previews = inject(StaffPreviewService);
-  readonly doc = new Y.Doc();
-  readonly game = new EditableGame(this.doc);
-
-  private provider: WebrtcProvider | null = null;
-  private projectId = 0;
-  private closing = false;
-  /** Set while a guest waits for the host's upgrade; settles that wait without it. */
-  private stopWaitingForSchema: (() => void) | null = null;
+  private readonly mode = inject(EditorModeService);
+  private readonly crashes = inject(CrashReporter);
 
   readonly status = signal<SessionStatus>('joining');
   readonly error = signal<string | null>(null);
   readonly ready = computed(() => this.status() === 'ready');
   readonly project = signal<ProjectExResponseDto | null>(null);
   /**
-   * Set by `openPreview`, for good: the document is a copy to look at. Nothing of it is saved,
-   * no work session is joined and no peer is connected, so whatever is typed dies with the tab.
+   * Whose game was loaded once to be looked at, or null for a live session. A game looked at
+   * joins no work session and connects no peer, and nothing of it is saved. It is about how the
+   * session was opened; whether an editor may write is the mode's to say.
    */
-  readonly readOnly = signal(false);
+  readonly preview = signal<PreviewKind | null>(null);
+
+  readonly doc = new Y.Doc();
+  /**
+   * The gate is open while the session opens: loading seeds what the document lacks, which is
+   * nobody's edit. Once it is open the mode decides.
+   */
+  readonly game = new EditableGame(
+    this.doc,
+    () => OPENING.includes(this.status()) || this.mode.canWrite(),
+  );
+
+  private provider: WebrtcProvider | null = null;
+  private projectId = '';
+  private closing = false;
+  /** Set while a guest waits for the host's upgrade; settles that wait without it. */
+  private stopWaitingForSchema: (() => void) | null = null;
   /**
    * What the upgrade this client ran could not rewrite, each on the line it left, for the editor
    * to point at. Only the client that ran it knows; the others open a document already upgraded.
@@ -82,7 +99,7 @@ export class WorkSessionService implements SavedSession {
     const me = this.auth.userId();
     const project = this.project();
     return (
-      !this.readOnly() &&
+      this.preview() === null &&
       me !== null &&
       !!project &&
       (project.creator.id === me ||
@@ -90,23 +107,49 @@ export class WorkSessionService implements SavedSession {
     );
   });
 
+  /**
+   * A local write that reaches the document while the mode does not write went round the gate
+   * and the controls both. Nothing can take it back, so it is reported as a fault of the app:
+   * the gate's tests cannot see a write made on a Yjs type directly.
+   */
+  private readonly reportStrayWrite = (
+    _update: Uint8Array,
+    origin: unknown,
+    _doc: Y.Doc,
+    transaction: Y.Transaction,
+  ): void => {
+    if (
+      transaction.local &&
+      origin !== LOAD_ORIGIN &&
+      origin !== MIGRATION_ORIGIN &&
+      this.ready() &&
+      !this.mode.canWrite()
+    ) {
+      this.crashes.report(
+        'web',
+        new Error(`The game document was written in ${this.mode.mode()} mode`),
+      );
+    }
+  };
+
   constructor() {
     this.saves.attach(this);
+    this.doc.on('update', this.reportStrayWrite);
     inject(DestroyRef).onDestroy(() => {
       void this.close();
     });
   }
 
-  get id(): number {
+  get id(): string {
     return this.projectId;
   }
 
-  /** The project a game run from here may host or join a session on. None in a preview. */
-  get playProjectId(): number | null {
-    return this.readOnly() ? null : this.projectId;
+  /** The project a game run from here may host or join a session on. None for a game looked at. */
+  get playProjectId(): string | null {
+    return this.preview() ? null : this.projectId;
   }
 
-  get myUserId(): number | null {
+  get myUserId(): string | null {
     return this.auth.userId();
   }
 
@@ -152,7 +195,7 @@ export class WorkSessionService implements SavedSession {
     if (!this.election.isHost()) {
       return;
     }
-    const key = `${SEED_KEY}.${String(this.projectId)}`;
+    const key = `${SEED_KEY}.${this.projectId}`;
     const json = sessionStorage.getItem(key);
     if (!json) {
       return;
@@ -167,13 +210,13 @@ export class WorkSessionService implements SavedSession {
     if (!entry) {
       return;
     }
-    this.doc.transact(() => {
+    this.game.transact(() => {
       entry.text.delete(0, entry.text.length);
       entry.text.insert(0, seed.code);
       if (seed.assets) {
         applyTutorialAssets(this.game, seed.assets);
       }
-    }, LOCAL_ORIGIN);
+    });
   }
 
   private seedMeta(details: ProjectExResponseDto): void {
@@ -194,7 +237,7 @@ export class WorkSessionService implements SavedSession {
       set(KEYS.shortDescription, details.shortDesc ?? '');
       set(KEYS.longDescription, details.longDesc ?? '');
       set(KEYS.projectTags, JSON.stringify(details.tags ?? []));
-    }, 'remote-init');
+    }, LOAD_ORIGIN);
   }
 
   private waitForSchema(): Promise<void> {
@@ -221,13 +264,13 @@ export class WorkSessionService implements SavedSession {
 
   /** Asks the browser to confirm leaving while the host holds edits the server has not seen. */
   onBeforeUnload(event: BeforeUnloadEvent): void {
-    if (!this.readOnly() && this.election.isHost() && this.saves.dirty()) {
+    if (!this.preview() && this.election.isHost() && this.saves.dirty()) {
       event.preventDefault();
     }
   }
 
   onPageHide(event: PageTransitionEvent): void {
-    if (this.readOnly()) {
+    if (this.preview()) {
       return;
     }
     if (this.election.isHost() && this.saves.dirty()) {
@@ -239,136 +282,153 @@ export class WorkSessionService implements SavedSession {
     }
   }
 
+  /** The game file as its collaborators read it, or null when nothing was saved yet. */
+  private async ownContent(projectId: string): Promise<Uint8Array | null> {
+    const blob = unwrap(
+      await projectContentControllerFetchProjectContent({
+        path: { id: projectId },
+        parseAs: 'blob',
+      }),
+    ) as Blob | undefined;
+    return blob && blob.size > 0 ? new Uint8Array(await blob.arrayBuffer()) : null;
+  }
+
   /**
    * Joins the session, then loads, connects, upgrades and seeds the document one step at a time.
    *
    * The session can be closed during any wait, and a step that ran after that would revive what
    * `close` took down, so the one check for it sits between the steps rather than inside each.
    */
-  async open(projectId: number): Promise<void> {
-    this.projectId = projectId;
-    try {
-      const session = unwrap(await workSessionControllerJoin({ path: { id: projectId } }));
-      if (this.closing) {
-        // Closed while the join was in flight, so the leave `close` sent may have reached the
-        // server before it.
-        await workSessionControllerLeave({ path: { id: projectId } }).catch(() => undefined);
-        return;
+  private async openLive(projectId: string, details: ProjectExResponseDto): Promise<void> {
+    const session = unwrap(await workSessionControllerJoin({ path: { id: projectId } }));
+    if (this.closing) {
+      // Closed while the join was in flight, so the leave `close` sent may have reached the
+      // server before it.
+      await workSessionControllerLeave({ path: { id: projectId } }).catch(() => undefined);
+      return;
+    }
+    this.election.start(projectId, session.hostId, () => {
+      if (needsMigration(this.doc)) {
+        this.migrationWarnings.set(migrateGame(this.doc).warnings);
       }
-      this.election.start(projectId, session.hostId, () => {
-        if (needsMigration(this.doc)) {
-          this.migrationWarnings.set(migrateGame(this.doc).warnings);
-        }
-        this.saves.startAutosave();
-      });
+      this.saves.startAutosave();
+    });
 
-      let bytes: Uint8Array | null = null;
-      const steps: (() => unknown)[] = [
-        async () => {
-          this.status.set('loading');
-          const blob = unwrap(
-            await projectContentControllerFetchProjectContent({
-              path: { id: String(projectId) },
-              parseAs: 'blob',
-            }),
-          ) as Blob | undefined;
-          bytes = blob && blob.size > 0 ? new Uint8Array(await blob.arrayBuffer()) : null;
-        },
-        () => {
-          if (bytes) {
-            Y.applyUpdate(this.doc, bytes, 'remote-init');
-          }
-          if (isFromFutureSchema(this.doc)) {
-            throw new Error(this.i18n.translate('editor.tooNew'));
-          }
-        },
-        () => {
-          this.connect(session.roomId, session.webrtcOffer);
-        },
-        async () => {
-          if (!needsMigration(this.doc)) {
-            return;
-          }
-          if (this.election.isHost()) {
-            this.migrationWarnings.set(migrateGame(this.doc).warnings);
-          } else {
-            this.status.set('upgrading');
-            await this.waitForSchema();
-          }
-        },
-        () => {
-          this.game.seedDefaults();
-          this.applySeedCode(bytes !== null);
-        },
-        async () => {
-          const details = unwrap(await projectControllerFindOne({ path: { id: projectId } }));
-          this.project.set(details);
-          this.seedMeta(details);
-        },
-        async () => {
-          this.saves.dirty.set(false);
-          this.status.set('ready');
-          if (this.election.isHost()) {
-            await this.saves.save();
-          }
-        },
-        () => {
-          if (this.election.isHost()) {
-            this.saves.startAutosave();
-          }
-        },
-      ];
-      for (const step of steps) {
-        await step();
-        if (this.closing) {
+    let bytes: Uint8Array | null = null;
+    const steps: (() => unknown)[] = [
+      async () => {
+        this.status.set('loading');
+        bytes = await this.ownContent(projectId);
+      },
+      () => {
+        if (bytes) {
+          Y.applyUpdate(this.doc, bytes, LOAD_ORIGIN);
+        }
+        if (isFromFutureSchema(this.doc)) {
+          throw new Error(this.i18n.translate('editor.tooNew'));
+        }
+      },
+      () => {
+        this.connect(session.roomId, session.webrtcOffer);
+      },
+      async () => {
+        if (!needsMigration(this.doc)) {
           return;
         }
-      }
-    } catch (error) {
+        if (this.election.isHost()) {
+          this.migrationWarnings.set(migrateGame(this.doc).warnings);
+        } else {
+          this.status.set('upgrading');
+          await this.waitForSchema();
+        }
+      },
+      () => {
+        this.game.seedDefaults();
+        this.applySeedCode(bytes !== null);
+        this.project.set(details);
+        this.seedMeta(details);
+      },
+      async () => {
+        this.saves.dirty.set(false);
+        this.status.set('ready');
+        if (this.election.isHost()) {
+          await this.saves.save();
+        }
+      },
+      () => {
+        if (this.election.isHost()) {
+          this.saves.startAutosave();
+        }
+      },
+    ];
+    for (const step of steps) {
+      await step();
       if (this.closing) {
         return;
       }
-      this.error.set(error instanceof Error ? error.message : 'Could not open this game');
-      this.status.set('error');
     }
   }
 
   /**
-   * Opens the game to look at and nothing more: two reads, then a local copy of the document.
+   * Opens the game to look at and nothing more: two reads, then a local copy of the document,
+   * with the mode held to read-only.
    *
    * It joins no work session, elects no host, connects no peer and starts no save. An older
    * document is brought forward in this copy alone. Every request it makes is a GET, and no
    * request follows it: that is what lets staff open someone's draft, and a suspended account its
    * own game, without either of them changing anything.
    */
-  async openPreview(projectId: number, kind: PreviewKind): Promise<void> {
+  private async openPreview(projectId: string, kind: PreviewKind): Promise<void> {
+    this.preview.set(kind);
+    this.mode.impose('read-only');
+    this.status.set('loading');
+    const [bytes, details] = await Promise.all([
+      kind === 'staff' ? this.previews.content(projectId) : this.ownContent(projectId),
+      kind === 'staff'
+        ? this.previews.project(projectId)
+        : projectControllerFindOne({ path: { id: projectId } }).then(unwrap),
+    ]);
+    if (this.closing) {
+      return;
+    }
+    if (bytes) {
+      Y.applyUpdate(this.doc, bytes, LOAD_ORIGIN);
+    }
+    if (isFromFutureSchema(this.doc)) {
+      throw new Error(this.i18n.translate('editor.tooNew'));
+    }
+    if (needsMigration(this.doc)) {
+      this.migrationWarnings.set(migrateGame(this.doc).warnings);
+    }
+    this.game.seedDefaults();
+    this.project.set(details);
+    this.seedMeta(details);
+    this.saves.dirty.set(false);
+    this.status.set('ready');
+  }
+
+  /**
+   * Opens the project the way the account may have it, and decides that alone. A suspended
+   * account looks at the game. Otherwise the project is asked for as its collaborators read it:
+   * answered, the account is one and gets the live session; refused, a staff member looks at
+   * the game and anyone else is told it cannot be opened.
+   */
+  async open(projectId: string): Promise<void> {
     this.projectId = projectId;
-    this.readOnly.set(true);
     try {
-      this.status.set('loading');
-      const [bytes, details] = await Promise.all([
-        kind === 'staff' ? this.previews.content(projectId, 'draft') : this.ownContent(projectId),
-        kind === 'staff'
-          ? this.previews.project(projectId)
-          : projectControllerFindOne({ path: { id: projectId } }).then(unwrap),
-      ]);
+      if (this.auth.suspension()) {
+        await this.openPreview(projectId, 'own');
+        return;
+      }
+      const asked = await projectControllerFindOne({ path: { id: projectId } });
       if (this.closing) {
         return;
       }
-      if (bytes) {
-        Y.applyUpdate(this.doc, bytes, 'remote-init');
+      if (asked.response?.status === 403 && this.auth.isStaff()) {
+        await this.openPreview(projectId, 'staff');
+        return;
       }
-      if (isFromFutureSchema(this.doc)) {
-        throw new Error(this.i18n.translate('editor.tooNew'));
-      }
-      if (needsMigration(this.doc)) {
-        this.migrationWarnings.set(migrateGame(this.doc).warnings);
-      }
-      this.game.seedDefaults();
-      this.project.set(details);
-      this.seedMeta(details);
-      this.saves.dirty.set(false);
-      this.status.set('ready');
+      await this.openLive(projectId, unwrap(asked));
     } catch (error) {
       if (this.closing) {
         return;
@@ -376,16 +436,6 @@ export class WorkSessionService implements SavedSession {
       this.error.set(error instanceof Error ? error.message : 'Could not open this game');
       this.status.set('error');
     }
-  }
-
-  private async ownContent(projectId: number): Promise<Uint8Array | null> {
-    const blob = unwrap(
-      await projectContentControllerFetchProjectContent({
-        path: { id: String(projectId) },
-        parseAs: 'blob',
-      }),
-    ) as Blob | undefined;
-    return blob && blob.size > 0 ? new Uint8Array(await blob.arrayBuffer()) : null;
   }
 
   async close(): Promise<void> {
@@ -393,7 +443,7 @@ export class WorkSessionService implements SavedSession {
       return;
     }
     this.closing = true;
-    if (this.readOnly()) {
+    if (this.preview()) {
       this.saves.stop();
       this.doc.destroy();
       this.status.set('closed');

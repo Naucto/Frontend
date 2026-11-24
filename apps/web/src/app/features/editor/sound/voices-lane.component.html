@@ -1,7 +1,7 @@
 <div class="relative flex" [style.height.px]="height">
   <div class="sticky left-0 z-10 shrink-0 bg-panel" [style.width.px]="KEY_W">
     <div
-      class="font-mono text-[10px] leading-none text-ink-4"
+      class="text-[10px] leading-none text-ink-4"
       [style.height.px]="RULER_H"
       [style.padding-left.px]="4"
       [style.padding-top.px]="3">
@@ -9,7 +9,7 @@
     </div>
     @for (voice of voices(); track voice.index) {
       <div
-        class="flex items-center font-mono text-[10px] leading-none"
+        class="flex items-center text-[10px] leading-none"
         [class]="voice.active ? 'text-jade-ink' : 'text-ink-4'"
         [style.height.px]="LANE_H"
         [style.padding-left.px]="4">

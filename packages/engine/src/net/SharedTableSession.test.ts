@@ -1,9 +1,9 @@
 import type { NetPermissions } from './NetPermissions';
 import type {
+  PlayerNumber,
   SessionRole,
   SessionTransport,
   SessionTransportEvents,
-  UserId,
 } from './SessionTransport';
 import { SharedTableSession } from './SharedTableSession';
 
@@ -14,7 +14,7 @@ type AnyListener = (...args: unknown[]) => void;
 // can be exercised headlessly.
 class Hub {
   private host?: MockTransport;
-  private readonly slaves = new Map<UserId, MockTransport>();
+  private readonly slaves = new Map<PlayerNumber, MockTransport>();
 
   register(transport: MockTransport): void {
     if (transport.role === 'host') {
@@ -22,8 +22,8 @@ class Hub {
       return;
     }
 
-    this.slaves.set(transport.selfUserId, transport);
-    this.host?.fire('peerJoined', transport.selfUserId);
+    this.slaves.set(transport.selfPlayer, transport);
+    this.host?.fire('peerJoined', transport.selfPlayer);
   }
 
   broadcastState(data: unknown): void {
@@ -32,11 +32,11 @@ class Hub {
     }
   }
 
-  respondTo(userId: UserId, data: unknown): void {
-    this.slaves.get(userId)?.fire('response', data);
+  respondTo(player: PlayerNumber, data: unknown): void {
+    this.slaves.get(player)?.fire('response', data);
   }
 
-  sendRequest(from: UserId, data: unknown): void {
+  sendRequest(from: PlayerNumber, data: unknown): void {
     this.host?.fire('request', from, data);
   }
 }
@@ -46,7 +46,7 @@ class MockTransport implements SessionTransport {
 
   constructor(
     public readonly role: SessionRole,
-    public readonly selfUserId: UserId,
+    public readonly selfPlayer: PlayerNumber,
     private readonly hub: Hub,
   ) {}
 
@@ -54,12 +54,12 @@ class MockTransport implements SessionTransport {
     this.hub.broadcastState(data);
   }
 
-  respondTo(userId: UserId, data: unknown): void {
-    this.hub.respondTo(userId, data);
+  respondTo(player: PlayerNumber, data: unknown): void {
+    this.hub.respondTo(player, data);
   }
 
   sendRequest(data: unknown): void {
-    this.hub.sendRequest(this.selfUserId, data);
+    this.hub.sendRequest(this.selfPlayer, data);
   }
 
   on<E extends keyof SessionTransportEvents>(event: E, listener: SessionTransportEvents[E]): void {
@@ -95,11 +95,11 @@ const flush = async (): Promise<void> => {
 
 function makeSession(
   role: SessionRole,
-  userId: UserId,
+  player: PlayerNumber,
   hub: Hub,
   permissions?: NetPermissions,
 ): SharedTableSession {
-  const transport = new MockTransport(role, userId, hub);
+  const transport = new MockTransport(role, player, hub);
   const session = new SharedTableSession(transport, permissions);
   hub.register(transport);
   return session;
@@ -118,7 +118,7 @@ function manualSlave(): {
   const handlers = new Map<string, AnyListener>();
   const transport: SessionTransport = {
     role: 'slave',
-    selfUserId: 2,
+    selfPlayer: 2,
     broadcastState: () => {},
     respondTo: () => {},
     sendRequest: (data) => sent.push(data as { reqId: string; ops: Record<string, unknown>[] }),

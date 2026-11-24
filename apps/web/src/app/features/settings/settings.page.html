@@ -1,31 +1,30 @@
 <section *transloco="let t" class="mx-auto w-full max-w-[1000px]">
-  <nc-panel [padded]="false">
-    <h1 class="px-2.75 pt-2.75 text-title text-ink">{{ t('settings.title') }}</h1>
-    <!-- No horizontal padding on the host: nc-tabs insets its own list. -->
-    <nc-tabs
-      [tabs]="tabs()"
-      [value]="current()"
-      (valueChange)="go($event)"
-      [label]="t('settings.title')"
-      class="mt-2 block" />
-    <div class="px-2.75 py-2.75">
-      @switch (current()) {
-        @case ('account') {
-          <nc-account-settings />
-        }
-        @case ('editor') {
-          <nc-editor-settings />
-        }
-        @case ('controls') {
-          <nc-controls-settings />
-        }
-        @case ('privacy') {
-          <nc-privacy-settings />
-        }
-        @case ('standing') {
-          <nc-standing-settings />
-        }
+  <h1 class="mb-2 font-display text-display text-ink">{{ t('settings.title') }}</h1>
+  <nc-tabs
+    [tabs]="tabs()"
+    [value]="current()"
+    (valueChange)="go($event)"
+    [label]="t('settings.title')" />
+  <!-- The strip's rule is this frame's top edge: the chosen tab opens into it. -->
+  <div
+    class="flat-sm bevel-open-t bevel-edge-line-strong bevel-fill-raised px-1 py-1.5 md:px-2.75 md:py-2.75"
+    role="tabpanel">
+    @switch (current()) {
+      @case ('account') {
+        <nc-account-settings />
       }
-    </div>
-  </nc-panel>
+      @case ('editor') {
+        <nc-editor-settings />
+      }
+      @case ('controls') {
+        <nc-controls />
+      }
+      @case ('privacy') {
+        <nc-privacy-settings />
+      }
+      @case ('standing') {
+        <nc-standing-settings />
+      }
+    }
+  </div>
 </section>

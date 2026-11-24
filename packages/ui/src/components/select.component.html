@@ -1,0 +1,49 @@
+<button
+  #trigger
+  type="button"
+  role="combobox"
+  aria-haspopup="listbox"
+  [attr.aria-expanded]="open()"
+  [id]="inputId()"
+  [attr.aria-label]="label()"
+  [attr.aria-controls]="listId"
+  [attr.aria-activedescendant]="active() < 0 ? null : optionId(active())"
+  [disabled]="closed()"
+  [ncPopover]="list"
+  [(popoverOpen)]="open"
+  (keydown)="onKey($event)"
+  [class]="TRIGGER">
+  <span class="min-w-0 flex-1 truncate" [class.text-ink-4]="!current()">
+    {{ current()?.label ?? placeholder() }}
+  </span>
+  <nc-mark [name]="open() ? 'chevron-up' : 'chevron-down'" class="text-ink-3" />
+</button>
+<ng-template #list>
+  <nc-popover-panel [title]="label()" [header]="false" [style.width.px]="width()">
+    <div
+      role="listbox"
+      class="max-h-[min(324px,50dvh)] overflow-y-auto"
+      [id]="listId"
+      [attr.aria-label]="label()">
+      @for (option of options(); track option.value; let i = $index) {
+        <div
+          ncOption
+          role="option"
+          tabindex="-1"
+          class="items-center"
+          [id]="optionId(i)"
+          [selected]="i === active()"
+          [attr.aria-selected]="option.value === value()"
+          (mousedown)="$event.preventDefault()"
+          (mouseenter)="active.set(i)"
+          (click)="choose(i)"
+          (keydown.enter)="choose(i)">
+          <span class="min-w-0 flex-1">{{ option.label }}</span>
+          @if (option.value === value()) {
+            <nc-mark name="check" />
+          }
+        </div>
+      }
+    </div>
+  </nc-popover-panel>
+</ng-template>

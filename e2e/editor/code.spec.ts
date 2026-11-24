@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 
-import { editorUrl, mockEditor } from '../editor-mocks';
+import { uuidOf } from '../../packages/api-client/testing';
+import { editorUrl, mockEditor, SEED_KEY } from '../editor-mocks';
 import { expect, test } from '../fixtures';
 import { boxOf, lit, screenPixels } from './helpers';
 
@@ -27,11 +28,12 @@ test('the active file tab wears its gold cap', async ({ page }) => {
 
   // Scoped to this tab, not to `[role=tab][aria-selected=true]`: the console strip carries a
   // selected tab too, and a document-wide query reads whichever the DOM happens to order first.
-  const cap = await tab.evaluate((el) => getComputedStyle(el).borderTopColor);
+  // A bevel's border is transparent: the cap is the painted highlight role.
+  const cap = await tab.evaluate((el) => getComputedStyle(el).getPropertyValue('--bv-hi'));
   const gold = await page.evaluate(() => {
     const probe = document.createElement('span');
     document.body.appendChild(probe);
-    probe.style.color = 'var(--color-gold)';
+    probe.style.color = 'var(--color-active-ink)';
     const value = getComputedStyle(probe).color;
     probe.remove();
     return value;
@@ -68,11 +70,11 @@ test('the screen is not mirrored top to bottom', async ({ page }) => {
 test('a reload opens the editor with the viewer docked', async ({ page }) => {
   await page.goto(editorUrl('code'));
   await page.getByRole('button', { name: 'Pop the viewer out' }).click();
-  await expect(page.getByText('Viewer · 320×180')).toBeVisible();
+  await expect(page.locator('.nc-pip')).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole('button', { name: 'Pop the viewer out' })).toBeVisible();
-  await expect(page.getByText('Viewer · 320×180')).toHaveCount(0);
+  await expect(page.locator('.nc-pip')).toHaveCount(0);
 });
 
 /**
@@ -87,13 +89,13 @@ test('the reference opens beside the game when there is room', async ({ page }) 
 
   // Closed: the console column has the screen and there is no reference.
   await expect(page.locator('nc-doc-pane')).toHaveCount(0);
-  await expect(page.getByText('320×180').first()).toBeVisible();
+  await expect(page.getByText('Game preview').first()).toBeVisible();
 
   await page.keyboard.press('F1');
 
   // Split: both. The game is NOT displaced — that is the whole point.
   await expect(page.locator('nc-doc-pane')).toBeVisible();
-  await expect(page.getByText('320×180').first()).toBeVisible();
+  await expect(page.getByText('Game preview').first()).toBeVisible();
   await expect(page.getByText('Game paused — swap back to resume')).toHaveCount(0);
 
   // Beside, not above: a runtime-built grid class Tailwind never generated stacks the columns.
@@ -131,12 +133,14 @@ test('the reference searches to a section, and copies a tutorial into a new game
   const dialog = page.getByRole('dialog');
   await expect(dialog).toContainText('Copy to a new game?');
   await page.route('**/projects', (route) =>
-    route.request().method() === 'POST' ? route.fulfill({ json: { id: 99 } }) : route.fallback(),
+    route.request().method() === 'POST'
+      ? route.fulfill({ json: { id: uuidOf(99) } })
+      : route.fallback(),
   );
   await dialog.getByRole('button', { name: 'Copy', exact: true }).click();
   // The new game is filed under its id; nothing answers for game 99, so the seed waits there.
   await expect
-    .poll(() => page.evaluate(() => sessionStorage.getItem('naucto.seed.99')))
+    .poll(() => page.evaluate((key) => sessionStorage.getItem(key), `naucto.seed.${uuidOf(99)}`))
     .toContain('function _update');
 });
 
@@ -200,7 +204,7 @@ test('the sidebar swaps both ways where there is room for one', async ({ page })
 
   await page.getByRole('button', { name: 'Swap back to the game' }).click();
   await expect(page.locator('nc-doc-pane')).toHaveCount(0);
-  await expect(page.getByText('320×180').first()).toBeVisible();
+  await expect(page.getByText('Game preview').first()).toBeVisible();
 });
 
 test('the console grip unfolds the reference where both fit', async ({ page }) => {
@@ -213,7 +217,7 @@ test('the console grip unfolds the reference where both fit', async ({ page }) =
 
   await expect(page.locator('nc-doc-pane')).toBeVisible();
   // Beside, not instead: the running game is still there.
-  await expect(page.getByText('320×180').first()).toBeVisible();
+  await expect(page.getByText('Game preview').first()).toBeVisible();
 });
 
 test('the reference stays on CODE and does not follow the reader to a canvas', async ({ page }) => {
@@ -250,7 +254,7 @@ test('the reference is closed from its own edge, not from a tab', async ({ page 
 
   await page.getByRole('button', { name: 'Close the reference' }).click();
   await expect(page.locator('nc-doc-pane')).toHaveCount(0);
-  await expect(page.getByText('320×180').first()).toBeVisible();
+  await expect(page.getByText('Game preview').first()).toBeVisible();
 });
 
 test('typing does not put the editor into a syncing state', async ({ page }) => {
@@ -408,9 +412,9 @@ test('a tab is named and coloured in a dialog, and the last one cannot be remove
 });
 
 test('a copied tutorial arrives with its sprites, flags and map', async ({ page }) => {
-  await page.addInitScript(() => {
+  await page.addInitScript((key) => {
     sessionStorage.setItem(
-      'naucto.seed.7',
+      key,
       JSON.stringify({
         name: 'Tutorial',
         code: 'function _draw() gfx.clear(0) print(map.get(2, 5) .. " " .. tostring(map.flag(40, 1))) end',
@@ -421,7 +425,7 @@ test('a copied tutorial arrives with its sprites, flags and map', async ({ page 
         },
       }),
     );
-  });
+  }, SEED_KEY);
   await page.goto(editorUrl('code'));
   await page.getByRole('tab', { name: 'main', exact: true }).waitFor();
   await page.getByRole('button', { name: 'Play' }).first().click();
@@ -436,7 +440,7 @@ test('FIND is a magnifier beside the plus', async ({ page }) => {
   const find = page.getByRole('button', { name: 'Find' });
   await expect(find).toBeVisible();
   await expect(find).toHaveText('');
-  await expect(find.locator('nc-icon')).toBeVisible();
+  await expect(find.locator('nc-mark')).toBeVisible();
 });
 
 /**
@@ -453,9 +457,9 @@ test('FIND arrows walk the matches and leave the caret in the bar', async ({ pag
   const line = page.getByText(/^LN \d+/);
   await field.fill('function');
   await next.click();
-  await expect(line).toHaveText(/LN 10 /);
+  await expect(line).toHaveText(/^LN 10$/);
   await next.click();
-  await expect(line).toHaveText(/LN 14 /);
+  await expect(line).toHaveText(/^LN 14$/);
   await expect(field).toBeFocused();
   await expect(page.locator('.cm-searchMatch').count()).resolves.toBeGreaterThanOrEqual(2);
   await expect(page.locator('.cm-searchMatch-selected')).toHaveText('function');
@@ -472,7 +476,7 @@ test('FIND arrows walk the matches and leave the caret in the bar', async ({ pag
   await page.getByRole('tab', { name: 'main', exact: true }).click();
   await expect(page.locator('.cm-content')).toContainText('_init');
   await next.click();
-  await expect(line).toHaveText(/LN 10 /);
+  await expect(line).toHaveText(/^LN 10$/);
 });
 
 /**
@@ -564,9 +568,8 @@ test('Step one frame advances a paused game by one update, and pauses a running 
   await page.getByRole('button', { name: 'Pause' }).click();
   await page.getByRole('tab', { name: 'Perf' }).click();
   // The readout samples the engine on a timer: let it catch up with the pause before reading.
-  const frame = page.getByText(/^FRAME \d+$/);
-  const read = async (): Promise<number> =>
-    Number((await frame.textContent())?.replace('FRAME ', ''));
+  const frame = page.getByTestId('perf-frame').locator('span').last();
+  const read = async (): Promise<number> => Number(await frame.textContent());
   await expect
     .poll(async () => {
       const before = await read();
@@ -576,10 +579,32 @@ test('Step one frame advances a paused game by one update, and pauses a running 
     .toBe(0);
   const frameNumber = await read();
   await page.getByRole('button', { name: 'Step one frame' }).click();
-  await expect(frame).toHaveText(`FRAME ${String(frameNumber + 1)}`);
+  await expect(frame).toHaveText(String(frameNumber + 1));
 
   await page.getByRole('button', { name: 'Play' }).click();
   await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
   await page.getByRole('button', { name: 'Step one frame' }).click();
   await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
+});
+
+/**
+ * The console column is a fixed track, narrower than the transport's buttons would like once the
+ * editor adds its own: the row has to fit it, down to its last button.
+ */
+test('the transport keeps its controls and fullscreen buttons inside the console column', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.goto(editorUrl('code'));
+  const column = page.locator('nc-console-column');
+  const fullscreen = column.getByRole('button', { name: 'Fullscreen' });
+  const controls = column.getByRole('button', { name: 'Controls' });
+  await expect(fullscreen).toBeVisible();
+  await expect(controls).toBeVisible();
+
+  const [track, gear, last] = [await boxOf(column), await boxOf(controls), await boxOf(fullscreen)];
+  expect(gear.x).toBeGreaterThanOrEqual(track.x);
+  // The two are joined: the fullscreen button starts on the pixel the gear ends on.
+  expect(gear.x + gear.width).toBe(last.x);
+  expect(last.x + last.width).toBeLessThanOrEqual(track.x + track.width);
 });

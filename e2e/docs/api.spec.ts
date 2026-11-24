@@ -1,9 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
-import { test } from '@playwright/test';
-
-import { mockEditor } from '../editor-mocks';
+import { editorUrl, mockEditor } from '../editor-mocks';
+import { test } from '../fixtures';
 import { grabFrame } from './frame';
 
 /** The frames the API reference shows: one Lua scene per picture, run in the editor's viewer. */
@@ -21,7 +20,7 @@ const demos = existsSync(DEMOS)
 for (const name of demos) {
   test(`frame ${name}`, async ({ page }) => {
     await mockEditor(page, { content: readFileSync(join(DEMOS, `${name}.bin`)) });
-    await page.goto('/edit/7/code');
+    await page.goto(editorUrl('code'));
     await page.locator('nc-game-screen canvas').first().waitFor();
     // Opening the editor does not start the game; pressing Play does.
     await page.getByRole('button', { name: 'Play' }).first().click();

@@ -5,9 +5,11 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { userAnalyticsControllerErase, userAnalyticsControllerExport } from '@naucto/api-client';
 import {
   ButtonDirective,
+  ChipComponent,
   ConfirmDialogComponent,
   DialogService,
   SettingRowComponent,
+  SettingsGroupComponent,
   ToastService,
   ToggleComponent,
 } from '@naucto/ui';
@@ -38,7 +40,9 @@ import { playTime } from './play-time';
     DecimalPipe,
     RouterLink,
     ButtonDirective,
+    ChipComponent,
     SettingRowComponent,
+    SettingsGroupComponent,
     ConsentChoiceComponent,
     ToggleComponent,
   ],

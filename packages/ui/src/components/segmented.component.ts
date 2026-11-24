@@ -9,6 +9,9 @@ import {
   viewChildren,
 } from '@angular/core';
 
+import { closedBy } from './disabled-scope.directive';
+import { CELL, CELL_ON, joined } from './selection-styles';
+
 export interface SegmentOption<T extends string> {
   value: T;
   label: string;
@@ -21,79 +24,58 @@ export interface SegmentOption<T extends string> {
   tone?: SegmentTone;
 }
 
-/** Fill of the selected segment. Gold is a primary action in this design, never a selection. */
-export type SegmentTone = 'raised' | 'ink' | 'orange';
+/**
+ * Fill of the selected segment. `raised` is the plain selection, which is the primary fill;
+ * `orange` is a state that has a colour of its own.
+ */
+export type SegmentTone = 'raised' | 'orange';
 
 const SELECTED: Record<SegmentTone, string> = {
-  raised: 'aria-checked:bg-raised aria-checked:text-ink',
-  ink: 'aria-checked:bg-ink-body aria-checked:text-page',
-  orange: 'aria-checked:bg-orange aria-checked:text-on-accent',
+  raised: CELL_ON.primary,
+  orange: CELL_ON.orange,
 };
 
 /**
- * Exclusive choice. Two shapes, both drawn in the design:
+ * Exclusive choice, as one row of joined cells. Two type settings:
  *
- * - `framed` (default) — joined buttons inside an inset track.
- * - `chips` — loose pills with no container.
+ * - `framed` (default) — a setting among a form's others.
+ * - `chips` — a filter over a list, set a step smaller.
+ *
+ * `fill` stretches either across the width it is given.
  */
 @Component({
   selector: 'nc-segmented',
   templateUrl: './segmented.component.html',
-  host: { '[class]': 'fill() ? "flex w-full" : "inline-flex"' },
+  host: { '[class]': 'fill() ? "flex w-full" : "inline-flex max-w-full"' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SegmentedComponent<T extends string = string> {
   readonly options = input.required<readonly SegmentOption<T>[]>();
   readonly value = model<T>();
-  readonly disabled = input(false);
+  readonly disabled = input(false, { transform: booleanAttribute });
+  protected readonly closed = closedBy(() => this.disabled());
   readonly label = input<string>();
   readonly variant = input<'framed' | 'chips'>('framed');
-  readonly tone = input<SegmentTone>();
   /** Stretch the segments to share the full width, as the publishing rows do. */
   readonly fill = input(false, { transform: booleanAttribute });
-  /**
-   * Control density: `sm` is for a strip or an inspector row, where the control comes down to the
-   * height of what stands beside it.
-   */
+  /** `sm` is for a strip or an inspector row, where the control stands a step lower. */
   readonly size = input<'sm' | 'md'>('md');
 
-  private readonly resolvedTone = computed<SegmentTone>(
-    () => this.tone() ?? (this.variant() === 'chips' ? 'ink' : 'raised'),
-  );
-
-  private readonly small = computed(() => this.variant() === 'chips' && this.size() === 'sm');
-  private readonly shortFrame = computed(() => this.variant() === 'framed' && this.size() === 'sm');
-
-  protected readonly trackClass = computed(() =>
+  private readonly baseItemClass = computed(() =>
     [
-      this.fill() ? 'flex w-full' : 'inline-flex',
-      'max-w-full flex-wrap',
-      this.variant() === 'chips'
-        ? this.small()
-          ? 'gap-[3px]'
-          : 'gap-[6px]'
-        : this.shortFrame()
-          ? 'gap-[1px] rounded-sm border border-line bg-inset p-[1px]'
-          : 'gap-[3px] rounded-sm border border-line bg-inset p-[3px]',
+      CELL,
+      'inline-flex items-center justify-center font-ui whitespace-nowrap uppercase text-ink-3 data-on:cursor-default',
+      this.fill() ? 'min-w-0 flex-1 px-[6px]' : '',
+      this.size() === 'sm'
+        ? `h-(--nc-h-xs) text-label tracking-button ${this.fill() ? '' : 'px-[10px]'}`
+        : this.variant() === 'chips'
+          ? `h-(--nc-h-sm) text-label tracking-tag ${this.fill() ? '' : 'px-[12px]'}`
+          : `h-(--nc-h-sm) text-meta tracking-button ${this.fill() ? '' : 'px-[14px]'}`,
     ].join(' '),
   );
 
-  protected readonly baseItemClass = computed(() =>
-    [
-      'cursor-pointer rounded-xs whitespace-nowrap uppercase transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-40',
-      this.fill() ? 'flex-1 text-center' : '',
-      this.variant() === 'chips'
-        ? this.small()
-          ? 'inline-flex h-[23px] items-center bg-raised px-[7px] font-mono text-micro tracking-button text-ink-3 hover:text-ink'
-          : 'bg-raised px-[11px] py-[6px] font-mono text-label tracking-button text-ink-3 hover:text-ink'
-        : this.shortFrame()
-          ? 'inline-flex h-(--nc-control-h-xs) items-center justify-center px-1 font-mono text-micro tracking-button text-ink-3 hover:text-ink'
-          : 'h-(--nc-control-h) px-1.5 font-mono text-meta tracking-button text-ink-3 hover:text-ink',
-    ].join(' '),
-  );
-
-  protected itemClass(option: SegmentOption<T>): string {
-    return `${this.baseItemClass()} ${SELECTED[option.tone ?? this.resolvedTone()]}`;
+  protected itemClass(option: SegmentOption<T>, first: boolean, last: boolean): string {
+    return `${this.baseItemClass()} ${SELECTED[option.tone ?? 'raised']} ${joined(first, last)}`;
   }
 
   private readonly radios = viewChildren<ElementRef<HTMLButtonElement>>('radio');

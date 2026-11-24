@@ -1,0 +1,121 @@
+<ng-container *transloco="let t">
+  @if (feed().data(); as day) {
+    @if (hero().length) {
+      <nc-hero-pile [entries]="hero()" [(index)]="front" (picked)="play($event)" />
+    }
+
+    @if (mine(); as games) {
+      <nc-shelf data-shelf="mine" [heading]="t('hub.shelf.mine')">
+        <a ncArrowLink shelfAction routerLink="/games">
+          {{ t('hub.seeAllCount', { n: mineTotal() }) }}
+        </a>
+        <ng-container *ncShelfItem="let game of games; open as open; flyoutId as flyoutId">
+          @if (game) {
+            <nc-shelf-disk
+              action="edit"
+              [link]="['/edit', game.id]"
+              [game]="game"
+              [open]="open"
+              [flyoutId]="flyoutId" />
+          } @else {
+            <a routerLink="/games/new" class="block">
+              <nc-floppy action="new" [caption]="t('nav.newGame')" />
+            </a>
+          }
+        </ng-container>
+        <ng-container *ncShelfFlyout="let game of games; when: isGame">
+          @if (game) {
+            <nc-game-flyout [game]="game" />
+          }
+        </ng-container>
+      </nc-shelf>
+    }
+
+    @if (sessions().length) {
+      <nc-shelf data-shelf="sessions" [heading]="t('hub.shelf.sessions')">
+        <nc-session-disk
+          *ncShelfItem="let session of sessions(); open as open; flyoutId as flyoutId"
+          [link]="['/play', session.projectId]"
+          [session]="session"
+          [viewer]="viewer()"
+          [open]="open"
+          [flyoutId]="flyoutId"
+          (joined)="join(session)" />
+        <nc-session-flyout
+          *ncShelfFlyout="let session of sessions()"
+          [session]="session"
+          [viewer]="viewer()"
+          (leave)="leave.mutate(session.sessionUuid)" />
+      </nc-shelf>
+    }
+
+    @for (shelf of day.shelves; track shelf.key) {
+      @if (shelf.collections; as collections) {
+        <section
+          class="grid min-w-0 gap-[14px]"
+          aria-labelledby="hub-collections"
+          data-shelf="collections">
+          <div class="flex flex-wrap items-center gap-[14px]">
+            <h3 id="hub-collections" class="font-display text-[22px] leading-[1.2] text-ink">
+              {{ t('hub.shelf.collections') }}
+            </h3>
+            <span class="flex-1"></span>
+            <a ncArrowLink routerLink="/collections">
+              {{ t('hub.seeAllCount', { n: shelf.total }) }}
+            </a>
+          </div>
+          <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-[20px]">
+            @for (collection of collections; track collection.id) {
+              <nc-collection-box
+                [link]="['/collections', collection.id]"
+                [title]="collection.title"
+                [curator]="collection.owner"
+                [total]="collection.gameCount"
+                [games]="collection.games"
+                (picked)="play($event)" />
+            }
+          </div>
+        </section>
+      } @else {
+        <nc-hub-shelf [shelf]="shelf" />
+      }
+    }
+
+    @for (keys of batches().slice(0, asked()); track $index) {
+      <nc-tag-shelves [keys]="keys" />
+    }
+    @if (asked() < batches().length) {
+      <span
+        #sentinel
+        aria-hidden="true"
+        class="pointer-events-none absolute bottom-0 size-px"></span>
+    }
+  } @else if (feed().isError()) {
+    <nc-error-state
+      class="min-h-[60vh]"
+      [title]="t('hub.errorTitle')"
+      [hint]="t('hub.errorHint')"
+      [retryLabel]="t('game.retry')"
+      (retry)="feed().refetch()" />
+  } @else {
+    <div
+      aria-hidden="true"
+      class="grid min-h-[560px] grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] items-center gap-[clamp(24px,4vw,72px)] pt-[8px] pb-[24px]">
+      <div class="grid content-center gap-[14px]">
+        <nc-skeleton class="text-label" [words]="[4, 2, 3, 4]" />
+        <nc-skeleton class="text-[56px] leading-[1.1]" [words]="[5, 4]" />
+        <nc-skeleton class="text-ui" [words]="[4, 3, 5, 2, 6, 3, 4]" />
+        <nc-skeleton class="text-ui" [words]="[3, 6, 2, 5, 4]" />
+      </div>
+      <div class="grid justify-items-center gap-[18px]">
+        <div class="h-[440px] w-[min(100%,680px)] pt-[104px]">
+          <nc-skeleton class="mx-auto aspect-[1/1.02]" width="min(300px, 44%)" height="auto" />
+        </div>
+        <nc-skeleton width="82px" height="8px" />
+      </div>
+    </div>
+    <nc-shelf-skeleton />
+    <nc-shelf-skeleton />
+    <nc-shelf-skeleton />
+  }
+</ng-container>

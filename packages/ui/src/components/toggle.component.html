@@ -3,13 +3,25 @@
   role="switch"
   [attr.aria-checked]="checked()"
   [attr.aria-label]="label()"
-  [disabled]="disabled()"
-  (click)="checked.set(!checked())"
+  [disabled]="closed()"
+  (click)="flip()"
+  (pointerdown)="grab($event)"
+  (pointermove)="slide($event)"
+  (pointerup)="release()"
+  (pointercancel)="drag.set(null)"
   [class]="buttonClass()">
+  <!-- A thin well: the rim of one, without the pixel of sink a typed-in field has. -->
   <span
-    class="relative inline-block h-2 w-[30px] bg-line-strong transition-colors duration-100 group-aria-checked:bg-jade">
+    class="flat-sm bevel-edge-well bevel-lo-line-strong bevel-fill-line-strong relative block h-[28px] w-[52px] flex-none group-enabled:group-aria-checked:bevel-fill-jade group-disabled:bevel-edge-line group-disabled:bevel-lo-line group-disabled:bevel-fill-transparent">
+    <span class="absolute inset-x-0 top-0 h-[3px] bg-on-accent/28 group-disabled:hidden"></span>
+    <!-- The travel is on a wrapper: the knob's own transition belongs to its bevel. -->
     <span
-      class="absolute top-[3px] left-[3px] h-[10px] w-[10px] bg-ink-3 transition-[transform,background-color] duration-100 group-aria-checked:translate-x-[14px] group-aria-checked:bg-page"></span>
+      class="absolute -top-[3px] -left-[3px]"
+      [class]="drag() ? '' : 'transition-transform duration-200 ease-[cubic-bezier(0.3,0.8,0.2,1)]'"
+      [style.transform]="'translateX(' + offset() + 'px)'">
+      <span
+        class="raised-sm block size-[28px] group-enabled:group-hover:bevel-lit group-active:bevel-down group-disabled:bevel-level group-disabled:bevel-edge-line group-disabled:bevel-fill-transparent"></span>
+    </span>
   </span>
   <ng-content />
 </button>

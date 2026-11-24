@@ -1,0 +1,65 @@
+<nc-dialog-shell
+  *transloco="let t"
+  [kicker]="t('collections.title')"
+  [title]="data.collection ? t('collections.dialog.edit') : t('collections.new')"
+  [closeLabel]="t('collections.dialog.close')">
+  <form id="collection-form" class="mt-2 grid gap-2" (submit)="$event.preventDefault(); save()">
+    <nc-field
+      for="collection-title"
+      [label]="t('collections.dialog.title')"
+      [counter]="t('count', { n: title().length, max: TITLE_MAX })">
+      <input
+        ncInput
+        id="collection-title"
+        autocomplete="off"
+        required
+        [attr.maxlength]="TITLE_MAX"
+        [value]="title()"
+        (input)="title.set($any($event.target).value)" />
+    </nc-field>
+    <nc-field
+      for="collection-description"
+      [label]="t('collections.dialog.description')"
+      [counter]="t('count', { n: description().length, max: DESCRIPTION_MAX })">
+      <textarea
+        ncInput
+        id="collection-description"
+        class="resize-none"
+        rows="4"
+        [attr.maxlength]="DESCRIPTION_MAX"
+        [value]="description()"
+        (input)="description.set($any($event.target).value)"></textarea>
+    </nc-field>
+    <div>
+      <div class="mb-1 font-ui text-label tracking-label text-ink-3 uppercase">
+        {{ t('collections.dialog.visibility') }}
+      </div>
+      <nc-segmented
+        fill
+        [label]="t('collections.dialog.visibility')"
+        [options]="options()"
+        [value]="visibility()"
+        (valueChange)="$event && visibility.set($event)" />
+      <p class="mt-[10px] text-meta text-ink-2" data-testid="visibility-hint">
+        {{ t('collections.visibilityHint.' + visibility()) }}
+      </p>
+    </div>
+    @if (error(); as message) {
+      <p role="alert" class="text-meta text-hot-ink">{{ message }}</p>
+    }
+  </form>
+  <ng-container footer>
+    <button ncButton variant="ghost" size="lg" type="button" (click)="ref.close()">
+      {{ t('collections.dialog.cancel') }}
+    </button>
+    <button
+      ncButton
+      variant="primary"
+      size="lg"
+      type="submit"
+      form="collection-form"
+      [disabled]="!title().trim() || saving()">
+      {{ data.collection ? t('collections.dialog.save') : t('collections.dialog.create') }}
+    </button>
+  </ng-container>
+</nc-dialog-shell>

@@ -1,0 +1,29 @@
+<div class="flex items-baseline justify-between gap-1.5">
+  <span class="text-label tracking-strip text-lcd-dim uppercase">{{ label() }}</span>
+  <span class="text-ui leading-none" [class]="ink()">{{ value() }}</span>
+</div>
+<div class="flat-sm min-h-0 flex-1 bevel-edge-line bevel-fill-inset">
+  <div
+    #well
+    role="img"
+    class="grid-lines h-full overflow-hidden"
+    [style.background-size]="'100% ' + gridStep() + 'px'"
+    [attr.aria-label]="label() + ' ' + value()">
+    @if (height() && width()) {
+      <svg
+        [attr.width]="width()"
+        [attr.height]="height()"
+        shape-rendering="crispEdges"
+        class="block"
+        aria-hidden="true">
+        @for (limit of limits(); track $index) {
+          <path [attr.d]="limit.dashes" [attr.fill]="limit.color" fill-opacity=".5" />
+        }
+        @for (paint of paths(); track paint.color) {
+          <path [attr.d]="paint.fill" [attr.fill]="paint.color" fill-opacity=".24" />
+          <path [attr.d]="paint.line" [attr.fill]="paint.color" />
+        }
+      </svg>
+    }
+  </div>
+</div>

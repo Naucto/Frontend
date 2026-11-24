@@ -1,0 +1,137 @@
+<ng-container *transloco="let t">
+  <div #screenSlot class="relative shrink-0">
+    @if (recorder.phase() === 'recording') {
+      <!-- Over the picture alone: the transport under it stays in reach, to pause is to stop. -->
+      <div
+        class="pointer-events-none absolute inset-x-0 top-(--nc-h-bar) z-10 aspect-video border-3 border-hot"
+        role="status">
+        <nc-chip tone="hot" class="absolute top-1 right-1">
+          <nc-mark name="record" />
+          {{ t('editor.game.clip.rec') }}
+          <span>{{ clock(recorder.elapsed()) }}</span>
+        </nc-chip>
+        <span class="absolute inset-x-0 bottom-0 h-[6px] bg-page/85">
+          <span
+            class="block h-full bg-hot"
+            [style.width.%]="(recorder.elapsed() / CLIP_SECONDS) * 100"></span>
+        </span>
+      </div>
+    }
+  </div>
+  <nc-panel-column edge="none" class="flex-1" [title]="t('editor.game.publishing')">
+    <button actions ncButton variant="secondary" size="sm" (click)="exportGame()">
+      <nc-mark name="download" />
+      {{ t('editor.game.export') }}
+    </button>
+    @if (isCreator()) {
+      <button actions ncButton variant="secondary" size="sm" (click)="confirmDelete()">
+        <nc-mark name="trash" />
+        {{ t('editor.game.delete') }}
+      </button>
+    }
+    <div class="grid min-w-0">
+      <nc-section banded [title]="t('editor.game.status')">
+        <nc-help-dot
+          actions
+          [title]="t('editor.game.status')"
+          [text]="t('editor.game.statusHelp')" />
+        <nc-segmented
+          fill
+          [options]="statuses()"
+          [value]="status()"
+          (valueChange)="setStatus($event)"
+          [label]="t('editor.game.status')" />
+      </nc-section>
+      @if (features.monetization()) {
+        <nc-section banded [title]="t('editor.game.monetization')">
+          <nc-help-dot
+            actions
+            [title]="t('editor.game.monetization')"
+            [text]="t('editor.game.monetizationHelp')" />
+          <nc-segmented
+            fill
+            [options]="monetizations()"
+            [value]="monetization()"
+            (valueChange)="setMonetization($event)"
+            [label]="t('editor.game.monetization')" />
+          <div
+            class="mt-1 flex items-center justify-between gap-1.75"
+            [class.opacity-40]="monetization() !== 'PAID'">
+            <label class="label text-ink-3" for="g-price">{{ t('editor.game.price') }}</label>
+            @if (monetization() === 'PAID') {
+              <input
+                ncInput
+                id="g-price"
+                class="w-[96px]"
+                type="number"
+                min="0"
+                step="0.5"
+                [(ngModel)]="price"
+                (change)="commitPrice()" />
+            } @else {
+              <nc-readout size="sm" value="–" class="w-[64px]" />
+            }
+          </div>
+        </nc-section>
+      }
+      <!-- Raised above the sections that follow, so the person-search panel that drops out of this
+         one paints over them. -->
+      <nc-section banded class="z-10" [title]="t('editor.game.inSession')">
+        <nc-chip actions>{{ presence.collaborators().length }}</nc-chip>
+        <ul class="grid gap-1" [attr.aria-label]="t('editor.game.inSession')">
+          @for (collaborator of presence.collaborators(); track collaborator.clientId) {
+            <li class="flex items-center gap-1">
+              <nc-user-avatar
+                [userId]="collaborator.userId"
+                [name]="collaborator.name"
+                [colour]="collaborator.isSelf ? 'gold' : collaborator.colour"
+                [size]="24" />
+              <span class="min-w-0 truncate text-ui text-ink">{{ collaborator.name }}</span>
+              @if (collaborator.isSelf) {
+                <nc-chip>{{ t('editor.game.you') }}</nc-chip>
+              }
+              <span class="flex-1"></span>
+              @if (!collaborator.isSelf && election.isHost()) {
+                <button
+                  ncButton
+                  variant="ghost"
+                  size="sm"
+                  (click)="election.kick(collaborator.userId)">
+                  {{ t('editor.game.kick') }}
+                </button>
+              }
+            </li>
+          }
+        </ul>
+        @if (isCreator()) {
+          <nc-person-search
+            class="mt-1.5"
+            [placeholder]="t('editor.game.inviteByName')"
+            [exclude]="memberIds()"
+            (picked)="invite($event)" />
+        }
+      </nc-section>
+      <nc-section banded [title]="t('editor.game.lineage')">
+        <div class="grid gap-1 text-body text-ink-2">
+          @if (session.project()?.forkedFromId; as from) {
+            <!-- Until the parent's name arrives, and for good once the parent is unpublished or
+               deleted, it is another game: an id says nothing to whoever reads it. -->
+            <div class="flex items-center gap-1">
+              {{ t('editor.game.forkedFrom') }}
+              <a [href]="'/play/' + from" class="min-w-0 truncate text-sky-ink">
+                {{ parent.data()?.name ?? t('editor.game.anotherGame') }}
+              </a>
+              @if (parent.data()?.creator; as creator) {
+                <nc-user-avatar [userId]="creator.id" [name]="creator.username" [size]="24" />
+              }
+            </div>
+          }
+          <div class="flex items-center gap-1">
+            {{ t('editor.game.remixes') }}
+            <nc-chip>{{ session.project()?.forkCount ?? 0 }}</nc-chip>
+          </div>
+        </div>
+      </nc-section>
+    </div>
+  </nc-panel-column>
+</ng-container>

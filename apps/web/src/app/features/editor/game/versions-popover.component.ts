@@ -19,10 +19,12 @@ import {
   DialogService,
   formatBytes,
   IconComponent,
+  MarkComponent,
   MeterComponent,
   PopoverDirective,
   PopoverPanelComponent,
   RelativeTimePipe,
+  StatComponent,
   ToastService,
 } from '@naucto/ui';
 import { QueryClient } from '@tanstack/angular-query-experimental';
@@ -54,10 +56,12 @@ const byWhen = (a: VersionRow, b: VersionRow): number => (b.when ?? '').localeCo
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
+    MarkComponent,
     MeterComponent,
     PopoverDirective,
     PopoverPanelComponent,
     RelativeTimePipe,
+    StatComponent,
   ],
   templateUrl: './versions-popover.component.html',
   host: { class: 'inline-flex items-center' },
@@ -143,9 +147,19 @@ export class VersionsPopoverComponent {
     if (!this.session.isCollaborator() || this.restoring()) {
       return;
     }
+    const confirmed = await this.dialogs.confirm({
+      title: this.transloco.translate('editor.game.restoreTitle'),
+      message: row.release
+        ? this.transloco.translate('editor.game.restoreRelease', { name: row.name })
+        : this.transloco.translate('editor.game.restoreAutosaveMessage'),
+      confirmLabel: this.transloco.translate('editor.game.restoreConfirm'),
+    });
+    if (!confirmed) {
+      return;
+    }
     this.restoring.set(true);
     try {
-      const path = { id: String(this.session.id) };
+      const path = { id: this.session.id };
       const res = row.release
         ? await projectContentControllerGetCheckpoint({
             path: { ...path, name: row.name },
@@ -188,7 +202,17 @@ export class VersionsPopoverComponent {
     if (!this.session.isCollaborator()) {
       return;
     }
-    const path = { id: String(this.session.id) };
+    const confirmed = await this.dialogs.confirmDanger({
+      title: this.transloco.translate('editor.game.deleteTitle'),
+      message: row.release
+        ? this.transloco.translate('editor.game.deleteRelease', { name: row.name })
+        : this.transloco.translate('editor.game.deleteAutosaveMessage'),
+      confirmLabel: this.transloco.translate('editor.game.deleteConfirm'),
+    });
+    if (!confirmed) {
+      return;
+    }
+    const path = { id: this.session.id };
     const res = row.release
       ? await projectContentControllerDeleteCheckpoint({ path: { ...path, name: row.name } })
       : await projectContentControllerDeleteVersion({ path: { ...path, version: row.name } });

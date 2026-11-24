@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { uuidOf } from '@naucto/api-client/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FeaturesService } from '../config/features.service';
@@ -94,9 +95,9 @@ describe('AnalyticsService', () => {
 
   it('counts each new path once, by its route template', async () => {
     const router = await start();
-    await router.navigateByUrl('/play/1');
-    await router.navigateByUrl('/play/1?fullscreen=1');
-    await router.navigateByUrl('/play/2');
+    await router.navigateByUrl(`/play/${uuidOf(1)}`);
+    await router.navigateByUrl(`/play/${uuidOf(1)}?fullscreen=1`);
+    await router.navigateByUrl(`/play/${uuidOf(2)}`);
 
     expect(routesSent()).toEqual(['hub', 'play/:id', 'play/:id']);
     expect(posted[0]?.path).toBe('/analytics/events');
@@ -106,7 +107,7 @@ describe('AnalyticsService', () => {
   it('counts the landing page when the service starts before the first navigation', async () => {
     TestBed.inject(AnalyticsService);
     TestBed.tick();
-    await TestBed.inject(Router).navigateByUrl('/play/3');
+    await TestBed.inject(Router).navigateByUrl(`/play/${uuidOf(3)}`);
 
     expect(routesSent()).toEqual(['play/:id']);
   });
@@ -136,7 +137,7 @@ describe('AnalyticsService', () => {
   it('counts nothing without consent, and the page once consent is given', async () => {
     consent.set('unknown');
     const router = await start();
-    await router.navigateByUrl('/play/1');
+    await router.navigateByUrl(`/play/${uuidOf(1)}`);
     expect(routesSent()).toEqual([]);
 
     consent.set('granted');
@@ -159,7 +160,7 @@ describe('AnalyticsService', () => {
     analytics.set(false);
     suspended.set(false);
     TestBed.tick();
-    await router.navigateByUrl('/play/1');
+    await router.navigateByUrl(`/play/${uuidOf(1)}`);
 
     expect(routesSent()).toEqual([]);
   });
@@ -174,7 +175,7 @@ describe('AnalyticsService', () => {
     };
     const router = await start();
     for (let index = 0; index < 20; index += 1) {
-      await router.navigateByUrl(`/play/${String(index)}`);
+      await router.navigateByUrl(`/play/${uuidOf(index)}`);
     }
     await vi.waitFor(() => {
       expect(disableAnalytics).toHaveBeenCalled();

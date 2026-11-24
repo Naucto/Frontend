@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { uuidOf } from '@naucto/api-client/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AuthStore } from '../auth/auth.store';
@@ -28,7 +29,7 @@ const settle = async (): Promise<void> => {
 describe('BrowserAccountService', () => {
   const auth = {
     status: signal<AuthStatus>('booting'),
-    userId: signal<number | null>(null),
+    userId: signal<string | null>(null),
     sessionExpired: signal(false),
     refresh: vi.fn(async (): Promise<string | null> => null),
   };
@@ -43,7 +44,7 @@ describe('BrowserAccountService', () => {
 
   const service = (): BrowserAccountService => TestBed.inject(BrowserAccountService);
 
-  const signIn = (userId: number): void => {
+  const signIn = (userId: string): void => {
     auth.userId.set(userId);
     auth.status.set('authenticated');
   };
@@ -89,17 +90,17 @@ describe('BrowserAccountService', () => {
 
   it('links the visitor once the account is known, and tells the other tabs', async () => {
     service();
-    signIn(7);
+    signIn(uuidOf(7));
     await settle();
 
     expect(link.mock.calls).toEqual([['visitor-a']]);
-    expect(heard).toContainEqual({ type: 'account-changed', userId: 7 });
+    expect(heard).toContainEqual({ type: 'account-changed', userId: uuidOf(7) });
   });
 
   it('links nothing without consent or with analytics off', async () => {
     consent.set('denied');
     service();
-    signIn(7);
+    signIn(uuidOf(7));
     await settle();
     analytics.set(false);
     consent.set('granted');
@@ -111,7 +112,7 @@ describe('BrowserAccountService', () => {
   it('starts a fresh visitor when the current one belongs to another account', async () => {
     answers = ['conflict', 'linked'];
     service();
-    signIn(7);
+    signIn(uuidOf(7));
     await settle();
 
     const fresh = readCookie(COOKIE_NAMES.visitor);
@@ -122,7 +123,7 @@ describe('BrowserAccountService', () => {
   it('starts a fresh visitor when the current one was erased', async () => {
     answers = ['erased', 'linked'];
     service();
-    signIn(7);
+    signIn(uuidOf(7));
     await settle();
 
     expect(link).toHaveBeenCalledTimes(2);
@@ -131,7 +132,7 @@ describe('BrowserAccountService', () => {
 
   it('gives the next person a new visitor after signing out here', async () => {
     service();
-    signIn(7);
+    signIn(uuidOf(7));
     await settle();
 
     signOut(false);
@@ -143,7 +144,7 @@ describe('BrowserAccountService', () => {
 
   it('leaves the visitor alone when the session lapsed rather than ended here', async () => {
     service();
-    signIn(7);
+    signIn(uuidOf(7));
     await settle();
 
     signOut(true);
@@ -155,11 +156,11 @@ describe('BrowserAccountService', () => {
 
   it('suspends a tab signed in as another account than the browser, and refreshes it', async () => {
     const tab = service();
-    signIn(7);
+    signIn(uuidOf(7));
     await settle();
     link.mockClear();
 
-    other.postMessage({ type: 'account-changed', userId: 8 });
+    other.postMessage({ type: 'account-changed', userId: uuidOf(8) });
     await settle();
 
     expect(tab.suspended()).toBe(true);
@@ -169,9 +170,9 @@ describe('BrowserAccountService', () => {
 
   it('resumes under the browser visitor once its refresh clears it', async () => {
     const tab = service();
-    signIn(7);
+    signIn(uuidOf(7));
     await settle();
-    other.postMessage({ type: 'account-changed', userId: 8 });
+    other.postMessage({ type: 'account-changed', userId: uuidOf(8) });
     await settle();
 
     signOut(true);
@@ -186,7 +187,7 @@ describe('BrowserAccountService', () => {
     auth.status.set('anonymous');
     await settle();
 
-    other.postMessage({ type: 'account-changed', userId: 8 });
+    other.postMessage({ type: 'account-changed', userId: uuidOf(8) });
     await settle();
 
     expect(tab.suspended()).toBe(false);
@@ -195,7 +196,7 @@ describe('BrowserAccountService', () => {
 
   it('starts fresh after an erase, links the new visitor and tells the other tabs', async () => {
     const tab = service();
-    signIn(7);
+    signIn(uuidOf(7));
     await settle();
     link.mockClear();
 

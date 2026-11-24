@@ -2,7 +2,8 @@
  * Migrates every stored game document of a deployment in place.
  *
  * A game lives in S3 only: its autosaves (`save/<id>/<epochMs>`), its named versions
- * (`checkpoint/<id>/<name>`) and, once published, an independent copy at `release/<id>`. Each is a
+ * (`checkpoint/<id>/<name>`) and, once published, an independent copy at `release/<id>`, where
+ * `<id>` is the project's id, a UUID. Each is a
  * Yjs update, and the editor migrates one transparently when it opens it -- but a release is never
  * opened by the editor, a checkpoint only when restored, and the `Project` row keeps a size
  * breakdown of the latest autosave stamped with the schema it was computed from. This brings all
@@ -12,8 +13,7 @@
  * `content-size` module live; `tools/migrate-games.mjs` builds the bundle it runs as.
  *
  *   node migrate-games.cjs --dry-run [--project <id>]   reads everything, writes nothing
- *   node migrate-games.cjs --apply   [--project <id>]   rewrites what is behind, or at the current
- *                                                       schema but still in an older shape
+ *   node migrate-games.cjs --apply   [--project <id>]   rewrites what is behind
  *   node migrate-games.cjs --check <id>                 prints the schema of each object of one game
  */
 import { writeFileSync } from 'node:fs';
@@ -40,8 +40,6 @@ export interface BlobMigration {
   warnings: string[];
   /** Written by a newer schema than this build knows: there is no reading it, let alone rewriting it. */
   future: boolean;
-  /** At the current schema already, and rewritten in place into the shape it now has. */
-  reshaped: boolean;
 }
 
 const describeWarning = (warning: MigrationWarning): string => {
@@ -60,13 +58,7 @@ export function migrateBlob(bytes: Uint8Array): BlobMigration {
       Y.applyUpdate(doc, bytes);
     }
     const from = schemaVersionOf(doc);
-    const untouched = {
-      bytes: null,
-      from,
-      to: GAME_SCHEMA_VERSION,
-      warnings: [],
-      reshaped: false,
-    };
+    const untouched = { bytes: null, from, to: GAME_SCHEMA_VERSION, warnings: [] };
     if (isFromFutureSchema(doc)) {
       return { ...untouched, future: true };
     }
@@ -81,7 +73,6 @@ export function migrateBlob(bytes: Uint8Array): BlobMigration {
       to: report.to,
       warnings: report.warnings.map(describeWarning),
       future: false,
-      reshaped: report.from === report.to && (report.counts.reshaped ?? 0) > 0,
     };
   } finally {
     doc.destroy();
@@ -173,13 +164,11 @@ interface ObjectResult {
   to?: number;
   bytes?: number;
   warnings: string[];
-  /** Rewritten in place at the current schema. */
-  reshaped?: boolean;
   error?: string;
 }
 
 interface ProjectResult {
-  id: number;
+  id: string;
   published: boolean;
   objects: ObjectResult[];
   contentSize?: { total: number; schemaVersion: number; written: boolean };
@@ -196,7 +185,6 @@ interface Report {
   totals: Record<ObjectStatus, number> & {
     projects: number;
     contentSizes: number;
-    reshaped: number;
   };
   transitions: Record<string, number>;
   warnings: string[];
@@ -205,7 +193,7 @@ interface Report {
 // ---- arguments and environment --------------------------------------------
 
 type Args =
-  { mode: 'dry-run' | 'apply'; project: number | null } | { mode: 'check'; project: number };
+  { mode: 'dry-run' | 'apply'; project: string | null } | { mode: 'check'; project: string };
 
 const USAGE = `usage: migrate-games (--dry-run | --apply) [--project <id>]
        migrate-games --check <id>`;
@@ -213,18 +201,22 @@ const USAGE = `usage: migrate-games (--dry-run | --apply) [--project <id>]
 const errorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
-function parseId(flag: string, value: string | undefined): number {
-  if (value === undefined || !/^\d+$/.test(value)) {
-    throw new Error(`${flag} needs a project id`);
+const PROJECT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+/** The id as the database and the object keys spell it: a UUID, in lower case. */
+function parseId(flag: string, value: string | undefined): string {
+  const id = value?.toLowerCase();
+  if (id === undefined || !PROJECT_ID.test(id)) {
+    throw new Error(`${flag} needs a project id, a UUID`);
   }
-  return Number(value);
+  return id;
 }
 
-function parseArgs(argv: string[]): Args {
+export function parseArgs(argv: string[]): Args {
   let dryRun = false;
   let apply = false;
-  let project: number | null = null;
-  let check: number | null = null;
+  let project: string | null = null;
+  let check: string | null = null;
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     switch (arg) {
@@ -355,15 +347,15 @@ const epochOf = (saveKey: string): number => Number(saveKey.slice(saveKey.lastIn
 
 async function objectsOf(
   store: Store,
-  id: number,
+  id: string,
   published: boolean,
 ): Promise<{ keys: string[]; latestSave: string | null; notes: string[] }> {
-  const saves = await listKeys(store, `save/${String(id)}/`);
-  const checkpoints = await listKeys(store, `checkpoint/${String(id)}/`);
+  const saves = await listKeys(store, `save/${id}/`);
+  const checkpoints = await listKeys(store, `checkpoint/${id}/`);
   const keys = [...saves, ...checkpoints];
   const notes: string[] = [];
   if (published) {
-    const release = `release/${String(id)}`;
+    const release = `release/${id}`;
     if (await exists(store, release)) {
       keys.push(release);
     } else {
@@ -388,28 +380,29 @@ interface Run {
 }
 
 interface ProjectRow {
-  id: number;
+  id: string;
   published: boolean;
 }
 
 // Prisma names the table after the model (`"Project"`, no `@@map`) and `publishedAt` after the
 // field, while the two size columns are the ones the model maps to snake_case.
-async function listProjects(db: PgClient, only: number | null): Promise<ProjectRow[]> {
-  const where = only === null ? '' : 'WHERE id = $1';
+async function listProjects(db: PgClient, only: string | null): Promise<ProjectRow[]> {
+  const where = only === null ? '' : 'WHERE id = $1::uuid';
+  // Oldest first, so a run that stops can be told how far it got; the id only breaks a tie.
   const { rows } = await db.query(
-    `SELECT id, "publishedAt" IS NOT NULL AS published FROM "Project" ${where} ORDER BY id`,
+    `SELECT id, "publishedAt" IS NOT NULL AS published FROM "Project" ${where} ORDER BY "createdAt", id`,
     only === null ? [] : [only],
   );
-  return rows.map((row) => ({ id: Number(row['id']), published: row['published'] === true }));
+  return rows.map((row) => ({ id: String(row['id']), published: row['published'] === true }));
 }
 
 async function storeContentSize(
   db: PgClient,
-  id: number,
+  id: string,
   breakdown: ContentSizeBreakdown,
 ): Promise<void> {
   await db.query(
-    'UPDATE "Project" SET content_size = $1::jsonb, content_size_total = $2 WHERE id = $3',
+    'UPDATE "Project" SET content_size = $1::jsonb, content_size_total = $2 WHERE id = $3::uuid',
     [JSON.stringify(breakdown), breakdown.total, id],
   );
 }
@@ -427,7 +420,6 @@ async function processObject(
       to: out.to,
       bytes: bytes.byteLength,
       warnings: out.warnings,
-      reshaped: out.reshaped,
     };
     if (out.future) {
       return { result: { ...base, status: 'future' }, migrated: null };
@@ -460,7 +452,7 @@ function describeTransition(object: ObjectResult): string {
   if (object.status !== 'migrated') {
     return ` (schema ${String(object.from)})`;
   }
-  return ` ${String(object.from)}→${String(object.to)}${object.reshaped === true ? ' (in place)' : ''}`;
+  return ` ${String(object.from)}→${String(object.to)}`;
 }
 
 async function processProject(run: Run, row: ProjectRow): Promise<ProjectResult> {
@@ -478,7 +470,7 @@ async function processProject(run: Run, row: ProjectRow): Promise<ProjectResult>
     const { result: object, migrated } = await processObject(run, key);
     result.objects.push(object);
     if (object.status !== 'skipped') {
-      console.log(`  #${String(row.id)} ${key}: ${object.status}${describeTransition(object)}`);
+      console.log(`  ${row.id} ${key}: ${object.status}${describeTransition(object)}`);
     }
     for (const warning of object.warnings) {
       console.log(`      ${warning}`);
@@ -511,18 +503,15 @@ function tally(report: Report): void {
     if (project.contentSize !== undefined) {
       report.totals.contentSizes += 1;
     }
-    report.warnings.push(...project.notes.map((note) => `#${String(project.id)}: ${note}`));
+    report.warnings.push(...project.notes.map((note) => `${project.id}: ${note}`));
     for (const object of project.objects) {
       report.totals[object.status] += 1;
-      if (object.reshaped === true) {
-        report.totals.reshaped += 1;
-      }
       if (object.status === 'migrated') {
         const transition = `${String(object.from)}→${String(object.to)}`;
         report.transitions[transition] = (report.transitions[transition] ?? 0) + 1;
       }
       report.warnings.push(
-        ...object.warnings.map((warning) => `#${String(project.id)} ${object.key}: ${warning}`),
+        ...object.warnings.map((warning) => `${project.id} ${object.key}: ${warning}`),
       );
     }
   }
@@ -543,9 +532,6 @@ function printSummary(report: Report, path: string): void {
   );
   console.log(`transitions: ${transitions.length > 0 ? transitions.join(', ') : 'none'}`);
   console.log(
-    `rewritten in place at schema ${String(report.schemaVersion)}: ${String(totals.reshaped)}${report.mode === 'apply' ? '' : ' (not written)'}`,
-  );
-  console.log(
     `content sizes recomputed: ${String(totals.contentSizes)}${report.mode === 'apply' ? '' : ' (not written)'}`,
   );
   if (report.warnings.length > 0) {
@@ -557,7 +543,7 @@ function printSummary(report: Report, path: string): void {
   const failed = report.projects.flatMap((project) =>
     project.objects
       .filter((object) => object.status === 'failed')
-      .map((object) => `  #${String(project.id)} ${object.key}: ${object.error ?? ''}`),
+      .map((object) => `  ${project.id} ${object.key}: ${object.error ?? ''}`),
   );
   if (failed.length > 0) {
     console.log(`failed (${String(failed.length)}):`);
@@ -568,14 +554,14 @@ function printSummary(report: Report, path: string): void {
   console.log(`report: ${path}`);
 }
 
-async function check(run: Run, id: number): Promise<void> {
+async function check(run: Run, id: string): Promise<void> {
   const [row] = await listProjects(run.db, id);
   if (row === undefined) {
-    throw new Error(`no project ${String(id)}`);
+    throw new Error(`no project ${id}`);
   }
   const { keys, latestSave, notes } = await objectsOf(run.store, id, row.published);
   console.log(
-    `#${String(id)} ${row.published ? 'published' : 'unpublished'}, ${String(keys.length)} objects, current schema ${String(GAME_SCHEMA_VERSION)}`,
+    `${id} ${row.published ? 'published' : 'unpublished'}, ${String(keys.length)} objects, current schema ${String(GAME_SCHEMA_VERSION)}`,
   );
   for (const note of notes) {
     console.log(`  ${note}`);
@@ -584,13 +570,7 @@ async function check(run: Run, id: number): Promise<void> {
     try {
       const { bytes } = await readObject(run.store, key);
       const out = migrateBlob(bytes);
-      const state = out.future
-        ? 'future'
-        : out.bytes === null
-          ? 'current'
-          : out.reshaped
-            ? 'older shape'
-            : 'behind';
+      const state = out.future ? 'future' : out.bytes === null ? 'current' : 'behind';
       const latest = key === latestSave ? ', latest autosave' : '';
       console.log(
         `  ${key}: schema ${String(out.from)} (${state}${latest}, ${String(bytes.byteLength)} bytes)`,
@@ -664,7 +644,6 @@ async function main(): Promise<void> {
     totals: {
       projects: 0,
       contentSizes: 0,
-      reshaped: 0,
       migrated: 0,
       skipped: 0,
       future: 0,
@@ -684,7 +663,7 @@ async function main(): Promise<void> {
     run.computeContentSize = loadContentSize(report.warnings);
     const rows = await listProjects(db, args.project);
     if (args.project !== null && rows.length === 0) {
-      throw new Error(`no project ${String(args.project)}`);
+      throw new Error(`no project ${args.project}`);
     }
     console.log(`${args.mode}: ${String(rows.length)} project(s) in ${store.bucket}`);
     for (const row of rows) {

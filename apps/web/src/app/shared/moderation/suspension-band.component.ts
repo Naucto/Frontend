@@ -1,12 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { NoticeComponent } from '@naucto/ui';
+import { ButtonDirective, NoticeComponent } from '@naucto/ui';
 
 import { AuthStore } from '../../core/auth/auth.store';
 import { FeaturesService } from '../../core/config/features.service';
-
-const UNTIL = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeStyle: 'short' });
 
 /**
  * Tells a suspended account, on every page, that it is suspended and until when. Draws nothing
@@ -14,7 +13,7 @@ const UNTIL = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeStyle: '
  */
 @Component({
   selector: 'nc-suspension-band',
-  imports: [RouterLink, TranslocoDirective, NoticeComponent],
+  imports: [DatePipe, RouterLink, TranslocoDirective, ButtonDirective, NoticeComponent],
   templateUrl: './suspension-band.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -22,10 +21,4 @@ const UNTIL = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeStyle: '
 export class SuspensionBandComponent {
   protected readonly auth = inject(AuthStore);
   protected readonly features = inject(FeaturesService);
-
-  /** When the suspension ends by itself, as the reader's own clock says it. Null when it has no end. */
-  protected readonly until = computed(() => {
-    const end = this.auth.suspension()?.until;
-    return end ? UNTIL.format(new Date(end)) : null;
-  });
 }

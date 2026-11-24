@@ -5,11 +5,10 @@
       <button
         ncButton
         variant="ghost"
-        size="sm"
         class="api-insert"
         [attr.aria-label]="t('docs.insert')"
         (click)="insert.emit(entry())">
-        <nc-icon name="code" [size]="12" />
+        <nc-icon name="code" />
         <span class="api-insert-word">{{ t('docs.insert') }}</span>
       </button>
     }
@@ -56,7 +55,11 @@
   @if (entry().notes.length) {
     <div class="doc-html">
       @for (note of entry().notes; track $index) {
-        <aside class="callout" [class]="note.kind" [innerHTML]="trust(note.html)"></aside>
+        <aside
+          class="callout"
+          [class]="note.kind"
+          [attr.data-kind]="note.kind"
+          [innerHTML]="trust(note.html)"></aside>
       }
     </div>
   }
@@ -64,9 +67,15 @@
     <div class="api-label">{{ t('docs.example') }}</div>
     <div class="doc-html">
       @for (ex of entry().examples; track $index) {
-        <pre class="lua">
+        <div class="doc-code">
+          <pre class="lua">
 <code [innerHTML]="trust(ex.html)"></code>
 </pre>
+          <button type="button" class="doc-copy" [attr.aria-label]="t('docs.copyCode')">
+            <nc-icon name="copy" class="doc-copy-idle" />
+            <nc-icon name="check" class="doc-copy-done" />
+          </button>
+        </div>
       }
       @if (entry().pictureHtml) {
         <div [innerHTML]="trust(entry().pictureHtml)"></div>

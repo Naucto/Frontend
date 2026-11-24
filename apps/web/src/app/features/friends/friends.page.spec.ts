@@ -1,4 +1,5 @@
 import { type FriendDto, type PresenceDto } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { QueryClient } from '@tanstack/angular-query-experimental';
 import { render, screen, within } from '@testing-library/angular';
 import { describe, expect, it } from 'vitest';
@@ -9,18 +10,18 @@ import { qk } from '../../shared/queries/query-keys';
 import { testProviders } from '../../testing/providers';
 import FriendsPage from './friends.page';
 
-function aFriend(id: number, username: string): FriendDto {
+function aFriend(number: number, username: string): FriendDto {
   return {
-    id,
+    id: uuidOf(number),
     username,
     nickname: null,
     since: '2026-10-22T12:00:00.000Z',
   };
 }
 
-function aPresence(userId: number, kind: PresenceDto['kind']): PresenceDto {
+function aPresence(number: number, kind: PresenceDto['kind']): PresenceDto {
   return {
-    userId,
+    userId: uuidOf(number),
     username: '',
     nickname: null,
     kind,
@@ -38,7 +39,7 @@ function aPresence(userId: number, kind: PresenceDto['kind']): PresenceDto {
 
 async function renderWith(
   friends: FriendDto[],
-  presences: Record<number, PresenceDto>,
+  presences: Record<string, PresenceDto>,
 ): Promise<void> {
   const queries = new QueryClient();
   queries.setQueryData(qk.friends(), friends);
@@ -46,10 +47,10 @@ async function renderWith(
     providers: [
       ...testProviders(),
       { provide: QueryClient, useValue: queries },
-      { provide: AuthStore, useValue: { isAuthenticated: () => false, userId: () => 1 } },
+      { provide: AuthStore, useValue: { isAuthenticated: () => false, userId: () => uuidOf(1) } },
       {
         provide: PresenceStore,
-        useValue: { of: (id: number) => presences[id] ?? null, load: async () => undefined },
+        useValue: { of: (id: string) => presences[id] ?? null, load: async () => undefined },
       },
     ],
   });
@@ -61,7 +62,9 @@ function section(label: string): HTMLElement {
 
 describe('FriendsPage', () => {
   it('lists a friend who is connected but idle as online, not offline', async () => {
-    await renderWith([aFriend(2, 'idler'), aFriend(3, 'gone')], { 2: aPresence(2, 'IDLE') });
+    await renderWith([aFriend(2, 'idler'), aFriend(3, 'gone')], {
+      [uuidOf(2)]: aPresence(2, 'IDLE'),
+    });
 
     expect(within(section('Online now')).getByText('idler')).toBeTruthy();
     expect(within(section('Online now')).getByText('online')).toBeTruthy();
@@ -70,8 +73,8 @@ describe('FriendsPage', () => {
 
   it('puts friends doing something before idle ones', async () => {
     await renderWith([aFriend(2, 'idler'), aFriend(3, 'player')], {
-      2: aPresence(2, 'IDLE'),
-      3: aPresence(3, 'PLAYING'),
+      [uuidOf(2)]: aPresence(2, 'IDLE'),
+      [uuidOf(3)]: aPresence(3, 'PLAYING'),
     });
 
     const names = within(section('Online now'))
@@ -79,6 +82,20 @@ describe('FriendsPage', () => {
       .map((link) => link.textContent?.trim())
       .filter((name) => name === 'idler' || name === 'player');
     expect(names).toEqual(['player', 'idler']);
+  });
+
+  it('sends whoever takes a slot to the session their friend hosts', async () => {
+    await renderWith([aFriend(2, 'host'), aFriend(3, 'player')], {
+      [uuidOf(2)]: { ...aPresence(2, 'HOSTING'), releaseId: uuidOf(5), sessionId: 'room-1' },
+      [uuidOf(3)]: { ...aPresence(3, 'PLAYING'), releaseId: uuidOf(6) },
+    });
+
+    expect(screen.getByRole('link', { name: 'Take the slot' }).getAttribute('href')).toBe(
+      `/play/${uuidOf(5)}?session=room-1`,
+    );
+    expect(screen.getByRole('link', { name: 'Join' }).getAttribute('href')).toBe(
+      `/play/${uuidOf(6)}`,
+    );
   });
 
   it('says since when an offline friend has been a friend, not when they were last seen', async () => {

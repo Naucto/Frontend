@@ -1,0 +1,194 @@
+<div
+  *transloco="let t"
+  class="grid grid-cols-[264px_minmax(0,1fr)] gap-2.25 @min-[721px]:grid-cols-[320px_minmax(0,1fr)] @min-[721px]:gap-2.75">
+  <div class="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-2">
+    <section [attr.aria-label]="t('editor.game.cover')">
+      <div class="mb-1 flex items-center justify-between gap-1">
+        <nc-label>{{ t('editor.game.cover') }}</nc-label>
+        <span class="flex items-center gap-[6px] text-label text-ink-4">
+          320
+          <nc-mark name="close" />
+          180
+        </span>
+      </div>
+      <nc-media-frame
+        [src]="cover.data()"
+        [emptyLabel]="t('editor.game.noCover')"
+        dropImages
+        (imageDrop)="dropCover($event)">
+        <button type="button" ncMediaAction actions [disabled]="closed()" (click)="grabFrame()">
+          <nc-icon name="camera" />
+          {{ t('editor.game.grabFrame') }}
+        </button>
+        <!-- A label has no disabled of its own: closed, it is made inert with its input. -->
+        <label ncMediaAction actions [attr.inert]="closed() ? '' : null">
+          <nc-icon name="upload" />
+          {{ t('editor.game.upload') }}
+          <input
+            type="file"
+            [accept]="coverAccept"
+            class="sr-only"
+            [disabled]="closed()"
+            (change)="upload($event)" />
+        </label>
+      </nc-media-frame>
+    </section>
+
+    <section [attr.aria-label]="t('editor.game.clip.title')">
+      <div class="mb-1 flex items-center justify-between gap-1">
+        <nc-label>{{ t('editor.game.clip.title') }}</nc-label>
+        <span class="text-label text-ink-4">
+          {{ t('editor.game.clip.limits', { seconds: CLIP_SECONDS }) }}
+        </span>
+      </div>
+      <nc-media-frame
+        [empty]="recorder.phase() !== 'recording' && !clipUrl()"
+        emptyIcon="video"
+        [emptyLabel]="t('editor.game.clip.none')"
+        [tone]="recorder.phase() === 'recording' ? 'hot' : 'default'">
+        @if (recorder.phase() === 'recording') {
+          <video #live class="pixelated h-full w-full object-cover" [muted]="true" autoplay></video>
+          <nc-chip tone="hot" class="absolute top-1 left-1">
+            <nc-mark name="record" />
+            {{ t('editor.game.clip.rec') }}
+          </nc-chip>
+          <nc-chip class="absolute top-1 right-1" role="timer">
+            <span class="text-ink">{{ clock(recorder.elapsed()) }}</span>
+            <span class="text-ink-4">
+              {{ t('editor.game.clip.of', { limit: clock(CLIP_SECONDS) }) }}
+            </span>
+          </nc-chip>
+          <div class="absolute inset-x-0 bottom-(--nc-h-md) h-[6px] bg-page/85">
+            <div
+              class="h-full bg-hot"
+              [style.width.%]="(recorder.elapsed() / CLIP_SECONDS) * 100"></div>
+          </div>
+        } @else if (clipUrl(); as url) {
+          <video
+            #clip
+            class="pixelated h-full w-full object-cover"
+            [src]="url"
+            [muted]="true"
+            autoplay
+            loop
+            playsinline
+            [attr.aria-label]="t('editor.game.clip.preview')"
+            (loadedmetadata)="readLength(clip)"
+            (timeupdate)="follow(clip)"></video>
+          <nc-chip tone="jade" wash class="absolute top-1 left-1">
+            {{ t('editor.game.clip.loop') }}
+          </nc-chip>
+          <div class="absolute top-1 right-1 flex gap-0.5">
+            @if (clipLength(); as length) {
+              <nc-chip>
+                <span class="text-ink">{{ length }}</span>
+              </nc-chip>
+            }
+            @if (clipBytes(); as bytes) {
+              <nc-chip>
+                <span class="normal-case">{{ formatBytes(bytes) }}</span>
+              </nc-chip>
+            }
+          </div>
+          <div class="absolute inset-x-0 bottom-(--nc-h-md) h-[6px] bg-page/85">
+            <div class="h-full bg-jade" [style.width.%]="clipProgress() * 100"></div>
+          </div>
+        }
+        <ng-container actions>
+          @if (recorder.phase() === 'recording') {
+            <button type="button" ncMediaAction tone="hot" (click)="recorder.stop()">
+              <nc-mark name="stop" />
+              {{ t('editor.game.clip.stop') }}
+              <span class="text-ink-3 normal-case">
+                {{ t('editor.game.clip.left', { seconds: secondsLeft() }) }}
+              </span>
+            </button>
+          } @else {
+            <button
+              type="button"
+              ncMediaAction
+              tone="danger"
+              [disabled]="closed() || recorder.phase() === 'saving'"
+              (click)="recorder.start()">
+              <nc-mark name="record" [class.text-hot]="!closed()" />
+              {{
+                recorder.phase() === 'saving'
+                  ? t('editor.game.clip.saving')
+                  : clipUrl()
+                    ? t('editor.game.clip.recordAgain')
+                    : t('editor.game.clip.record')
+              }}
+            </button>
+            @if (clipUrl() && recorder.phase() !== 'saving') {
+              <button
+                type="button"
+                ncMediaAction
+                tone="danger"
+                [disabled]="closed()"
+                (click)="removeClip()">
+                <nc-icon name="trash" />
+                {{ t('editor.game.delete') }}
+              </button>
+            }
+          }
+        </ng-container>
+      </nc-media-frame>
+      @if (recorder.issue(); as issue) {
+        <p class="mt-0.75 flex items-start gap-0.75 text-meta text-hot-ink" role="alert">
+          <nc-icon name="alert" class="shrink-0" />
+          {{ t('editor.game.clip.issue.' + issue) }}
+        </p>
+      }
+    </section>
+  </div>
+
+  <div class="grid min-w-0 content-start gap-2">
+    <nc-field
+      [label]="t('editor.game.name')"
+      for="g-name"
+      [counter]="t('editor.game.count', { n: name().length, max: NAME_MAX })">
+      <input
+        ncInput
+        id="g-name"
+        [(ngModel)]="name"
+        [maxlength]="NAME_MAX"
+        [placeholder]="t('editor.game.namePlaceholder')" />
+    </nc-field>
+    <nc-field
+      [label]="t('editor.game.summary')"
+      for="g-summary"
+      [counter]="t('editor.game.count', { n: summary().length, max: SUMMARY_MAX })">
+      <nc-help-dot
+        actions
+        [title]="t('editor.game.summary')"
+        [text]="t('editor.game.summaryHelp')" />
+      <input
+        ncInput
+        id="g-summary"
+        [(ngModel)]="summary"
+        [maxlength]="SUMMARY_MAX"
+        [placeholder]="t('editor.game.summaryPlaceholder')" />
+    </nc-field>
+    <nc-field
+      [label]="t('editor.game.description')"
+      for="g-desc"
+      [counter]="t('editor.game.count', { n: description().length, max: DESCRIPTION_MAX })">
+      <textarea
+        ncInput
+        id="g-desc"
+        rows="5"
+        [(ngModel)]="description"
+        [maxlength]="DESCRIPTION_MAX"
+        [placeholder]="t('editor.game.descriptionPlaceholder')"></textarea>
+    </nc-field>
+    <nc-field
+      [label]="t('editor.game.tags')"
+      for="g-tags"
+      [counter]="t('editor.game.count', { n: tags().length, max: TAGS_MAX })">
+      <nc-tag-input
+        [tags]="tags()"
+        (tagsChange)="tags.set($event)"
+        [placeholder]="t('editor.game.tagPlaceholder')" />
+    </nc-field>
+  </div>
+</div>

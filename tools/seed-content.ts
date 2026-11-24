@@ -558,7 +558,7 @@ function buildContent(seed: SeedGame): Uint8Array {
 // ---------------------------------------------------------------------------- seeding
 
 interface ProjectRow {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -567,7 +567,7 @@ async function findOwn(token: string, name: string): Promise<ProjectRow | undefi
   return mine.projects.find((project) => project.name === name);
 }
 
-async function seedGame(seed: SeedGame): Promise<number> {
+async function seedGame(seed: SeedGame): Promise<string> {
   const token = await signIn(seed.author);
   let project = await findOwn(token, seed.name);
   project ??= await api<ProjectRow>('/projects', {
@@ -577,7 +577,7 @@ async function seedGame(seed: SeedGame): Promise<number> {
   });
 
   // longDesc, tags and status are not on the create DTO; they come in on the update.
-  await api<unknown>(`/projects/${String(project.id)}`, {
+  await api<unknown>(`/projects/${project.id}`, {
     method: 'PUT',
     token,
     json: {
@@ -594,7 +594,7 @@ async function seedGame(seed: SeedGame): Promise<number> {
   // `new Blob([bytes])` would spread the array into a list of indices under the lint's
   // no-misused-spread rule; wrap the buffer instead.
   form.append('file', new Blob([content.buffer as ArrayBuffer]), `${seed.name}.ncto`);
-  await api<unknown>(`/projects/${String(project.id)}/content`, {
+  await api<unknown>(`/projects/${project.id}/content`, {
     method: 'PATCH',
     token,
     body: form,
@@ -603,13 +603,13 @@ async function seedGame(seed: SeedGame): Promise<number> {
   const cover = new FormData();
   const png = buildCover(seed);
   cover.append('file', new Blob([png.buffer as ArrayBuffer], { type: 'image/png' }), 'cover.png');
-  await api<unknown>(`/projects/${String(project.id)}/image`, {
+  await api<unknown>(`/projects/${project.id}/image`, {
     method: 'POST',
     token,
     body: cover,
   });
 
-  await api<unknown>(`/projects/${String(project.id)}/publish`, { method: 'POST', token });
+  await api<unknown>(`/projects/${project.id}/publish`, { method: 'POST', token });
   return project.id;
 }
 
@@ -617,10 +617,10 @@ async function seedGame(seed: SeedGame): Promise<number> {
  * Every comment body already on the project, replies included; comments have no natural key, so the
  * seed dedupes on its hand-written bodies.
  */
-async function existingComments(projectId: number): Promise<Set<string>> {
+async function existingComments(projectId: string): Promise<Set<string>> {
   const seen = new Set<string>();
   const page = await api<{ comments?: { content?: string; replies?: { content?: string }[] }[] }>(
-    `/projects/${String(projectId)}/comments?limit=100`,
+    `/projects/${projectId}/comments?limit=100`,
   );
   for (const comment of page.comments ?? []) {
     if (comment.content) {
@@ -635,14 +635,14 @@ async function existingComments(projectId: number): Promise<Set<string>> {
   return seen;
 }
 
-async function seedComments(projectId: number, seed: SeedGame): Promise<void> {
+async function seedComments(projectId: string, seed: SeedGame): Promise<void> {
   const seen = await existingComments(projectId);
   for (const comment of seed.comments) {
     if (seen.has(comment.body)) {
       continue;
     }
     const token = await signIn(comment.author);
-    const created = await api<{ id: number }>(`/projects/${String(projectId)}/comments`, {
+    const created = await api<{ id: string }>(`/projects/${projectId}/comments`, {
       method: 'POST',
       token,
       json: { content: comment.body },
@@ -652,7 +652,7 @@ async function seedComments(projectId: number, seed: SeedGame): Promise<void> {
         continue;
       }
       const replyToken = await signIn(reply.author);
-      await api<unknown>(`/projects/${String(projectId)}/comments/${String(created.id)}/reply`, {
+      await api<unknown>(`/projects/${projectId}/comments/${created.id}/reply`, {
         method: 'POST',
         token: replyToken,
         json: { content: reply.body },
@@ -773,11 +773,11 @@ async function main(): Promise<void> {
     throw new Error(`seed:content refuses to write to ${API}; it is a local development fixture.`);
   }
 
-  const ids = new Map<string, number>();
+  const ids = new Map<string, string>();
   for (const seed of GAMES) {
     const id = await seedGame(seed);
     ids.set(seed.name, id);
-    console.log(`published #${String(id)} ${seed.name} (${seed.author})`);
+    console.log(`published ${id} ${seed.name} (${seed.author})`);
     await seedComments(id, seed);
   }
 
@@ -785,19 +785,19 @@ async function main(): Promise<void> {
   if (source !== undefined) {
     const token = await signIn(FORK.by);
     try {
-      const fork = await api<ProjectRow>(`/projects/${String(source)}/fork`, {
+      const fork = await api<ProjectRow>(`/projects/${source}/fork`, {
         method: 'POST',
         token,
       });
-      await api<unknown>(`/projects/${String(fork.id)}`, {
+      await api<unknown>(`/projects/${fork.id}`, {
         method: 'PUT',
         token,
         // PUT replaces the project's details, so every required field goes, not just the name.
         json: { name: FORK.name, shortDesc: FORK.shortDesc, tags: FORK.tags },
       });
       // A fork counts as a remix only once it has a published release.
-      await api<unknown>(`/projects/${String(fork.id)}/publish`, { method: 'POST', token });
-      console.log(`forked ${FORK.of} as ${FORK.name} (${FORK.by}), published #${String(fork.id)}`);
+      await api<unknown>(`/projects/${fork.id}/publish`, { method: 'POST', token });
+      console.log(`forked ${FORK.of} as ${FORK.name} (${FORK.by}), published ${fork.id}`);
     } catch (error) {
       // A second run hits the "already forked" path; the lineage is there either way.
       console.log(`fork skipped: ${error instanceof Error ? error.message : String(error)}`);

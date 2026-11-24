@@ -18,6 +18,7 @@ import {
   DialogService,
   HighlightComponent,
   IconComponent,
+  MarkComponent,
   SearchComponent,
   ToastService,
 } from '@naucto/ui';
@@ -33,6 +34,7 @@ import {
   type SearchHit,
 } from '../../../shared/docs/docs.service';
 import { seedNewGame } from '../../../shared/docs/seed-new-game';
+import { EditorModeService } from '../state/editor-mode.service';
 import { EditorRuntimeService } from '../state/editor-runtime.service';
 import { DocRequestService } from './doc-request.service';
 
@@ -43,6 +45,7 @@ import { DocRequestService } from './doc-request.service';
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
+    MarkComponent,
     SearchComponent,
     ApiCardComponent,
     DocAnchorComponent,
@@ -65,6 +68,8 @@ export class DocPaneComponent {
     read: ElementRef,
   });
   private readonly runtime = inject(EditorRuntimeService);
+  /** A snippet is inserted into the code, so the offer goes where the code may not be written. */
+  protected readonly mode = inject(EditorModeService);
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(DialogService);
   private readonly i18n = inject(TranslocoService);

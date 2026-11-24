@@ -1,10 +1,10 @@
 import type { GameTableServerMessage } from '@naucto/api-client';
 import type {
+  PlayerNumber,
   RelayUsage,
   SessionRole,
   SessionTransport,
   SessionTransportEvents,
-  UserId,
 } from '@naucto/engine';
 // The min build's default export is the constructor only; pull the type members
 // from the @types/simple-peer namespace.
@@ -20,7 +20,7 @@ import { SessionSignalingSocket } from './session-signaling-socket';
 
 export interface SyncedSessionTransportOptions {
   role: SessionRole;
-  selfUserId: UserId;
+  selfPlayer: PlayerNumber;
   signalingUrl: string;
   ticket: string;
   ticketIssuedAt: number;
@@ -121,22 +121,22 @@ export function readRelayUsage(reports: Record<string, unknown>[]): RelayUsage |
 // double-apply.
 export class SyncedSessionTransport implements SessionTransport {
   public readonly role: SessionRole;
-  public readonly selfUserId: UserId;
+  public readonly selfPlayer: PlayerNumber;
 
   private readonly signaling: SessionSignalingSocket;
   private readonly iceServers: RTCIceServer[];
   private readonly relayOnly: boolean;
   private readonly listeners = new Map<keyof SessionTransportEvents, Set<AnyListener>>();
 
-  // host: one peer per slave userId. slave: a single entry for the host, keyed by selfUserId.
-  private readonly peers = new Map<UserId, Peer>();
+  // host: one peer per slave player. slave: a single entry for the host, keyed by selfPlayer.
+  private readonly peers = new Map<PlayerNumber, Peer>();
   private readonly departedUsage: RelayUsage[] = [];
   private destroyed = false;
   private pingTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(opts: SyncedSessionTransportOptions) {
     this.role = opts.role;
-    this.selfUserId = opts.selfUserId;
+    this.selfPlayer = opts.selfPlayer;
     this.iceServers = opts.iceServers;
     this.relayOnly = opts.relayOnly ?? false;
 
@@ -216,16 +216,16 @@ export class SyncedSessionTransport implements SessionTransport {
     });
   }
 
-  respondTo(userId: UserId, data: unknown): void {
+  respondTo(player: PlayerNumber, data: unknown): void {
     this.impaired(() => {
-      const peer = this.peers.get(userId);
+      const peer = this.peers.get(player);
 
       if (peer?.channelOpen) {
         this.safeSend(peer, JSON.stringify({ type: 'response', data }));
         return;
       }
 
-      this.signaling.send({ type: 'response', to: userId, data });
+      this.signaling.send({ type: 'response', to: player, data });
     });
   }
 
@@ -270,8 +270,8 @@ export class SyncedSessionTransport implements SessionTransport {
 
     // The slave drives the handshake (it knows it just joined); the host waits
     // for each slave's offer before answering.
-    if (this.role === 'slave' && !this.peers.has(this.selfUserId)) {
-      this.createPeer(this.selfUserId, true);
+    if (this.role === 'slave' && !this.peers.has(this.selfPlayer)) {
+      this.createPeer(this.selfPlayer, true);
     }
   }
 
@@ -297,7 +297,7 @@ export class SyncedSessionTransport implements SessionTransport {
         if (frame.from !== undefined) {
           this.onSignal(frame.from, frame.data);
         } else {
-          this.onSignal(this.selfUserId, frame.data);
+          this.onSignal(this.selfPlayer, frame.data);
         }
         break;
 
@@ -315,23 +315,23 @@ export class SyncedSessionTransport implements SessionTransport {
     }
   }
 
-  private onPeerJoined(userId: UserId): void {
-    const known = this.peers.get(userId)?.announced === true;
-    this.ensurePeer(userId);
+  private onPeerJoined(player: PlayerNumber): void {
+    const known = this.peers.get(player)?.announced === true;
+    this.ensurePeer(player);
 
     if (known) {
       if (this.role === 'host') {
-        this.emit('peerRejoined', userId);
+        this.emit('peerRejoined', player);
       }
       return;
     }
 
     // Announced now, over the relay, so the snapshot reaches the newcomer before any live patch.
-    this.announce(userId);
+    this.announce(player);
   }
 
-  private onPeerLeft(userId: UserId): void {
-    const peer = this.peers.get(userId);
+  private onPeerLeft(player: PlayerNumber): void {
+    const peer = this.peers.get(player);
 
     if (!peer) {
       return;
@@ -341,15 +341,15 @@ export class SyncedSessionTransport implements SessionTransport {
       this.departedUsage.push(peer.usage);
     }
     this.teardownPeer(peer);
-    this.peers.delete(userId);
-    this.emit('peerLeft', userId);
+    this.peers.delete(player);
+    this.emit('peerLeft', player);
   }
 
-  private onSignal(userId: UserId, data: unknown): void {
-    const peer = this.ensurePeer(userId);
+  private onSignal(player: PlayerNumber, data: unknown): void {
+    const peer = this.ensurePeer(player);
 
     // A signal proves the peer is present even when its peer-joined frame was lost to a reconnect.
-    this.announce(userId);
+    this.announce(player);
 
     try {
       peer.conn.signal(data as PeerSignalData);
@@ -358,17 +358,17 @@ export class SyncedSessionTransport implements SessionTransport {
     }
   }
 
-  private ensurePeer(userId: UserId): Peer {
-    const existing = this.peers.get(userId);
+  private ensurePeer(player: PlayerNumber): Peer {
+    const existing = this.peers.get(player);
 
     if (existing) {
       return existing;
     }
 
-    return this.createPeer(userId, false);
+    return this.createPeer(player, false);
   }
 
-  private createPeer(userId: UserId, initiator: boolean): Peer {
+  private createPeer(player: PlayerNumber, initiator: boolean): Peer {
     const conn = new SimplePeer({
       initiator,
       trickle: true,
@@ -379,13 +379,13 @@ export class SyncedSessionTransport implements SessionTransport {
     });
 
     const peer: Peer = { conn, channelOpen: false, announced: false, rttMs: null, usage: null };
-    this.peers.set(userId, peer);
+    this.peers.set(player, peer);
 
     conn.on('signal', (data) => {
       // A slave only ever signals the host, so it omits `to`; the host targets
       // the specific slave.
       if (this.role === 'host') {
-        this.signaling.send({ type: 'signal', to: userId, data });
+        this.signaling.send({ type: 'signal', to: player, data });
       } else {
         this.signaling.send({ type: 'signal', data });
       }
@@ -393,16 +393,16 @@ export class SyncedSessionTransport implements SessionTransport {
 
     conn.on('connect', () => {
       peer.channelOpen = true;
-      this.announce(userId);
+      this.announce(player);
       this.startPinging();
     });
 
     conn.on('data', (raw: PeerData) => {
-      this.onChannelData(userId, raw);
+      this.onChannelData(player, raw);
     });
 
     conn.on('error', () => {
-      this.announce(userId);
+      this.announce(player);
     });
     conn.on('close', () => {
       peer.channelOpen = false;
@@ -412,7 +412,7 @@ export class SyncedSessionTransport implements SessionTransport {
     return peer;
   }
 
-  private onChannelData(userId: UserId, raw: PeerData): void {
+  private onChannelData(player: PlayerNumber, raw: PeerData): void {
     let frame: { type: string; data?: unknown };
 
     try {
@@ -425,7 +425,7 @@ export class SyncedSessionTransport implements SessionTransport {
 
     switch (frame.type) {
       case 'request':
-        this.emit('request', userId, frame.data);
+        this.emit('request', player, frame.data);
         break;
       case 'state':
         this.emit('state', frame.data);
@@ -434,14 +434,14 @@ export class SyncedSessionTransport implements SessionTransport {
         this.emit('response', frame.data);
         break;
       case 'ping': {
-        const peer = this.peers.get(userId);
+        const peer = this.peers.get(player);
         if (peer) {
           this.safeSend(peer, JSON.stringify({ type: 'pong', data: frame.data }));
         }
         break;
       }
       case 'pong': {
-        const peer = this.peers.get(userId);
+        const peer = this.peers.get(player);
         const sentAt = typeof frame.data === 'number' ? frame.data : null;
         if (peer && sentAt !== null) {
           peer.rttMs = Math.max(0, Date.now() - sentAt);
@@ -452,8 +452,8 @@ export class SyncedSessionTransport implements SessionTransport {
   }
 
   /** Round-trip time to a peer, measured over the data channel. */
-  pingTo(userId: UserId): number | null {
-    return this.peers.get(userId)?.rttMs ?? null;
+  pingTo(player: PlayerNumber): number | null {
+    return this.peers.get(player)?.rttMs ?? null;
   }
 
   relayUsage(): RelayUsage[] {
@@ -500,8 +500,8 @@ export class SyncedSessionTransport implements SessionTransport {
     (this.pingTimer as { unref?: () => void }).unref?.();
   }
 
-  private announce(userId: UserId): void {
-    const peer = this.peers.get(userId);
+  private announce(player: PlayerNumber): void {
+    const peer = this.peers.get(player);
 
     if (!peer || peer.announced) {
       return;
@@ -511,7 +511,7 @@ export class SyncedSessionTransport implements SessionTransport {
 
     // The slave's own "peer" is the host; only a host announces joined slaves.
     if (this.role === 'host') {
-      this.emit('peerJoined', userId);
+      this.emit('peerJoined', player);
     }
   }
 
@@ -528,7 +528,7 @@ export class SyncedSessionTransport implements SessionTransport {
       return undefined;
     }
 
-    return this.peers.get(this.selfUserId);
+    return this.peers.get(this.selfPlayer);
   }
 
   private teardownPeer(peer: Peer): void {

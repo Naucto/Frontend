@@ -96,6 +96,15 @@ describe('NumberFieldComponent, empty', () => {
 });
 
 describe('NumberFieldComponent, typed and stepped', () => {
+  it('prints the unit beside the number without making it part of its name', async () => {
+    await render(NumberFieldComponent, {
+      inputs: { value: 120, min: 40, max: 240, unit: 'BPM', ariaLabel: 'Tempo' },
+    });
+
+    expect(screen.getByText('BPM')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByRole('textbox', { name: 'Tempo' })).toHaveValue('120');
+  });
+
   it('asks for the number typed', async () => {
     const requested = vi.fn();
     await render(NumberFieldComponent, {
@@ -185,6 +194,19 @@ describe('NumberFieldComponent, typed and stepped', () => {
     expect(requested).toHaveBeenCalledWith(5);
   });
 
+  it('is typed only where it is plain, and still steps from the keyboard', async () => {
+    const requested = vi.fn();
+    await render(NumberFieldComponent, {
+      inputs: { value: 4, min: 0, max: 9, ariaLabel: 'Place', plain: true },
+      on: { requested },
+    });
+
+    expect(screen.queryByRole('button')).toBeNull();
+    await userEvent.click(screen.getByRole('textbox', { name: 'Place' }));
+    await userEvent.keyboard('{ArrowDown}');
+    expect(requested).toHaveBeenCalledWith(3);
+  });
+
   it('ignores text that is not a number, and shows the value it still holds', async () => {
     const cleared = vi.fn();
     const requested = vi.fn();
@@ -200,5 +222,31 @@ describe('NumberFieldComponent, typed and stepped', () => {
     expect(cleared).not.toHaveBeenCalled();
     expect(requested).not.toHaveBeenCalled();
     expect(box).toHaveValue('4');
+  });
+});
+
+describe('NumberFieldComponent, disabled', () => {
+  it('closes its field as well as its two steps', async () => {
+    const requested = vi.fn();
+    await render(NumberFieldComponent, {
+      inputs: { value: 4, min: 0, max: 9, ariaLabel: 'Place', disabled: true },
+      on: { requested },
+    });
+
+    expect(screen.getByRole('textbox', { name: 'Place' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Place +1' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Place -1' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Place +1' }));
+    expect(requested).not.toHaveBeenCalled();
+  });
+
+  it('draws the frame of a disabled well whatever its tone', async () => {
+    await render(NumberFieldComponent, {
+      inputs: { value: 4, ariaLabel: 'Place', tone: 'accent', disabled: true },
+    });
+
+    const frame = screen.getByRole('group', { name: 'Place' });
+    expect(frame).toHaveClass('bevel-edge-line', 'bevel-fill-transparent');
+    expect(frame).not.toHaveClass('bevel-fill-hot');
   });
 });

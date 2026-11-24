@@ -3,5 +3,28 @@
   [title]="t('feedback.rating.dialogTitle')"
   [lead]="t('feedback.rating.dialogLead')"
   [closeLabel]="t('feedback.close')">
-  <nc-rating-form [role]="data.role" origin="MANUAL" (sent)="ref.close($event)" />
+  <nc-rating-form #form [role]="data.role" origin="MANUAL" (sent)="ref.close($event)" />
+  <ng-container footer>
+    <button ncButton variant="ghost" type="button" (click)="ref.close()">
+      {{ t('feedback.cancel') }}
+    </button>
+    @if (form.low()) {
+      <button
+        ncButton
+        variant="secondary"
+        type="button"
+        [disabled]="form.pending()"
+        (click)="form.send(true)">
+        {{ t('feedback.rating.reportBug') }}
+      </button>
+    }
+    <button
+      ncButton
+      variant="primary"
+      type="button"
+      [disabled]="form.score() === null || form.pending()"
+      (click)="form.send(false)">
+      {{ form.pending() ? t('feedback.sending') : t('feedback.rating.send') }}
+    </button>
+  </ng-container>
 </nc-dialog-shell>

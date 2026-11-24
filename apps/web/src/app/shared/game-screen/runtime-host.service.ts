@@ -5,31 +5,34 @@ import {
   Engine,
   type EngineError,
   type EngineFault,
+  type EngineOptions,
   type EngineState,
   GamepadSource,
   KeyboardSource,
-  type NetPermissions,
-  type NetUi,
   SoundEngine,
   TouchSource,
   WebAudioBackend,
   WebGL2Backend,
 } from '@naucto/engine';
 
-import { InputBindingsStore } from '../../core/input/input-bindings.store';
 import { CrashReporter } from '../../core/reports/crash-reporter.service';
+import { GamepadSeatsStore } from '../controls/gamepad-seats.store';
 import { ActiveRuntimeService } from './active-runtime.service';
 import { faultError } from './fault-error';
 
+/** How many readings the PERF graphs keep: half a minute at one every 250 ms. */
+const PERF_HISTORY = 120;
+
 /**
  * Owns one running game: engine, renderer, audio, input sources. Provided per
- * screen (component-level) so the editor and the play page each get their own.
+ * screen (component-level) so the editor and the play page each get their own. What a key or a
+ * gamepad control does is the mounted game's to say: the engine reads it from the game's actions.
+ * Which player a gamepad drives is the device's, the same for every game: `GamepadSeatsStore`.
  */
 @Injectable()
 export class RuntimeHostService {
   private engine: Engine | null = null;
-  private keyboard: KeyboardSource | null = null;
-  private gamepad: GamepadSource | null = null;
+  private readonly gamepad = signal<GamepadSource | null>(null);
   private gfx: WebGL2Backend | null = null;
   private audio: WebAudioBackend | null = null;
   private sound: SoundEngine | null = null;
@@ -42,39 +45,25 @@ export class RuntimeHostService {
   readonly lines = signal<ConsoleEntry[]>([]);
   readonly fps = signal(0);
   readonly cpu = signal(0);
-  /** Connected gamepads, polled with the frame stats. */
-  readonly gamepadCount = signal(0);
   readonly frame = signal(0);
+  /** The readings taken while the game ran, oldest first; emptied when it goes back to idle. */
+  readonly fpsHistory = signal<readonly number[]>([]);
+  readonly cpuHistory = signal<readonly number[]>([]);
+  /** The canvas the game is drawn on, at the console's own resolution; null until one is mounted. */
+  readonly canvas = signal<HTMLCanvasElement | null>(null);
 
-  private readonly bindings = inject(InputBindingsStore);
   private readonly active = inject(ActiveRuntimeService);
   private readonly crashes = inject(CrashReporter);
+  private readonly seats = inject(GamepadSeatsStore);
 
   constructor() {
+    effect(() => {
+      const gamepad = this.gamepad();
+      this.seats.seats().forEach((player, pad) => gamepad?.assign(pad, player));
+    });
     inject(DestroyRef).onDestroy(() => {
       this.destroy();
     });
-    effect(() => {
-      const allBindings = this.bindings.bindings();
-      this.keyboard?.setBindings(allBindings);
-      this.gamepad?.setBindings(allBindings);
-    });
-  }
-
-  /** Connected gamepads and the player slot each one drives. */
-  gamepads(): { index: number; id: string; player: number }[] {
-    const pads = typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : [];
-    const out: { index: number; id: string; player: number }[] = [];
-    pads.forEach((pad, i) => {
-      if (pad) {
-        out.push({ index: i, id: pad.id, player: this.gamepad?.slots[i] ?? i });
-      }
-    });
-    return out;
-  }
-
-  assignGamepad(index: number, player: number): void {
-    this.gamepad?.assign(index, player);
   }
 
   /**
@@ -97,24 +86,22 @@ export class RuntimeHostService {
   mount(
     canvas: HTMLCanvasElement,
     game: Game,
-    opts: { netUi?: NetUi; netPermissions?: NetPermissions } = {},
+    opts: Pick<EngineOptions, 'netUi' | 'netPermissions' | 'netInvite'> = {},
   ): Engine {
     this.destroy();
+    this.canvas.set(canvas);
     this.gfx = new WebGL2Backend(canvas, game);
     this.audio = new WebAudioBackend();
     this.sound = new SoundEngine(this.audio, game);
-    const keyboard = new KeyboardSource({ bindings: this.bindings.bindings() });
-    const gamepad = new GamepadSource({ bindings: this.bindings.bindings() });
-    this.keyboard = keyboard;
-    this.gamepad = gamepad;
+    const gamepad = new GamepadSource();
+    this.gamepad.set(gamepad);
     const engine = new Engine({
       game,
       gfx: this.gfx,
       sound: this.sound,
-      inputs: [keyboard, gamepad],
+      inputs: [new KeyboardSource(), gamepad],
       inputTarget: canvas,
-      netUi: opts.netUi,
-      netPermissions: opts.netPermissions,
+      ...opts,
     });
     this.engine = engine;
     this.active.claim(this);
@@ -177,12 +164,12 @@ export class RuntimeHostService {
     this.perfTimer = setInterval(() => {
       this.fps.set(Math.round(engine.stats.fps));
       this.cpu.set(Math.round(engine.stats.cpu * 100));
-      this.gamepadCount.set(
-        typeof navigator.getGamepads === 'function'
-          ? navigator.getGamepads().filter((pad) => pad !== null).length
-          : 0,
-      );
       this.frame.set(engine.stats.frame);
+      // Until two frames have been presented there is no rate to read, only a zero.
+      if (engine.currentState === 'running' && engine.stats.fps > 0) {
+        this.fpsHistory.update((history) => [...history.slice(1 - PERF_HISTORY), this.fps()]);
+        this.cpuHistory.update((history) => [...history.slice(1 - PERF_HISTORY), this.cpu()]);
+      }
     }, 250);
     this.setState('idle');
     this.error.set(null);
@@ -254,6 +241,10 @@ export class RuntimeHostService {
 
   private setState(next: EngineState): void {
     this.state.set(next);
+    if (next === 'idle') {
+      this.fpsHistory.set([]);
+      this.cpuHistory.set([]);
+    }
     for (const listener of this.stateListeners) {
       listener(next);
     }
@@ -268,6 +259,7 @@ export class RuntimeHostService {
       unsubscribe();
     }
     this.unsub = [];
+    this.canvas.set(null);
     this.active.release(this);
     this.engine?.destroy();
     this.engine = null;

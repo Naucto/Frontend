@@ -1,15 +1,19 @@
-<div role="radiogroup" [attr.aria-label]="label()" [class]="trackClass()">
+<div
+  role="radiogroup"
+  [attr.aria-label]="label()"
+  [class]="fill() ? 'flex w-full' : 'inline-flex max-w-full'">
   @for (option of options(); track option.value; let i = $index) {
     <button
       #radio
       type="button"
       role="radio"
       [attr.aria-checked]="option.value === value()"
+      [attr.data-on]="option.value === value() ? '' : null"
       [attr.tabindex]="tabIndexFor(option, i)"
-      [disabled]="disabled()"
+      [disabled]="closed()"
       (click)="value.set(option.value)"
       (keydown)="onKey($event, i)"
-      [class]="itemClass(option)">
+      [class]="itemClass(option, $first, $last)">
       {{ option.label }}
     </button>
   }

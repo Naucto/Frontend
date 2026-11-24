@@ -1,0 +1,10 @@
+<header class="mb-1 px-2.25">
+  <h2 class="text-ui" [class]="danger() ? 'text-hot-ink' : 'text-ink'">{{ title() }}</h2>
+  @if (hint()) {
+    <p class="text-meta text-ink-3">{{ hint() }}</p>
+  }
+</header>
+<!-- One frame around the rows, as a table stands in one; the title stays outside it. -->
+<div [class]="unframed() ? 'grid gap-1.5' : 'flat-sm bevel-edge-line-strong bevel-fill-panel'">
+  <ng-content />
+</div>

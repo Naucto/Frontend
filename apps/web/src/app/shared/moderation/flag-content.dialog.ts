@@ -9,20 +9,26 @@ import {
   FieldComponent,
   InputDirective,
   NoticeComponent,
+  SelectComponent,
 } from '@naucto/ui';
 
 import { ApiError } from '../../core/api/api-errors';
+import { CommentBubbleComponent } from '../comments/comment-bubble.component';
 import { injectFlagContent } from '../queries/moderation.queries';
 
-export const FLAG_DETAILS_MAX = 1000;
+const FLAG_DETAILS_MAX = 1000;
 
-export const FLAG_REASONS = Object.values(ModerationReason);
+const FLAG_REASONS = Object.values(ModerationReason);
 
-/** What is being reported. `label` is how the dialog names it back to the person. */
+/**
+ * What is being reported. `label` is how the dialog names it back to the person; with an `author`
+ * the label is a comment's text, shown as the comment it is, cut to a few lines.
+ */
 export interface FlagContentData {
   targetType: ModerationTargetType;
-  targetId: number;
+  targetId: string;
   label: string;
+  author?: { id: string; name: string };
 }
 
 /** Refusals the dialog answers in its own words. Any other failure gets the general sentence. */
@@ -34,19 +40,21 @@ const REFUSALS: Record<string, string> = {
 };
 
 /**
- * Reports a game, a comment or a profile to the moderators: why, and anything they should know.
- * The code calls a report a flag, since "report" already names bug reports. Closes with true once
- * the report is sent.
+ * Reports a game, a comment, a collection or a profile to the moderators: why, and anything they
+ * should know. The code calls a report a flag, since "report" already names bug reports. Closes
+ * with true once the report is sent.
  */
 @Component({
   selector: 'nc-flag-content-dialog',
   imports: [
+    CommentBubbleComponent,
     TranslocoDirective,
     ButtonDirective,
     DialogShellComponent,
     FieldComponent,
     InputDirective,
     NoticeComponent,
+    SelectComponent,
   ],
   templateUrl: './flag-content.dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -68,10 +76,6 @@ export class FlagContentDialog {
   protected readonly details = signal('');
   protected readonly pending = this.submit.isPending;
   protected readonly failed = signal<string | null>(null);
-
-  protected setReason(value: string): void {
-    this.reason.set(FLAG_REASONS.find((reason) => reason === value) ?? null);
-  }
 
   protected async send(): Promise<void> {
     const reason = this.reason();

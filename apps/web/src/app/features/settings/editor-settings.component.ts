@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { SettingRowComponent, ToggleComponent } from '@naucto/ui';
+import { SettingRowComponent, SettingsGroupComponent, ToggleComponent } from '@naucto/ui';
 
 import { EditorPrefsStore } from '../../core/prefs/editor-prefs.store';
 
 /** EDITOR tab: defaults the editor starts with. */
 @Component({
   selector: 'nc-editor-settings',
-  imports: [TranslocoDirective, SettingRowComponent, ToggleComponent],
+  imports: [TranslocoDirective, SettingRowComponent, SettingsGroupComponent, ToggleComponent],
   templateUrl: './editor-settings.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -1,0 +1,13 @@
+<button
+  *transloco="let t"
+  ncButton
+  variant="ghost"
+  size="bar"
+  iconOnly
+  type="button"
+  data-testid="theme-switch"
+  [ncTooltip]="t('account.theme')"
+  [attr.aria-label]="t('account.theme')"
+  (click)="theme.toggle()">
+  <nc-icon [name]="theme.effective() === 'dark' ? 'moon' : 'sun'" [size]="24" />
+</button>

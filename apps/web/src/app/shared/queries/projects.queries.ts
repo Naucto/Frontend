@@ -1,7 +1,10 @@
+import { inject } from '@angular/core';
 import {
+  type PaginatedProjectsResponseDto,
   projectContentControllerGetCheckpoints,
   projectContentControllerGetLimits,
   projectContentControllerGetVersions,
+  projectControllerFindAll,
   type ProjectLimitsDto,
 } from '@naucto/api-client';
 import {
@@ -11,6 +14,7 @@ import {
 } from '@tanstack/angular-query-experimental';
 
 import { unwrap } from '../../core/api/api-errors';
+import { AuthStore } from '../../core/auth/auth.store';
 import { qk } from './query-keys';
 
 /** One saved state of a project, from either history. */
@@ -44,24 +48,24 @@ export const toRows = (
   });
 };
 
-export function injectProjectVersions(id: () => number): CreateQueryResult<VersionRow[]> {
+export function injectProjectVersions(id: () => string): CreateQueryResult<VersionRow[]> {
   return injectQuery(() => ({
     queryKey: qk.projectVersions(id()),
     queryFn: async () =>
       toRows(
-        unwrap(await projectContentControllerGetVersions({ path: { id: String(id()) } })),
+        unwrap(await projectContentControllerGetVersions({ path: { id: id() } })),
         'versions',
         false,
       ),
   }));
 }
 
-export function injectProjectCheckpoints(id: () => number): CreateQueryResult<VersionRow[]> {
+export function injectProjectCheckpoints(id: () => string): CreateQueryResult<VersionRow[]> {
   return injectQuery(() => ({
     queryKey: qk.projectCheckpoints(id()),
     queryFn: async () =>
       toRows(
-        unwrap(await projectContentControllerGetCheckpoints({ path: { id: String(id()) } })),
+        unwrap(await projectContentControllerGetCheckpoints({ path: { id: id() } })),
         'checkpoints',
         true,
       ),
@@ -77,6 +81,16 @@ export function injectProjectLimits(): CreateQueryResult<ProjectLimitsDto> {
   }));
 }
 
+/** The signed-in reader's own projects, drafts included, the last one touched first. */
+export function injectMyProjects(limit: number): CreateQueryResult<PaginatedProjectsResponseDto> {
+  const auth = inject(AuthStore);
+  return injectQuery(() => ({
+    queryKey: qk.myProjects({ page: 1, limit }),
+    enabled: auth.isAuthenticated(),
+    queryFn: async () => unwrap(await projectControllerFindAll({ query: { page: 1, limit } })),
+  }));
+}
+
 /**
  * Drop one of a project's two histories after something wrote to it.
  *
@@ -86,7 +100,7 @@ export function injectProjectLimits(): CreateQueryResult<ProjectLimitsDto> {
  */
 export function invalidateProjectHistory(
   qc: QueryClient,
-  id: number,
+  id: string,
   kind: 'versions' | 'checkpoints',
 ): Promise<void> {
   return qc.invalidateQueries({

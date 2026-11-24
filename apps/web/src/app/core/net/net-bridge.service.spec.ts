@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { TranslocoService } from '@jsverse/transloco';
 import { client } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { AppConfigService } from '../config/app-config';
@@ -49,7 +50,7 @@ describe('NetUiBridgeService.createSession', () => {
     'sends a seat count within the endpoint bounds when the game asks %s',
     async (_case, ask, sent) => {
       await bridge()
-        .createSession(7, { title: 'Snake', maxPlayers: ask })
+        .createSession(uuidOf(7), { title: 'Snake', maxPlayers: ask })
         .catch(() => undefined);
 
       expect(JSON.parse(bodies.join(''))).toMatchObject({ maxPlayers: sent });
@@ -58,10 +59,10 @@ describe('NetUiBridgeService.createSession', () => {
 
   it('marks a room the editor hosts to test its own game', async () => {
     await bridge()
-      .createSession(7, { maxPlayers: 2 }, true)
+      .createSession(uuidOf(7), { maxPlayers: 2 }, true)
       .catch(() => undefined);
     await bridge()
-      .createSession(7, { maxPlayers: 2 })
+      .createSession(uuidOf(7), { maxPlayers: 2 })
       .catch(() => undefined);
 
     expect(bodies.map((body) => (JSON.parse(body) as { editorTest: boolean }).editorTest)).toEqual([

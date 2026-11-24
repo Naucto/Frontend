@@ -15,14 +15,19 @@ import { BugCategory, type BugContextDto } from '@naucto/api-client';
 import {
   ButtonDirective,
   DialogShellComponent,
+  DisclosureComponent,
   FieldComponent,
   IconComponent,
   InputDirective,
+  MediaActionDirective,
+  MediaFrameComponent,
   NoticeComponent,
+  SelectComponent,
 } from '@naucto/ui';
 
 import { violationsOf } from '../../core/api/api-errors';
 import { APP_RELEASE } from '../../core/config/release';
+import { ID_PATTERN } from '../../core/ids/ids';
 import { pagePath } from '../../core/reports/page-path';
 import { ActiveRuntimeService } from '../game-screen/active-runtime.service';
 import { frameToPng } from '../game-screen/frame-to-png';
@@ -48,24 +53,24 @@ export const BUG_CATEGORIES = Object.values(BugCategory);
 /** Where the dialog was opened from, and what that place already knows. */
 export interface BugReportData {
   category?: BugCategory;
-  ratingId?: number;
+  ratingId?: string;
   description?: string;
 }
 
-/** The report sent, and whether its screenshot, if any, was refused. */
+/** Whether the screenshot sent with the report, if any, was refused. */
 export interface BugReportSent {
-  id: number;
   screenshotRefused: boolean;
 }
 
+const SUBJECT = new RegExp(`^/(play|edit)/(${ID_PATTERN})(?:/|$)`);
+
 /** The release or project a page is about, read from its path. */
-export function subjectOf(path: string): { releaseId?: number; projectId?: number } {
-  const play = /^\/play\/(\d+)/.exec(path);
-  if (play?.[1]) {
-    return { releaseId: Number(play[1]) };
+export function subjectOf(path: string): { releaseId?: string; projectId?: string } {
+  const [, page, id] = SUBJECT.exec(path) ?? [];
+  if (!id) {
+    return {};
   }
-  const edit = /^\/edit\/(\d+)/.exec(path);
-  return edit?.[1] ? { projectId: Number(edit[1]) } : {};
+  return page === 'play' ? { releaseId: id } : { projectId: id };
 }
 
 /** The category a report opened on this page most likely belongs to. */
@@ -89,10 +94,14 @@ export function categoryFor(path: string): BugCategory {
     TranslocoDirective,
     ButtonDirective,
     DialogShellComponent,
+    DisclosureComponent,
     FieldComponent,
     IconComponent,
+    MediaActionDirective,
+    MediaFrameComponent,
     InputDirective,
     NoticeComponent,
+    SelectComponent,
   ],
   templateUrl: './bug-report.dialog.html',
   host: { '(paste)': 'onPaste($event)' },
@@ -137,6 +146,7 @@ export class BugReportDialog {
 
   protected readonly context: BugContextDto = this.buildContext();
   protected readonly contextRows = computed(() => this.describeContext());
+  protected readonly showIncluded = signal(false);
 
   protected readonly valid = computed(
     () =>
@@ -185,16 +195,6 @@ export class BugReportDialog {
     }
   }
 
-  protected async onDrop(event: DragEvent): Promise<void> {
-    event.preventDefault();
-    const file = [...(event.dataTransfer?.files ?? [])].find((item) =>
-      item.type.startsWith('image/'),
-    );
-    if (file) {
-      await this.attach(file);
-    }
-  }
-
   protected async onPaste(event: ClipboardEvent): Promise<void> {
     const file = [...(event.clipboardData?.items ?? [])]
       .find((item) => item.kind === 'file' && item.type.startsWith('image/'))
@@ -223,7 +223,7 @@ export class BugReportDialog {
       return;
     }
     this.failed.set(null);
-    let id: number;
+    let id: string;
     try {
       ({ id } = await this.submit.mutateAsync({
         category: this.category(),
@@ -252,10 +252,10 @@ export class BugReportDialog {
         screenshotRefused = true;
       }
     }
-    this.ref.close({ id, screenshotRefused });
+    this.ref.close({ screenshotRefused });
   }
 
-  private async attach(image: Blob): Promise<void> {
+  protected async attach(image: Blob): Promise<void> {
     this.screenshotError.set(null);
     this.preparing.set(true);
     try {
@@ -291,10 +291,10 @@ export class BugReportDialog {
       .slice(-CONSOLE_LINES)
       .map((line) => `[${line.level}] ${line.text}`.slice(0, CONSOLE_LINE_MAX));
     const where = error?.file
-      ? `${error.file}${error.line === undefined ? '' : `:${String(error.line)}`} · `
+      ? `${error.file}${error.line === undefined ? '' : `:${String(error.line)}`}`
       : '';
     const engineError = error
-      ? [`${where}${error.phase}: ${error.message}`, error.traceback ?? '']
+      ? [where, `${error.phase}: ${error.message}`, error.traceback ?? '']
           .filter(Boolean)
           .join('\n')
           .slice(0, BUG_DESCRIPTION_MAX)
@@ -307,23 +307,23 @@ export class BugReportDialog {
     };
   }
 
-  private describeContext(): { label: string; value: string }[] {
+  private describeContext(): { label: string; value: string; identifier?: boolean }[] {
     const label = (key: string): string => this.transloco.translate(`feedback.bug.included.${key}`);
     const rows = [
       { label: label('page'), value: this.route },
       { label: label('browser'), value: label('browserValue') },
       { label: label('viewport'), value: this.context.viewport ?? '' },
       { label: label('language'), value: this.context.language ?? '' },
-      { label: label('release'), value: APP_RELEASE },
+      { label: label('release'), value: APP_RELEASE, identifier: true },
     ];
     if (this.subject.releaseId !== undefined) {
-      rows.push({ label: label('game'), value: `#${String(this.subject.releaseId)}` });
+      rows.push({ label: label('game'), value: this.subject.releaseId, identifier: true });
     }
     if (this.subject.projectId !== undefined) {
-      rows.push({ label: label('project'), value: `#${String(this.subject.projectId)}` });
+      rows.push({ label: label('project'), value: this.subject.projectId, identifier: true });
     }
     if (this.context.engineError) {
-      rows.push({ label: label('engineError'), value: this.context.engineError });
+      rows.push({ label: label('engineError'), value: this.context.engineError, identifier: true });
     }
     if (this.context.console) {
       rows.push({
@@ -331,6 +331,7 @@ export class BugReportDialog {
         value: this.transloco.translate('feedback.bug.included.consoleLines', {
           count: this.context.console.length,
         }),
+        identifier: true,
       });
     }
     return rows;

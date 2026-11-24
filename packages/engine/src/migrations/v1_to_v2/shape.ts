@@ -96,35 +96,6 @@ function settledInstrument(raw: string): string | null {
 }
 
 /**
- * Whether a document still holds anything of the v1 shape: cells in the roots, a size on the meta,
- * a collection without entries or an entry without a size, an instrument the synth cannot read.
- */
-export function holdsV1Shape(doc: Y.Doc): boolean {
-  const meta = doc.getMap(KEYS.meta);
-  const collectionsOld = COLLECTIONS.some((collection) => {
-    const entries = doc.getMap<Y.Map<unknown>>(collection.key);
-    let sizeless = false;
-    entries.forEach((entry) => {
-      sizeless ||= !isSize(entry.get(ENTRY_KEYS.width)) || !isSize(entry.get(ENTRY_KEYS.height));
-    });
-
-    return (
-      entries.size === 0 ||
-      sizeless ||
-      meta.has(collection.width.meta) ||
-      meta.has(collection.height.meta) ||
-      collection.roots.some(([root]) => doc.getMap(root).size > 0)
-    );
-  });
-  let instrumentsOld = false;
-  doc.getMap<string>(KEYS.instruments).forEach((raw) => {
-    instrumentsOld ||= settledInstrument(raw) !== null;
-  });
-
-  return collectionsOld || instrumentsOld;
-}
-
-/**
  * Brings a document to the v2 shape: every sheet and map an entry of its collection holding its own
  * cells and size, the v1 roots and meta sizes emptied, every instrument complete. Idempotent;
  * returns how many things it changed.

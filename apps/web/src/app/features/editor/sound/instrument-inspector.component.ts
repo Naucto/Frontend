@@ -14,10 +14,12 @@ import {
 import {
   ButtonDirective,
   ChipComponent,
+  closedBy,
   HelpDotComponent,
-  IconComponent,
+  MarkComponent,
   SegmentedComponent,
   SliderComponent,
+  StatComponent,
 } from '@naucto/ui';
 
 import { PresenceSurfaceComponent } from '../work-session/presence-surface.component';
@@ -53,11 +55,12 @@ const FILTERS = [
 @Component({
   selector: 'nc-instrument-inspector',
   imports: [
+    StatComponent,
     TranslocoDirective,
     ButtonDirective,
     ChipComponent,
     HelpDotComponent,
-    IconComponent,
+    MarkComponent,
     SegmentedComponent,
     SliderComponent,
     EnvelopeGraphComponent,
@@ -77,6 +80,8 @@ export class InstrumentInspectorComponent {
   readonly samples = input.required<Map<string, string>>();
   /** Emitted with the encoded PCM (or null to drop it); the library owns the document write. */
   readonly sampleChange = output<string | null>();
+  /** The oscillator cards are drawn here and not by the kit, so they ask the scope themselves. */
+  protected readonly closed = closedBy(() => false);
   protected readonly oscs = OSCS;
   protected readonly ENV_MAX = ENV_MAX;
   protected readonly filters = FILTERS;
@@ -87,15 +92,15 @@ export class InstrumentInspectorComponent {
     params?: Record<string, unknown>;
   } | null>(null);
   protected readonly sampleName = computed(() => this.inst().sampleId ?? null);
-  /** "0.6 s · 4.8 KB" — what the sample costs, since the budget is the reason it is capped. */
-  protected readonly sampleMeta = computed(() => {
+  /** What the sample costs, in time and in size, since the budget is the reason it is capped. */
+  protected readonly sampleCost = computed(() => {
     const id = this.inst().sampleId;
     const encoded = id ? this.samples().get(id) : undefined;
     if (!encoded) {
-      return '';
+      return [];
     }
     const bytes = Math.floor((encoded.length * 3) / 4);
-    return `${(bytes / SAMPLE_RATE).toFixed(1)} s · ${(bytes / 1024).toFixed(1)} KB`;
+    return [`${(bytes / SAMPLE_RATE).toFixed(1)} s`, `${(bytes / 1024).toFixed(1)} KB`];
   });
 
   protected noteName(midi: number): string {
@@ -105,7 +110,7 @@ export class InstrumentInspectorComponent {
   /** Left/up and right/down cycle the oscillator, wrapping at the ends. */
   protected onOscKey(event: KeyboardEvent): void {
     const step = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 }[event.key];
-    if (!step) {
+    if (!step || this.closed()) {
       return;
     }
     event.preventDefault();

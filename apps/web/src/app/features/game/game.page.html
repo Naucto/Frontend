@@ -1,7 +1,7 @@
 <div *transloco="let t" class="flex flex-1 flex-col items-stretch lg:-mx-3 lg:-my-3 lg:flex-row">
   <div class="min-w-0 flex-1 lg:px-3 lg:pt-2.75 lg:pb-3.25">
     @if (failure(); as reason) {
-      <div class="rounded-sm border border-line bg-panel">
+      <div class="flat-lg bevel-fill-panel">
         <nc-error-state
           [title]="t(failureTitle() ?? 'game.loadFailedTitle')"
           [hint]="t(reason)"
@@ -11,14 +11,29 @@
         </nc-error-state>
       </div>
     } @else if (loading()) {
-      <nc-skeleton height="60vh" radius="rounded-sm" />
+      <nc-skeleton height="60vh" />
     } @else {
+      @if (strip(); as cameFor) {
+        <nc-session-strip
+          [cameFor]="cameFor"
+          (signIn)="signInToJoin()"
+          (alone)="screen.playAlone()" />
+      }
       <nc-game-screen
+        #screen
         [game]="game()"
         [projectId]="id()"
         [ncPlayTracking]="id()"
+        [invite]="invite()"
+        (inviteJoined)="dropSessionParams()"
+        (inviteClosed)="closeInvite()"
         fit="width"
         [autoPlay]="false" />
+    }
+    @if (game()?.actions; as actions) {
+      @if (actions.length) {
+        <nc-how-to-play class="mt-4" [actions]="actions" />
+      }
     }
     @if (release.data(); as release) {
       <nc-comments class="mt-4 block" [projectId]="release.id" [authorId]="release.creator.id" />
@@ -28,10 +43,10 @@
   <!-- min-w-0 stops the panel's min-content width from widening the flex track; the minmax(0,1fr)
        column stops its rows from widening the column. -->
   <aside
-    class="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-2 lg:w-[380px] lg:shrink-0 lg:border-l lg:border-b lg:border-line lg:bg-panel lg:px-2.5 lg:pt-2.75 lg:pb-2.5">
+    class="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-2 lg:w-[380px] lg:shrink-0 lg:border-l-3 lg:border-b-3 lg:border-line lg:bg-panel lg:px-2.5 lg:pt-2.75 lg:pb-2.5">
     @if (release.data(); as release) {
       <div>
-        <h1 class="truncate text-display text-ink">{{ release.name }}</h1>
+        <h1 class="truncate font-display text-display text-ink">{{ release.name }}</h1>
         <div class="mt-1 flex items-center gap-1 text-meta text-ink-2">
           <nc-user-avatar
             [name]="release.creator.username"
@@ -46,7 +61,7 @@
             </span>
           }
         </div>
-        <div class="mt-1 flex gap-2">
+        <div class="mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
           <nc-stat icon="eye" [value]="release.viewCount" [label]="t('game.views')" />
           <nc-stat icon="users" [value]="release.uniquePlayers" [label]="t('game.players')" />
           <nc-stat icon="git-branch" [value]="release.forkCount ?? 0" [label]="t('game.remixes')" />
@@ -54,8 +69,8 @@
         @if (release.forkedFromId) {
           <a
             [routerLink]="['/play', release.forkedFromId]"
-            class="mt-1 inline-flex items-center gap-0.5 text-label text-ink-3 hover:text-ink">
-            <nc-icon name="git-branch" [size]="12" />
+            class="mt-1 inline-flex items-center gap-0.5 text-meta text-ink-3 hover:text-ink">
+            <nc-icon name="git-branch" />
             @if (parent.data(); as parentRelease) {
               {{ t('game.forkedFromNamed') }}
               <span class="text-gold-ink">{{ parentRelease.name }}</span>
@@ -84,13 +99,22 @@
             {{ descOpen() ? t('game.showLess') : t('game.showMore') }}
           </button>
         }
-        <div class="mt-2 grid grid-cols-2 gap-1">
+        @if (release.tags.length) {
+          <div class="mt-1.5 flex flex-wrap gap-0.5">
+            @for (tag of release.tags; track tag) {
+              <nc-chip kind="tag">{{ tag }}</nc-chip>
+            }
+          </div>
+        }
+        <div class="mt-3 grid grid-cols-2 gap-1.5">
           <button
             ncButton
             size="bar"
             [variant]="likes.data()?.liked ? 'run' : 'secondary'"
             (click)="toggleLike()">
-            <nc-icon name="heart" [size]="12" />
+            <nc-icon
+              [name]="likes.data()?.liked ? 'heart-filled' : 'heart'"
+              [class.like-pop]="justLiked()" />
             {{ count(likes.data()?.likes ?? release.likes) }} {{ t('game.likes') }}
           </button>
           <button
@@ -99,42 +123,32 @@
             variant="secondary"
             (click)="remix(release.id)"
             [disabled]="fork.isPending()">
-            <nc-icon name="git-branch" [size]="12" />
+            <nc-icon name="git-branch" />
             {{ t('game.remix') }}
           </button>
           @if (canEdit()) {
             <a ncButton variant="secondary" class="col-span-2" [routerLink]="['/edit', release.id]">
-              <nc-icon name="edit" [size]="12" />
+              <nc-icon name="edit" />
               {{ t('game.edit') }}
             </a>
           }
+          <nc-add-to-collection class="col-span-2" [projectId]="release.id" />
         </div>
         @if (canReport()) {
-          <button
-            type="button"
-            class="mt-1 label flex items-center gap-0.5 text-ink-3 hover:text-ink"
-            (click)="report(release)">
-            <nc-icon name="flag" [size]="12" />
-            {{ t('moderation.reportGame') }}
-          </button>
-        }
-        @if (release.tags.length) {
-          <div class="mt-2 flex flex-wrap gap-0.5">
-            @for (tag of release.tags; track tag) {
-              <nc-chip kind="tag">{{ tag }}</nc-chip>
-            }
+          <div class="mt-2 flex justify-center">
+            <button ncButton variant="ghost" size="sm" type="button" (click)="report(release)">
+              <nc-mark name="flag" />
+              {{ t('moderation.reportGame') }}
+            </button>
           </div>
         }
       </div>
-      <nc-how-to-play
-        class="mt-0.25 border-t border-line pt-2.25 lg:-mx-2.5 lg:px-2.5"
-        [declared]="declaredActions()" />
       @if (remixes().length) {
-        <div class="mt-0.25 border-t border-line pt-2.25 lg:-mx-2.5 lg:px-2.5">
+        <div class="mt-0.25 border-t-3 border-line pt-2.25 lg:-mx-2.5 lg:px-2.5">
           <nc-label class="mb-1">{{ t('game.remixesOf') }}</nc-label>
-          <div class="grid gap-2">
+          <div class="grid gap-0.5">
             @for (game of remixes(); track game.id) {
-              <nc-game-card [game]="game" dense />
+              <nc-game-disk [game]="game" dense />
             }
           </div>
           @if ((release.forkCount ?? 0) > remixes().length) {
@@ -145,27 +159,28 @@
         </div>
       }
       @if (moreFrom().length) {
-        <div class="mt-0.25 border-t border-line pt-2.25 lg:-mx-2.5 lg:px-2.5">
+        <div class="mt-0.25 border-t-3 border-line pt-2.25 lg:-mx-2.5 lg:px-2.5">
           <nc-label class="mb-1">
             {{ t('game.moreFrom', { name: release.creator.username }) }}
           </nc-label>
-          <div class="grid gap-2">
+          <div class="grid grid-cols-2 gap-x-2 gap-y-2.5">
             @for (game of moreFrom(); track game.id) {
-              <nc-game-card [game]="game" />
+              <nc-game-disk [game]="game" />
             }
           </div>
         </div>
       }
       @if (similar().length) {
-        <div class="mt-0.25 border-t border-line pt-2.25 lg:-mx-2.5 lg:px-2.5">
-          <nc-label class="mb-1">
-            {{
-              release.tags[0] ? t('game.similarTag', { tag: release.tags[0] }) : t('game.similar')
-            }}
-          </nc-label>
-          <div class="grid gap-2">
+        <div class="mt-0.25 border-t-3 border-line pt-2.25 lg:-mx-2.5 lg:px-2.5">
+          <div class="mb-1 flex items-center gap-1">
+            <nc-label>{{ t('game.similar') }}</nc-label>
+            @if (release.tags[0]; as tag) {
+              <nc-chip kind="tag">{{ tag }}</nc-chip>
+            }
+          </div>
+          <div class="grid grid-cols-2 gap-x-2 gap-y-2.5">
             @for (game of similar(); track game.id) {
-              <nc-game-card [game]="game" />
+              <nc-game-disk [game]="game" />
             }
           </div>
         </div>

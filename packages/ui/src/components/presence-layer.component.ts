@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { type IconName } from '../icons/paths';
+import { type MarkName } from '../icons/glyphs';
 import { type PresenceColour } from './avatar.component';
-import { IconComponent } from './icon.component';
+import { MarkComponent } from './mark.component';
 import { PresenceFlagComponent } from './presence-flag.component';
 
 /** Somebody's pointer, in the coordinates of whatever content the layer is laid over. */
@@ -25,7 +25,7 @@ export interface PresenceViewport {
 type Edge = 'up' | 'down' | 'left' | 'right';
 type Placed = PresenceMark & { edge: Edge | null };
 
-const ARROW: Record<Edge, IconName> = {
+const ARROW: Record<Edge, MarkName> = {
   up: 'caret-up',
   down: 'caret-down',
   left: 'caret-left',
@@ -61,7 +61,7 @@ const PAD_Y = 14;
  */
 @Component({
   selector: 'nc-presence-layer',
-  imports: [IconComponent, PresenceFlagComponent],
+  imports: [MarkComponent, PresenceFlagComponent],
   templateUrl: './presence-layer.component.html',
   host: { class: 'contents' },
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -79,7 +79,7 @@ export class PresenceLayerComponent {
     return FILL[colour];
   }
 
-  protected arrow(edge: Edge): IconName {
+  protected arrow(edge: Edge): MarkName {
     return ARROW[edge];
   }
 

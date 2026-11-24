@@ -48,11 +48,12 @@ import {
 } from '@codemirror/view';
 import type { EngineError, MigrationWarning } from '@naucto/engine';
 import type { PresenceColour } from '@naucto/ui';
-import { yCollab, yUndoManagerKeymap } from 'y-codemirror.next';
+import { yCollab, ySyncAnnotation, yUndoManagerKeymap } from 'y-codemirror.next';
 import type { Awareness } from 'y-protocols/awareness';
 import type * as Y from 'yjs';
 
 import { DocsService } from '../../../shared/docs/docs.service';
+import { EditorModeService } from '../state/editor-mode.service';
 import { luaHover } from './lua-docs';
 import { luaAutocomplete, luaLanguage } from './lua-language';
 import { type SearchTerms } from './search-bar.component';
@@ -64,6 +65,22 @@ export interface CursorInfo {
   col: number;
 }
 
+/**
+ * What the editor is given to write with, by whether the mode writes. Closed, it still selects,
+ * finds and follows what collaborators type, since a change Yjs brings is not one made here; and
+ * it has no undo keys, which write the text themselves without going through the editor.
+ */
+function writability(canWrite: boolean): Extension {
+  return canWrite
+    ? keymap.of(yUndoManagerKeymap)
+    : [
+        EditorState.readOnly.of(true),
+        EditorState.changeFilter.of(
+          (transaction) => transaction.annotation(ySyncAnnotation) !== undefined,
+        ),
+      ];
+}
+
 /** CodeMirror 6 bound to a Y.Text through y-codemirror.next (collaborator carets included). */
 @Component({
   selector: 'nc-code-editor',
@@ -73,6 +90,7 @@ export interface CursorInfo {
 })
 export class CodeEditorComponent {
   private readonly docs = inject(DocsService);
+  private readonly mode = inject(EditorModeService);
 
   readonly text = input.required<Y.Text>();
   readonly awareness = input<Awareness | null>(null);
@@ -95,10 +113,10 @@ export class CodeEditorComponent {
    */
   private query: SearchQuery | null = null;
 
-  /** Replaces the selection with */
+  /** Replaces the selection with `text`; false where there is no editor or it may not write. */
   insert(text: string): boolean {
     const view = this.view;
-    if (!view) {
+    if (!view || !this.mode.canWrite()) {
       return false;
     }
     const { from, to } = view.state.selection.main;
@@ -175,6 +193,7 @@ export class CodeEditorComponent {
   }
   private readonly lintCompartment = new Compartment();
   private readonly errorLineCompartment = new Compartment();
+  private readonly writeCompartment = new Compartment();
 
   constructor() {
     effect((cleanup) => {
@@ -204,6 +223,10 @@ export class CodeEditorComponent {
       if (this.docs.ready()) {
         this.view?.dispatch({});
       }
+    });
+    effect(() => {
+      const canWrite = this.mode.canWrite();
+      this.view?.dispatch({ effects: this.writeCompartment.reconfigure(writability(canWrite)) });
     });
     effect(() => {
       const err = this.error();
@@ -298,7 +321,6 @@ export class CodeEditorComponent {
         },
         { key: 'Mod-g', preventDefault: true, run: findNext },
         { key: 'Shift-Mod-g', preventDefault: true, run: findPrevious },
-        ...yUndoManagerKeymap,
         ...defaultKeymap,
         indentWithTab,
       ]),
@@ -311,7 +333,10 @@ export class CodeEditorComponent {
         }
       }),
     ];
-    extensions.push(yCollab(text, awareness));
+    extensions.push(
+      yCollab(text, awareness),
+      this.writeCompartment.of(writability(untracked(this.mode.canWrite))),
+    );
     void this.docs.load();
     this.view = new EditorView({
       state: EditorState.create({ doc: text.toString(), extensions }),

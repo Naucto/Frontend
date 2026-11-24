@@ -1,12 +1,12 @@
 import { inject } from '@angular/core';
 import {
-  featuredReleaseControllerGetFeatured,
   type ForkProjectResponseDto,
   hubControllerFork,
   hubControllerGetLikeStatus,
   hubControllerGetPaginatedReleases,
   hubControllerGetPublishedProjectImage,
   hubControllerGetRelease,
+  hubControllerGetReleaseTags,
   hubControllerLikeProject,
   hubControllerUnlikeProject,
   type ImageUrlResponseDto,
@@ -16,11 +16,8 @@ import {
   type ProjectExResponseDto,
 } from '@naucto/api-client';
 import {
-  type CreateInfiniteQueryResult,
   type CreateMutationResult,
   type CreateQueryResult,
-  type InfiniteData,
-  injectInfiniteQuery,
   injectMutation,
   injectQuery,
   QueryClient,
@@ -32,8 +29,6 @@ import { AuthStore } from '../../core/auth/auth.store';
 import { qk } from './query-keys';
 
 export const RELEASE_PAGE_SIZE = 24;
-
-export type SortMetric = 'viewCount' | 'uniquePlayers';
 
 export type ReleaseSort = 'fresh' | 'popular' | 'liked' | 'discussed' | 'name';
 
@@ -60,31 +55,6 @@ interface ReleasePage {
   total: number;
 }
 
-/** A page that knows its own index, for the "show N more" shelf. */
-interface NumberedReleasePage extends ReleasePage {
-  page: number;
-}
-
-/** One page of released games, searched and sorted by the backend. */
-export function injectReleasesPage(
-  page: () => number,
-  limit = RELEASE_PAGE_SIZE,
-  query: () => ReleaseQuery = () => ({}),
-): CreateQueryResult<ReleasePage> {
-  return injectQuery(() => ({
-    queryKey: qk.releases({ page: page(), limit, ...query() }),
-    queryFn: async () => {
-      const res = unwrap(
-        await hubControllerGetPaginatedReleases({
-          query: { page: page(), limit, ...releaseParams(query()) },
-        }),
-      );
-      return { items: res.projects, total: res.total };
-    },
-    placeholderData: (prev: ReleasePage | undefined) => prev,
-  }));
-}
-
 /**
  * How many recent releases a page reads to derive remixes, collaborations or related games itself,
  * for want of an endpoint that answers those questions. It is the first page only, so what is
@@ -94,54 +64,44 @@ const RELATED_WINDOW = 48;
 
 /** The partial window above, shared by every page that derives a related shelf from it. */
 export function injectRelatedWindow(): CreateQueryResult<ReleasePage> {
-  return injectReleasesPage(() => 1, RELATED_WINDOW);
-}
-
-/** The editorially chosen game of the week, or null when nothing is featured. */
-export function injectFeaturedRelease(): CreateQueryResult<ProjectExResponseDto | null> {
   return injectQuery(() => ({
-    queryKey: qk.featuredRelease(),
-    staleTime: 5 * 60 * 1000,
+    queryKey: qk.releases({ page: 1, limit: RELATED_WINDOW }),
     queryFn: async () => {
-      const res = unwrap(await featuredReleaseControllerGetFeatured());
-      return res.featured?.project ?? null;
+      const res = unwrap(
+        await hubControllerGetPaginatedReleases({ query: { page: 1, limit: RELATED_WINDOW } }),
+      );
+      return { items: res.projects, total: res.total };
     },
   }));
 }
 
-export function injectRelease(id: () => number): CreateQueryResult<ProjectExResponseDto> {
+/** The release of a game; with no id, as for a game that was forked from none, nothing is asked. */
+export function injectRelease(id: () => string | null): CreateQueryResult<ProjectExResponseDto> {
   return injectQuery(() => ({
     queryKey: qk.release(id()),
-    enabled: id() > 0,
-    queryFn: async () => unwrap(await hubControllerGetRelease({ path: { id: String(id()) } })),
+    enabled: id() !== null,
+    queryFn: async () => unwrap(await hubControllerGetRelease({ path: { id: id() ?? '' } })),
   }));
 }
 
-/** Every released game, page after page ("SHOW N MORE"), searched and sorted by the backend. */
-export function injectReleasesInfinite(
-  limit = RELEASE_PAGE_SIZE,
-  query: () => ReleaseQuery = () => ({}),
-): CreateInfiniteQueryResult<InfiniteData<NumberedReleasePage, number>> {
-  return injectInfiniteQuery(() => ({
-    queryKey: qk.releases({ page: 'all', limit, ...query() }),
-    initialPageParam: 1,
-    queryFn: async ({ pageParam }): Promise<NumberedReleasePage> => {
-      const res = unwrap(
-        await hubControllerGetPaginatedReleases({
-          query: { page: pageParam, limit, ...releaseParams(query()) },
-        }),
-      );
-      return { items: res.projects, total: res.total, page: pageParam };
-    },
-    getNextPageParam: (last: NumberedReleasePage): number | undefined =>
-      last.page * limit < last.total ? last.page + 1 : undefined,
+/** The tags published games carry most, the most used first; asked for only once `enabled`. */
+export function injectReleaseTags(
+  limit: number,
+  enabled: () => boolean,
+): CreateQueryResult<string[]> {
+  return injectQuery(() => ({
+    queryKey: qk.releaseTags(limit),
+    enabled: enabled(),
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () =>
+      unwrap(await hubControllerGetReleaseTags({ query: { limit } })).tags.map(({ tag }) => tag),
   }));
 }
 
 /** Signed cover URL for a published game; null when the game has no cover. */
-export function injectReleaseImage(id: () => number | null): CreateQueryResult<string | null> {
+export function injectReleaseImage(id: () => string | null): CreateQueryResult<string | null> {
   return injectQuery(() => ({
-    queryKey: qk.releaseImage(id() ?? -1),
+    queryKey: qk.releaseImage(id()),
     enabled: id() !== null,
     staleTime: 10 * 60 * 1000,
     queryFn: async () => {
@@ -166,9 +126,9 @@ export function injectReleaseImage(id: () => number | null): CreateQueryResult<s
  *
  * Authenticated, so it is for a reader looking at their own work rather than for the shelves.
  */
-export function injectProjectImage(id: () => number | null): CreateQueryResult<string | null> {
+export function injectProjectImage(id: () => string | null): CreateQueryResult<string | null> {
   return injectQuery(() => ({
-    queryKey: qk.projectImage(id() ?? -1),
+    queryKey: qk.projectImage(id()),
     enabled: id() !== null,
     staleTime: 10 * 60 * 1000,
     queryFn: async () => {
@@ -186,35 +146,34 @@ export function injectProjectImage(id: () => number | null): CreateQueryResult<s
   }));
 }
 
-export function injectReleaseContentUrl(id: () => number): CreateQueryResult<string> {
+export function injectReleaseContentUrl(id: () => string): CreateQueryResult<string> {
   return injectQuery(() => ({
     queryKey: qk.releaseContentUrl(id()),
     staleTime: 0,
     queryFn: async () =>
-      unwrap(await projectContentControllerGetReleaseContentUrl({ path: { id: String(id()) } }))
-        .signedUrl,
+      unwrap(await projectContentControllerGetReleaseContentUrl({ path: { id: id() } })).signedUrl,
   }));
 }
 
 export function injectLikeStatus(
-  id: () => number,
+  id: () => string,
 ): CreateQueryResult<{ likes: number; liked: boolean }> {
   const auth = inject(AuthStore);
   return injectQuery(() => ({
     queryKey: qk.likeStatus(id()),
     enabled: auth.isAuthenticated(),
-    queryFn: async () => unwrap(await hubControllerGetLikeStatus({ path: { id: String(id()) } })),
+    queryFn: async () => unwrap(await hubControllerGetLikeStatus({ path: { id: id() } })),
   }));
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type -- inferred mutation type (context from onMutate)
-export function injectToggleLike(id: () => number) {
+export function injectToggleLike(id: () => string) {
   const qc = inject(QueryClient);
   return injectMutation<LikeResponseDto, Error, boolean, LikeResponseDto | undefined>(() => ({
     mutationFn: async (liked: boolean): Promise<LikeResponseDto> => {
       const res = liked
-        ? await hubControllerUnlikeProject({ path: { id: String(id()) } })
-        : await hubControllerLikeProject({ path: { id: String(id()) } });
+        ? await hubControllerUnlikeProject({ path: { id: id() } })
+        : await hubControllerLikeProject({ path: { id: id() } });
       return unwrap(res);
     },
     onMutate: async (liked: boolean) => {
@@ -237,18 +196,10 @@ export function injectToggleLike(id: () => number) {
   }));
 }
 
-export function injectFork(): CreateMutationResult<ForkProjectResponseDto, Error, number> {
+export function injectFork(): CreateMutationResult<ForkProjectResponseDto, Error, string> {
   const qc = inject(QueryClient);
   return injectMutation(() => ({
-    mutationFn: async (id: number) => unwrap(await hubControllerFork({ path: { id } })),
+    mutationFn: async (id: string) => unwrap(await hubControllerFork({ path: { id } })),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.projectsAll() }),
   }));
 }
-
-export const SORTERS: Record<
-  SortMetric,
-  (a: ProjectExResponseDto, b: ProjectExResponseDto) => number
-> = {
-  viewCount: (a, b) => b.viewCount - a.viewCount,
-  uniquePlayers: (a, b) => b.uniquePlayers - a.uniquePlayers,
-};

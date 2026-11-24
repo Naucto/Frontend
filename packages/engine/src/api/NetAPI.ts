@@ -74,11 +74,20 @@ export const NET_API = defineLuaNamespace<NetAPI>('net', {
   ),
   join: luaFn(
     {
-      summary: 'Open the join dialog.',
+      summary:
+        'Join the session the game was opened on, or open the join dialog; callback() once joined.',
       params: [param.function('callback', { optional: true })],
       returns: null,
     },
     'join',
+  ),
+  invite: luaFn(
+    {
+      summary: 'The session the game was opened on, which net.join() enters; nil without one.',
+      params: [],
+      returns: 'table|nil',
+    },
+    'invite',
   ),
   leave: luaFn({ summary: 'Leave the current session.', params: [], returns: null }, 'leave'),
   id: luaFn({ summary: 'Your player id in the session.', params: [], returns: 'number' }, 'id'),
@@ -146,7 +155,7 @@ export class NetAPI extends EngineModule {
   }
 
   id(): number {
-    return this.require().selfUserId;
+    return this.require().selfPlayer;
   }
 
   emit(name: string, payload: unknown): void {
@@ -255,6 +264,20 @@ export class NetAPI extends EngineModule {
     });
   }
 
+  /** A table of its own at each call, so what a game writes into one stays in that one. */
+  invite(): Record<string, unknown> | undefined {
+    const invite = this.ctx.netInvite?.();
+
+    return invite
+      ? {
+          title: invite.title,
+          host: invite.host,
+          players: invite.players,
+          max_players: invite.maxPlayers,
+        }
+      : undefined;
+  }
+
   private hostOptions(config: unknown): NetHostOptions {
     const table = (typeof config === 'object' && config !== null ? config : {}) as Record<
       string,
@@ -264,6 +287,7 @@ export class NetAPI extends EngineModule {
     return {
       maxPlayers: typeof table.max_players === 'number' ? table.max_players : 2,
       title: typeof table.title === 'string' ? table.title : undefined,
+      listed: table.listed === true,
     };
   }
 
@@ -409,8 +433,8 @@ export class NetAPI extends EngineModule {
     const session = this.require();
 
     if (pattern === 'peer.joined' || pattern === 'peer.left') {
-      session.onPeer(pattern === 'peer.joined' ? 'joined' : 'left', (userId) => {
-        this.invoke(callback, userId);
+      session.onPeer(pattern === 'peer.joined' ? 'joined' : 'left', (player) => {
+        this.invoke(callback, player);
       });
       return;
     }

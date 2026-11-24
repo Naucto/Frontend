@@ -7,7 +7,8 @@
   "main": "./entry.ts",
   "types": "./entry.ts",
   "exports": {
-    ".": "./entry.ts"
+    ".": "./entry.ts",
+    "./testing": "./testing.ts"
   },
   "scripts": {
     "generate": "openapi-ts",

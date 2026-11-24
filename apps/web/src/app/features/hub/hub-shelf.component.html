@@ -1,0 +1,12 @@
+<nc-shelf *transloco="let t" [heading]="title()" [attr.data-shelf]="shelf().key">
+  <a ncArrowLink shelfAction routerLink="/hub" [queryParams]="{ shelf: shelf().key }">
+    {{ t('hub.seeAllCount', { n: shelf().total }) }}
+  </a>
+  <nc-shelf-disk
+    *ncShelfItem="let game of shelf().games; open as open; flyoutId as flyoutId"
+    [link]="['/play', game.id]"
+    [game]="game"
+    [open]="open"
+    [flyoutId]="flyoutId" />
+  <nc-game-flyout *ncShelfFlyout="let game of shelf().games" [game]="game" />
+</nc-shelf>

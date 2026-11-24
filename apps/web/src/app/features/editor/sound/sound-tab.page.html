@@ -4,7 +4,7 @@
   class="grid h-full grid-cols-[200px_minmax(0,1fr)_auto] min-[1280px]:grid-cols-[276px_minmax(0,1fr)_auto]">
   <!-- Scrolls as a whole: the banks keep a fixed height, so a short screen must not cut one of them
        mid-row. -->
-  <aside class="flex min-h-0 flex-col overflow-y-auto border-r border-line bg-panel">
+  <aside class="flex min-h-0 flex-col overflow-y-auto border-r-3 border-line bg-panel">
     <!-- A floor rather than nothing: left free to shrink it would give up every one of its
          rows to the banks below before the column ever scrolled. -->
     <nc-instrument-list
@@ -39,12 +39,13 @@
        ancestor: the bar's own height and wrapping have to be asked of the box around it. -->
   <section #column class="@container flex min-h-0 flex-col">
     @if (pattern(); as currentPattern) {
-      <!-- Too narrow for one line, the bar takes a second row of its own height rather than
-           wrapping inside the first. -->
+      <!-- Too narrow for one line, the bar grows by whole rows rather than clipping what wraps. -->
       <header
-        class="flex h-(--nc-bar-h) shrink-0 items-center gap-1 overflow-x-auto border-b border-line bg-panel px-2 @max-[780px]:h-[calc(2*var(--nc-bar-h))] @max-[780px]:flex-wrap @max-[780px]:content-start @max-[440px]:gap-0.5 @max-[440px]:px-1">
+        class="flex h-(--nc-h-bar) shrink-0 items-center gap-1 overflow-x-auto border-b-3 border-line bg-panel px-2 @max-[780px]:h-auto @max-[780px]:flex-wrap @max-[780px]:content-start @max-[780px]:py-[6px] @max-[440px]:gap-0.5 @max-[440px]:px-1">
+        <!-- Which pattern is shown, not what it holds. -->
         <nc-number-field
-          class="h-(--nc-transport-h) shrink-0"
+          ncLooksOnly
+          class="h-(--nc-h-md) shrink-0"
           fill
           [label]="tightBar() ? '' : t('editor.sound.pattern')"
           [ariaLabel]="t('editor.sound.pattern')"
@@ -59,7 +60,7 @@
           [attr.aria-label]="t('editor.sound.clearPattern', { n: pad(currentPattern.slot) })"
           [disabled]="!currentPattern.notes.length"
           (click)="clearPattern()">
-          <nc-icon name="trash" [size]="24" />
+          <nc-mark name="trash" />
         </button>
         <span class="flex-1"></span>
         <nc-transport
@@ -75,27 +76,29 @@
           (rewound)="toStart()"
           (stopped)="stop()" />
         <nc-toggle-button
+          ncLooksOnly
           size="strip"
           [label]="t('editor.sound.loop')"
           [checked]="sound.loop()"
           (checkedChange)="setLoop($event)">
-          <nc-icon name="repeat" [size]="24" />
+          <nc-icon name="repeat" />
           <span class="hidden @min-[900px]:inline">{{ t('editor.sound.loop') }}</span>
         </nc-toggle-button>
         <nc-toggle-button
+          ncLooksOnly
           size="strip"
           [label]="t('editor.sound.metronome')"
           [checked]="sound.metronome()"
           (checkedChange)="sound.setMetronome($event)"
           accent="jade">
-          <nc-icon name="metronome" [size]="24" />
+          <nc-icon name="metronome" />
           <span class="hidden @min-[900px]:inline">{{ t('editor.sound.metronome') }}</span>
         </nc-toggle-button>
         <!-- The spring between the two groups on one line; on two it is the line break,
              taking a whole line of no height so the number fields start the next. -->
         <span class="flex-1 @max-[780px]:basis-full"></span>
         <nc-number-field
-          class="h-(--nc-transport-h) shrink-0"
+          class="h-(--nc-h-md) shrink-0"
           fill
           [label]="t('editor.sound.bpm')"
           [ariaLabel]="t('editor.sound.bpm')"
@@ -104,7 +107,7 @@
           [max]="BPM_MAX"
           (requested)="setBpm($event)" />
         <nc-number-field
-          class="h-(--nc-transport-h) shrink-0"
+          class="h-(--nc-h-md) shrink-0"
           fill
           [label]="t('editor.sound.steps')"
           [ariaLabel]="t('editor.sound.steps')"
@@ -116,22 +119,22 @@
         <button
           ncButton
           variant="ghost"
-          [size]="tightBar() ? 'sm' : 'strip'"
+          [size]="tightBar() ? 'sm' : 'md'"
           iconOnly
           [attr.aria-label]="t('editor.undo')"
           (click)="undo.manager.undo()"
           [disabled]="!undo.canUndo()">
-          <nc-icon name="undo" [size]="24" />
+          <nc-icon name="undo" />
         </button>
         <button
           ncButton
           variant="ghost"
-          [size]="tightBar() ? 'sm' : 'strip'"
+          [size]="tightBar() ? 'sm' : 'md'"
           iconOnly
           [attr.aria-label]="t('editor.redo')"
           (click)="undo.manager.redo()"
           [disabled]="!undo.canRedo()">
-          <nc-icon name="redo" [size]="24" />
+          <nc-icon name="redo" />
         </button>
       </header>
       <nc-piano-roll
@@ -169,7 +172,7 @@
           [title]="t('editor.sound.emptyTitle')"
           [hint]="t('editor.sound.emptyHint')">
           <button ncButton variant="primary" (click)="addInstrument()">
-            <nc-icon name="plus" [size]="12" />
+            <nc-icon name="plus" />
             {{ t('editor.sound.addInstrument') }}
           </button>
         </nc-empty-state>
@@ -178,7 +181,8 @@
   </section>
 
   <nc-panel-column [width]="PANEL_WIDTH">
-    <div actions class="flex min-w-0 flex-1 items-center gap-1">
+    <!-- The snap and the zoom are each person's own view of the roll. -->
+    <div actions ncLooksOnly class="flex min-w-0 flex-1 items-center gap-1">
       <!-- Controlled: a press means "next resolution", and only the store knows whether the result
            is still lit. -->
       <nc-toggle-button
@@ -186,11 +190,11 @@
         [checked]="sound.snap() !== 0"
         (activated)="cycleSnap()"
         [label]="t('editor.sound.snap')">
-        <nc-icon name="grid" [size]="24" />
+        <nc-mark name="grid" />
         {{ snapLabel(t('editor.sound.snap')) }}
       </nc-toggle-button>
       <nc-oscilloscope
-        class="h-(--nc-control-h) w-[88px] shrink-0 border border-line"
+        class="h-(--nc-h-sm) w-[88px] shrink-0 border-3 border-line"
         [peaks]="peaks"
         [label]="t('editor.sound.liveOut')" />
       <span class="flex-1"></span>
@@ -202,7 +206,7 @@
         class="shrink-0"
         [attr.aria-label]="t('editor.sound.zoomOut')"
         (click)="stepZoom(-1)">
-        <nc-icon name="zoom-out" [size]="24" />
+        <nc-mark name="minus" />
       </button>
       <nc-slider
         class="w-[88px] min-w-[32px] shrink"
@@ -222,11 +226,11 @@
         class="shrink-0"
         [attr.aria-label]="t('editor.sound.zoomIn')"
         (click)="stepZoom(1)">
-        <nc-icon name="zoom-in" [size]="24" />
+        <nc-mark name="plus" />
       </button>
       <button
         type="button"
-        class="control-type w-[38px] shrink-0 text-right font-mono text-ink-3 hover:text-ink"
+        class="w-[38px] shrink-0 cursor-pointer text-right text-label text-ink-3 hover:text-ink"
         [attr.aria-label]="t('editor.sound.zoomReset')"
         (click)="sound.setZoom(1)">
         ×{{ zoomLabel() }}

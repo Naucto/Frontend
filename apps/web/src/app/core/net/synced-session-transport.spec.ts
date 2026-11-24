@@ -62,9 +62,9 @@ interface FakePeer {
   fire: (event: string, arg?: unknown) => void;
 }
 
-const options = (role: SessionRole, selfUserId: number): SyncedSessionTransportOptions => ({
+const options = (role: SessionRole, selfPlayer: number): SyncedSessionTransportOptions => ({
   role,
-  selfUserId,
+  selfPlayer,
   signalingUrl: 'ws://signal',
   ticket: 'ticket',
   ticketIssuedAt: Date.now(),

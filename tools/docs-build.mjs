@@ -223,6 +223,13 @@ export function asciiToSvg(text) {
   );
 }
 
+/** A token, one span per line it runs over, so a line of code can be wrapped on its own. */
+const token = (cls, text, attrs = '') =>
+  text
+    .split('\n')
+    .map((line) => `<span class="${cls}"${attrs}>${esc(line)}</span>`)
+    .join('\n');
+
 export function highlightLua(code) {
   const re =
     /(--\[\[[\s\S]*?\]\]|--[^\n]*)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\b\d+(?:\.\d+)?\b)|(\b[a-z][a-z0-9]*\.[a-z_][a-z0-9_]*\b(?=\s*\())|(\b[A-Za-z_]\w*\b)/g;
@@ -232,23 +239,50 @@ export function highlightLua(code) {
     html += esc(code.slice(last, m.index));
     const [text, cmt, str, num, api, word] = m;
     if (cmt) {
-      html += `<span class="tok-cmt">${esc(text)}</span>`;
+      html += token('tok-cmt', text);
     } else if (str) {
-      html += `<span class="tok-str">${esc(text)}</span>`;
+      html += token('tok-str', text);
     } else if (num) {
-      html += `<span class="tok-num">${esc(text)}</span>`;
+      html += token('tok-num', text);
     } else if (api) {
-      html += `<span class="tok-api" data-api="${esc(text)}">${esc(text)}</span>`;
+      html += token('tok-api', text, ` data-api="${esc(text)}"`);
     } else if (word && LUA_KW.has(word)) {
-      html += `<span class="tok-kw">${esc(text)}</span>`;
+      html += token('tok-kw', text);
     } else if (word && LUA_CB.has(word)) {
-      html += `<span class="tok-cb">${esc(text)}</span>`;
+      html += token('tok-cb', text);
     } else {
       html += esc(text);
     }
     last = m.index + text.length;
   }
   return html + esc(code.slice(last));
+}
+
+/**
+ * Code as the lines the stylesheet numbers. The number is drawn by a counter, so it is neither
+ * selected with the code nor part of what the copy button reads.
+ */
+export const numbered = (html) =>
+  html
+    .replace(/\n+$/, '')
+    .split('\n')
+    .map((line) => `<span class="doc-line">${line}</span>`)
+    .join('\n');
+
+// Both glyphs of the copy button; the stylesheet shows one.
+const COPY_GLYPH = 'M4 2h11v2H6v13H4V2zm4 4h12v16H8V6zm2 2v12h8V8h-8z';
+const CHECK_GLYPH =
+  'M18 6h2v2h-2V6zm-2 4V8h2v2h-2zm-2 2v-2h2v2h-2zm-2 2h2v-2h-2v2zm-2 2h2v-2h-2v2zm-2 0v2h2v-2H8zm-2-2h2v2H6v-2zm0 0H4v-2h2v2z';
+const glyph = (cls, path) =>
+  `<svg class="${cls}" width="24" height="24" viewBox="0 0 24 24" shape-rendering="crispEdges" aria-hidden="true"><path d="${path}" fill="currentColor"/></svg>`;
+
+/** A block of code in its well, with the button that copies it. */
+export function codeBlock(html, lang = '') {
+  return (
+    `<div class="doc-code"><pre${lang ? ` class="${lang}"` : ''}><code>${numbered(html)}</code></pre>` +
+    `<button type="button" class="doc-copy" aria-label="Copy code">` +
+    `${glyph('doc-copy-idle', COPY_GLYPH)}${glyph('doc-copy-done', CHECK_GLYPH)}</button></div>\n`
+  );
 }
 
 // ---- markdown ----------------------------------------------------------------
@@ -371,7 +405,7 @@ marked.use({
   renderer: {
     code({ text, lang }) {
       if (lang === 'lua') {
-        return `<pre class="lua"><code>${highlightLua(text)}</code></pre>\n`;
+        return codeBlock(highlightLua(text), 'lua');
       }
       // Unlabelled code, fenced or indented, may be box art.
       if (!lang && looksLikeDiagram(text)) {
@@ -380,7 +414,7 @@ marked.use({
           return svg;
         }
       }
-      return `<pre><code>${esc(text)}</code></pre>\n`;
+      return codeBlock(esc(text));
     },
     // marked hands a renderer the source text and its inline tokens and uses the return verbatim,
     // so the tokens are rendered here.
@@ -435,8 +469,8 @@ const LISTING_TIP =
 function listing(code) {
   const lines = code.split('\n').length;
   return (
-    `<details class="doc-listing"><summary>Complete code · ${lines} lines</summary>` +
-    `<pre class="lua"><code>${highlightLua(code)}</code></pre></details>\n`
+    `<details class="doc-listing"><summary>Complete code<span>${lines} lines</span></summary>` +
+    `${codeBlock(highlightLua(code), 'lua')}</details>\n`
   );
 }
 
@@ -584,7 +618,7 @@ for (const ns of api.namespaces) {
         })),
         returns: f.returns ? renderMarkdown(f.returns).replace(/^<p>|<\/p>\s*$/g, '') : null,
         returnType: f.returnType ?? null,
-        examples: (f.examples ?? []).map((e) => ({ code: e, html: highlightLua(e) })),
+        examples: (f.examples ?? []).map((e) => ({ code: e, html: numbered(highlightLua(e)) })),
         notes: (f.notes ?? []).map((n) => ({ kind: n.kind, html: renderMarkdown(n.text ?? '') })),
         since: String(f.since ?? ''),
         seeAlso: f.seeAlso ?? [],

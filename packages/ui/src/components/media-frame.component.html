@@ -1,0 +1,21 @@
+@if (src(); as url) {
+  <img
+    [src]="url"
+    [alt]="alt()"
+    class="pixelated h-full w-full"
+    [class]="fit() === 'cover' ? 'object-cover' : 'object-contain'" />
+}
+<ng-content />
+@if (showEmpty()) {
+  <div
+    class="no-cover absolute inset-0 flex flex-col items-center justify-center gap-0.5 pb-(--nc-h-md) text-ink-4">
+    <nc-icon [name]="emptyIcon()" [size]="24" />
+    <span class="px-1 text-center font-ui text-label tracking-label uppercase">
+      {{ emptyLabel() }}
+    </span>
+  </div>
+}
+<div
+  class="absolute inset-x-0 bottom-0 flex h-(--nc-h-md) border-t-3 border-line-strong bg-page/85 empty:hidden">
+  <ng-content select="[actions]" />
+</div>

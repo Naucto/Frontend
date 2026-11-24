@@ -19,20 +19,24 @@ export class MeterComponent {
   readonly max = input.required<number>();
   readonly label = input<string>();
   readonly legend = input(true);
-  /** `md` is the 12px pill of the size budget; `sm` the 4px inline bar. */
+  /** `md` is the 16px track of the size budget; `sm` the 12px inline bar. Neither pads: the fill meets the frame. */
   readonly size = input<'sm' | 'md'>('sm');
 
-  protected readonly trackClass = computed(() =>
-    [
-      'flex w-full overflow-hidden bg-line-soft',
-      this.size() === 'md' ? 'h-1.5 rounded-full' : 'h-[4px] rounded-xs',
-      this.over() ? 'outline outline-hot' : '',
-    ].join(' '),
-  );
   protected readonly total = computed(() =>
     this.segments().reduce((sum, segment) => sum + segment.value, 0),
   );
   protected readonly over = computed(() => this.total() > this.max());
+  protected readonly trackClass = computed(() =>
+    [
+      'flat-sm bevel-fill-inset flex w-full',
+      this.size() === 'md' ? 'h-[16px]' : 'h-[12px]',
+      this.over() ? 'bevel-edge-hot' : '',
+    ].join(' '),
+  );
+  /** Segments with nothing in them are left out; the others are one kit pixel wide at least. */
+  protected readonly filled = computed(() =>
+    this.segments().filter((segment) => segment.value > 0),
+  );
   protected pct(value: number): number {
     return Math.min(100, (value / Math.max(this.max(), this.total())) * 100);
   }

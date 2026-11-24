@@ -19,7 +19,7 @@ import { presenceApi } from './presence.api';
 
 interface PresenceState {
   /** Latest presence per user id. Absent means offline. */
-  byUser: Record<number, PresenceDto>;
+  byUser: Record<string, PresenceDto>;
   seeded: boolean;
 }
 
@@ -61,7 +61,7 @@ export const PresenceStore = signalStore(
     };
 
     return {
-      of(userId: number): PresenceDto | null {
+      of(userId: string): PresenceDto | null {
         return store.byUser()[userId] ?? null;
       },
 
@@ -99,7 +99,7 @@ export const PresenceStore = signalStore(
           case 'presence:offline': {
             const { userId } = msg.payload;
             const byUser = Object.fromEntries(
-              Object.entries(store.byUser()).filter(([id]) => Number(id) !== userId),
+              Object.entries(store.byUser()).filter(([id]) => id !== userId),
             );
             patchState(store, { byUser });
             break;

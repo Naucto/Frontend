@@ -7,7 +7,7 @@ import { ANALYTICS_CHANNEL, ConsentStore } from './consent.store';
 import { ensureVisitorId, rotateVisitor } from './visitor';
 
 type ChannelMessage =
-  | { type: 'account-changed'; userId: number | null }
+  | { type: 'account-changed'; userId: string | null }
   | { type: 'erased' }
   | { type: 'consent-changed' };
 
@@ -26,9 +26,9 @@ export class BrowserAccountService {
   private readonly api = inject(AnalyticsApi);
 
   /** The browser's account as the last tab to sign in or out said; undefined until one has. */
-  private readonly browserAccount = signal<number | null | undefined>(undefined);
+  private readonly browserAccount = signal<string | null | undefined>(undefined);
   private channel: BroadcastChannel | null = null;
-  private previousUserId: number | null | undefined = undefined;
+  private previousUserId: string | null | undefined = undefined;
   private linked: string | null = null;
 
   /** Whether this tab is signed in as an account other than the browser's. */
@@ -80,7 +80,7 @@ export class BrowserAccountService {
     await this.linkVisitor();
   }
 
-  private accountChanged(previous: number | null | undefined, current: number | null): void {
+  private accountChanged(previous: string | null | undefined, current: string | null): void {
     if (previous === current) {
       return;
     }
@@ -100,7 +100,7 @@ export class BrowserAccountService {
     // Cleared because the browser now belongs to another account: that tab speaks for it.
   }
 
-  private claimBrowser(userId: number | null): void {
+  private claimBrowser(userId: string | null): void {
     this.browserAccount.set(userId);
     this.channel?.postMessage({ type: 'account-changed', userId } satisfies ChannelMessage);
   }
@@ -124,7 +124,7 @@ export class BrowserAccountService {
       return;
     }
     let visitorId = ensureVisitorId();
-    const key = `${String(userId)}|${visitorId}`;
+    const key = `${userId}|${visitorId}`;
     if (this.linked === key) {
       return;
     }
@@ -132,7 +132,7 @@ export class BrowserAccountService {
     let status = await this.api.link(visitorId);
     if (status === 'conflict' || status === 'erased') {
       visitorId = rotateVisitor().visitorId;
-      this.linked = `${String(userId)}|${visitorId}`;
+      this.linked = `${userId}|${visitorId}`;
       status = await this.api.link(visitorId);
     }
     if (status !== 'linked') {

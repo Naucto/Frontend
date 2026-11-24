@@ -17,6 +17,7 @@ import { PresenceLayerComponent, type PresenceMark, type PresenceViewport } from
 
 import { ThemeService } from '../../../core/theme/theme.service';
 import { cssVar } from '../../../shared/pixel/pixel-tools';
+import { EditorModeService } from '../state/editor-mode.service';
 import { type Collaborator } from '../work-session/session-presence.service';
 import { PianoKeysComponent } from './piano-keys.component';
 
@@ -144,6 +145,7 @@ export class PianoRollComponent {
    */
   protected readonly dpr = signal(typeof window === 'undefined' ? 1 : window.devicePixelRatio);
   private readonly theme = inject(ThemeService);
+  private readonly mode = inject(EditorModeService);
   private drag: Drag | null = null;
   /** A press in the ruler, held. Not a `Drag`: there is no note behind it to carry. */
   private seeking = false;
@@ -342,6 +344,10 @@ export class PianoRollComponent {
       }
       return;
     }
+    // Past the ruler every press places, moves, stretches or removes a note.
+    if (!this.mode.canWrite()) {
+      return;
+    }
     const index = this.hit(step, pitch);
     const notes = [...this.notes()];
     if (event.button === 2) {
@@ -399,8 +405,11 @@ export class PianoRollComponent {
       );
       return;
     }
+    // The cell lit under the pointer is where a note would go, so it is shown only where one can.
     const cell =
-      this.drag || !this.inRuler(event) ? { step: this.newNote(step).step, pitch } : null;
+      this.drag || (this.mode.canWrite() && !this.inRuler(event))
+        ? { step: this.newNote(step).step, pitch }
+        : null;
     this.hoverCell.set(cell);
     this.pointer.emit(this.pointOf(event));
     const drag = this.drag;
@@ -574,7 +583,7 @@ export class PianoRollComponent {
     const sy = this.scrollY();
     ctx.fillStyle = cssVar(el, '--nc-panel');
     ctx.fillRect(0, sy, width, RULER_H);
-    ctx.font = `10px ${cssVar(el, '--font-mono')}`;
+    ctx.font = `10px ${cssVar(el, '--font-ui')}`;
     ctx.textBaseline = 'middle';
     ctx.fillStyle = cssVar(el, '--nc-ink-4');
     for (let step = 0; step < pattern.steps; step += pattern.stepsPerBeat) {

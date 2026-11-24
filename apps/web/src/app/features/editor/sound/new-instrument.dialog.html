@@ -7,9 +7,9 @@
       <div class="grid h-full grid-cols-2 content-center gap-2 px-2">
         <button
           type="button"
-          class="flex flex-col items-start gap-1 rounded-sm border border-line p-2 text-left hover:border-gold hover:bg-raised"
+          class="flex cursor-pointer flex-col items-start gap-1 raised-lg p-2 text-left hover:bevel-lit active:bevel-down"
           (click)="step.set('preset')">
-          <nc-icon name="music" [size]="24" class="text-gold-ink" />
+          <nc-icon name="music" class="text-gold-ink" />
           <span class="text-ui text-ink">{{ t('editor.sound.fromPreset') }}</span>
           <span class="text-meta leading-[1.5] text-ink-3">
             {{ t('editor.sound.fromPresetHint') }}
@@ -17,9 +17,9 @@
         </button>
         <button
           type="button"
-          class="flex flex-col items-start gap-1 rounded-sm border border-line p-2 text-left hover:border-gold hover:bg-raised"
+          class="flex cursor-pointer flex-col items-start gap-1 raised-lg p-2 text-left hover:bevel-lit active:bevel-down"
           (click)="ref.close({ kind: 'custom' })">
-          <nc-icon name="sliders" [size]="24" class="text-ink-3" />
+          <nc-icon name="sliders" class="text-ink-3" />
           <span class="text-ui text-ink">{{ t('editor.sound.custom') }}</span>
           <span class="text-meta leading-[1.5] text-ink-3">
             {{ t('editor.sound.customHint') }}
@@ -36,11 +36,11 @@
             <button
               type="button"
               [attr.aria-pressed]="shelf() === shelfOption"
-              class="rounded-sm border px-1 py-0.75 text-left font-mono text-label tracking-tag uppercase"
+              class="flex h-(--nc-h-sm) shrink-0 cursor-pointer items-center raised-sm px-1 text-left text-label tracking-tag uppercase active:bevel-down"
               [class]="
                 shelf() === shelfOption
-                  ? 'border-gold bg-raised text-ink'
-                  : 'border-transparent text-ink-3 hover:bg-raised hover:text-ink'
+                  ? 'bevel-down bevel-lit text-active-ink'
+                  : 'bevel-bare text-ink-3 hover:bevel-lit hover:bevel-fill-raised hover:text-active-ink'
               "
               (click)="shelf.set(shelfOption)">
               {{ t('editor.sound.family.' + shelfOption) }}
@@ -57,12 +57,8 @@
               role="radio"
               [attr.aria-checked]="chosen()?.name === preset.name"
               [attr.aria-label]="preset.name"
-              class="flex flex-col gap-0.75 rounded-sm border p-1 text-left"
-              [class]="
-                chosen()?.name === preset.name
-                  ? 'border-gold bg-raised'
-                  : 'border-line hover:border-line-strong hover:bg-raised'
-              "
+              class="flex cursor-pointer flex-col gap-0.75 raised-sm p-1 text-left"
+              [class]="chosen()?.name === preset.name ? 'bevel-down bevel-lit' : 'hover:bevel-lit'"
               (click)="choose(preset)">
               <span class="flex w-full items-center gap-1">
                 <nc-wave-glyph
@@ -80,7 +76,7 @@
                     [attr.points]="preset.points"
                     fill="none"
                     stroke="currentColor"
-                    stroke-width="1.5" />
+                    stroke-width="3" />
                 </svg>
               </span>
               <span class="text-meta leading-[1.5] text-ink-3">{{ preset.blurb }}</span>

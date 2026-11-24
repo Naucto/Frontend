@@ -13,25 +13,30 @@
         (keydown.enter)="start()" />
     </nc-field>
   } @else {
-    <nc-field [label]="t('net.host.code')">
+    <nc-field class="mt-2" [label]="t('net.host.code')">
       <nc-share-code [code]="code()" (copied)="copy()" />
       <p class="mt-1 text-meta text-ink-3">{{ t('net.host.codeHint') }}</p>
     </nc-field>
-    <nc-setting-row class="mt-2" [title]="t('net.host.listed')" [hint]="t('net.host.listedHint')">
+    <nc-setting-row
+      bare
+      class="mt-2"
+      [title]="t('net.host.listed')"
+      [hint]="t('net.host.listedHint')">
       <nc-toggle
         [checked]="listed()"
         (checkedChange)="setListed($event)"
         [label]="t('net.host.listed')" />
     </nc-setting-row>
-    <p class="mt-2 label text-ink-4">
-      {{ t('net.host.inTheRoom', { players: seats().taken, max: seats().max }) }}
+    <p class="mt-2 flex items-center gap-1.5">
+      <span class="label text-ink-4">{{ t('net.host.inTheRoom') }}</span>
+      <nc-stat icon="users" [value]="t('count', { n: seats().taken, max: seats().max })" />
     </p>
     <div class="mt-1 flex flex-wrap gap-2">
       @for (seat of seats().slots; track $index) {
         @if (seat) {
-          <nc-user-avatar [size]="26" [userId]="seat.id" [name]="seat.name" />
+          <nc-user-avatar [size]="30" [userId]="seat.account" [name]="seat.name" />
         } @else {
-          <span class="size-[26px] rounded-xs border border-dashed border-line-strong"></span>
+          <span class="flat-sm size-[30px] bevel-edge-line-strong bevel-fill-inset"></span>
         }
       }
     </div>

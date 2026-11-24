@@ -1,6 +1,6 @@
 <svg
   viewBox="0 0 200 60"
-  class="block h-[96px] w-full touch-none rounded-xs bg-lcd"
+  class="block h-[96px] w-full touch-none bg-lcd"
   role="group"
   [attr.aria-label]="label()"
   (pointerdown)="onDown($event)"
@@ -12,7 +12,8 @@
     [attr.points]="points()"
     fill="none"
     class="stroke-lcd-ink"
-    stroke-width="1.5"
+    stroke-width="3"
+    vector-effect="non-scaling-stroke"
     shape-rendering="crispEdges" />
   @for (handle of handles(); track handle.kind) {
     <rect
@@ -20,7 +21,8 @@
       [attr.y]="handle.y - 3"
       width="6"
       height="6"
-      class="cursor-grab fill-lcd-ink"
+      class="fill-lcd-ink"
+      [class.cursor-grab]="!closed()"
       [class.cursor-grabbing]="dragging === handle.kind" />
   }
 </svg>

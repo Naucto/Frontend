@@ -1,6 +1,15 @@
 import * as Y from 'yjs';
 
-import { type DeclaredAction, isAction } from '../input/ActionMap';
+import {
+  ACTION_DESCRIPTION_MAX,
+  ACTION_LABEL_MAX,
+  type ActionInput,
+  actionNameIssue,
+  type GameAction,
+  inputId,
+  MAX_ACTIONS,
+  parseInputId,
+} from '../input/actions';
 import type { Instrument, Pattern, Song } from '../sound/model';
 import { BUBBLEGUM_16 } from './defaults';
 import { GameMap, type MapWriter } from './GameMap';
@@ -47,8 +56,17 @@ export interface CodeFile {
 /** The part of the sound library an edit touched. */
 export type SoundLibraryPart = 'instruments' | 'patterns' | 'sfx' | 'songs' | 'samples';
 
+/**
+ * An entry of the game's net rules, keyed by `net.state` path. With `flags`, the path has a rule
+ * of its own; without, the path is only declared and takes the rule of its nearest ancestor that
+ * has one.
+ */
+export interface NetRule {
+  flags?: number;
+}
+
 /** What a running game may ask of its permission rules; writing them is the editor's. */
-export type NetPermissionRules = Pick<Y.Map<{ flags: number }>, 'forEach' | 'get' | 'has'>;
+export type NetPermissionRules = Pick<Y.Map<NetRule>, 'forEach' | 'get' | 'has'>;
 
 export const coordKey = (x: number, y: number): string => `${String(x)},${String(y)}`;
 const parseCoord = (key: string): [number, number] => {
@@ -111,6 +129,7 @@ export class Game {
   /** The sheets and the maps a game has, each entry holding its own cells and size. */
   protected readonly sheetsMap: Y.Map<Y.Map<unknown>>;
   protected readonly mapsMap: Y.Map<Y.Map<unknown>>;
+  protected readonly actionsMap: Y.Map<Y.Map<unknown>>;
   protected readonly instruments: Y.Map<string>;
   protected readonly patterns: Y.Map<string>;
   protected readonly sfx: Y.Map<string>;
@@ -125,6 +144,8 @@ export class Game {
   /** The projections as last built, or null once the document has moved under them. */
   private sheetsHeld: Sheet[] | null = null;
   private mapsHeld: GameMap[] | null = null;
+  private actionsHeld: readonly GameAction[] | null = null;
+  private readonly actionListeners = new Set<() => void>();
   private readonly sheetWriter: SheetWriter = {
     setPixel: (id, x, y, colour) => {
       this.writeSheetPixel(id, x, y, colour);
@@ -157,6 +178,7 @@ export class Game {
     this.paletteArray = doc.getArray(KEYS.palette);
     this.sheetsMap = doc.getMap(KEYS.sheets);
     this.mapsMap = doc.getMap(KEYS.maps);
+    this.actionsMap = doc.getMap(KEYS.actions);
     this.instruments = doc.getMap(KEYS.instruments);
     this.patterns = doc.getMap(KEYS.patterns);
     this.sfx = doc.getMap(KEYS.sfx);
@@ -201,10 +223,20 @@ export class Game {
         listener();
       });
     };
+    const onActions = (): void => {
+      this.actionsHeld = null;
+      this.actionListeners.forEach((listener) => {
+        listener();
+      });
+    };
     this.sheetsMap.observeDeep(onSheets);
     this.mapsMap.observeDeep(onMaps);
+    this.actionsMap.observeDeep(onActions);
     this.paletteArray.observe(onPalette);
     this.unobservers.push(
+      () => {
+        this.actionsMap.unobserveDeep(onActions);
+      },
       () => {
         this.sheetsMap.unobserveDeep(onSheets);
       },
@@ -248,7 +280,9 @@ export class Game {
   private orderedEntries(from: Y.Map<Y.Map<unknown>>): [string, Y.Map<unknown>][] {
     const out: [string, Y.Map<unknown>][] = [];
     from.forEach((entry, id) => {
-      out.push([id, entry]);
+      if (entry instanceof Y.Map) {
+        out.push([id, entry]);
+      }
     });
 
     return out.sort(
@@ -552,7 +586,7 @@ export class Game {
     }
   }
 
-  private writeSheetPixel(sheetId: string, x: number, y: number, colour: number): void {
+  protected writeSheetPixel(sheetId: string, x: number, y: number, colour: number): void {
     const cells = this.sheetCells(sheetId, ENTRY_KEYS.pixels);
     const key = coordKey(x, y);
     if (colour === 0) {
@@ -564,7 +598,7 @@ export class Game {
     }
   }
 
-  private writeSheetFlag(sheetId: string, local: number, value: number): void {
+  protected writeSheetFlag(sheetId: string, local: number, value: number): void {
     const cells = this.sheetCells(sheetId, ENTRY_KEYS.flags);
     const key = String(local);
     const masked = value & 0xff;
@@ -576,7 +610,7 @@ export class Game {
       cells.set(key, masked);
     }
   }
-  private writeMapTile(mapId: string, x: number, y: number, sprite: number): void {
+  protected writeMapTile(mapId: string, x: number, y: number, sprite: number): void {
     const cells = this.mapCells(mapId);
     const key = coordKey(x, y);
     if (sprite === 0) {
@@ -658,22 +692,58 @@ export class Game {
     return typeof value === 'number' ? value : 0;
   }
 
+  // ---- actions -------------------------------------------------------------
+
   /**
-   * The names the game gives its actions, persisted so they show without running the game; empty
-   * when it names none.
+   * The game's actions, in order, as far as the document states them well: an entry whose name
+   * cannot be an action's or is another's is left out, as is an input this build does not know and
+   * every action past the limit. A label left blank reads as the name. Held between changes.
    */
-  get declaredActions(): readonly DeclaredAction[] {
-    const raw = this.meta.get(META_KEYS.actions);
-    if (!Array.isArray(raw)) {
-      return [];
+  get actions(): readonly GameAction[] {
+    if (this.actionsHeld) {
+      return this.actionsHeld;
     }
-    return raw.filter(
-      (entry): entry is DeclaredAction =>
-        typeof entry === 'object' &&
-        entry !== null &&
-        isAction((entry as DeclaredAction).action) &&
-        typeof (entry as DeclaredAction).label === 'string',
-    );
+    const names = new Set<string>();
+    const actions: GameAction[] = [];
+    for (const [id, entry] of this.orderedEntries(this.actionsMap)) {
+      const name = stringOf(entry, ENTRY_KEYS.name, '');
+      if (actions.length === MAX_ACTIONS || actionNameIssue(name, names) !== null) {
+        continue;
+      }
+      names.add(name);
+      const plugged = entry.get(ENTRY_KEYS.inputs);
+      const ranked = new Map<string, { input: ActionInput; rank: number }>();
+      if (plugged instanceof Y.Map) {
+        plugged.forEach((value, key) => {
+          const input = parseInputId(key);
+          const rank = typeof value === 'number' ? value : 0;
+          // Two spellings of one key are one input, at the place of whichever came first.
+          if (input && rank <= (ranked.get(inputId(input))?.rank ?? rank)) {
+            ranked.set(inputId(input), { input, rank });
+          }
+        });
+      }
+      actions.push({
+        id,
+        name,
+        label: stringOf(entry, ENTRY_KEYS.label, '').trim().slice(0, ACTION_LABEL_MAX) || name,
+        description: stringOf(entry, ENTRY_KEYS.description, '')
+          .trim()
+          .slice(0, ACTION_DESCRIPTION_MAX),
+        order: numberOf(entry, ENTRY_KEYS.order, actions.length),
+        inputs: [...ranked]
+          .sort((a, b) => a[1].rank - b[1].rank || a[0].localeCompare(b[0]))
+          .map(([, held]) => held.input),
+      });
+    }
+
+    return (this.actionsHeld = actions);
+  }
+
+  /** Told when an action or one of its inputs is added, changed or removed, whoever did it. */
+  onActionsChange(listener: () => void): Unsubscribe {
+    this.actionListeners.add(listener);
+    return () => this.actionListeners.delete(listener);
   }
 
   // ---- palette --------------------------------------------------------------

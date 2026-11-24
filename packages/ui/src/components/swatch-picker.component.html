@@ -1,21 +1,27 @@
-@if (allowNone()) {
+@for (cell of cells(); track cell.slot) {
   <button
     type="button"
-    class="flex h-[22px] w-[22px] items-center justify-center rounded-sm border border-line-strong text-ink-4 outline-offset-2"
-    [class]="value() === null ? 'outline-2 outline-ink' : ''"
-    [attr.aria-label]="noneLabel()"
-    [attr.aria-pressed]="value() === null"
-    (click)="value.set(null)">
-    <nc-icon name="close" [size]="12" />
+    class="group"
+    [class.w-full]="fill()"
+    [class]="cell.frame + (cell.sinks ? ' enabled:data-on:mt-[3px]' : '')"
+    [style.--bv-fill]="cell.colour"
+    [attr.aria-label]="cell.slot === null ? noneLabel() : slotLabel() + ' ' + cell.slot"
+    [attr.aria-pressed]="value() === cell.slot"
+    [attr.data-on]="value() === cell.slot ? '' : null"
+    [disabled]="closed()"
+    (click)="pick(cell.slot)"
+    (keydown)="move($event, $index)">
+    <span
+      class="flex h-[24px] items-center justify-center text-ink-4 group-enabled:group-data-on:text-active-ink"
+      [class]="
+        (fill() ? 'w-full ' : 'w-[26px] ') +
+        (cell.sinks ? 'group-enabled:group-data-on:h-[21px]' : '')
+      ">
+      @if (cell.slot === null) {
+        <nc-mark name="close" />
+      } @else {
+        <span [class]="markClass(cell.slot)" [style.background]="cell.ink"></span>
+      }
+    </span>
   </button>
-}
-@for (slot of slots(); track slot) {
-  <button
-    type="button"
-    class="h-[22px] w-[22px] rounded-sm outline-offset-2"
-    [class]="value() === slot ? 'outline-2 outline-ink' : ''"
-    [style.background]="colours()[slot]"
-    [attr.aria-label]="slotLabel() + ' ' + slot"
-    [attr.aria-pressed]="value() === slot"
-    (click)="value.set(slot)"></button>
 }

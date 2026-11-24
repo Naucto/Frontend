@@ -1,7 +1,7 @@
 import type { Destroyable } from '../types';
 import type { NetPermissions } from './NetPermissions';
 import { ALLOW_ALL } from './NetPermissions';
-import type { SessionTransport, UserId } from './SessionTransport';
+import type { PlayerNumber, SessionTransport } from './SessionTransport';
 
 export type TableScalar = number | string | boolean;
 
@@ -11,7 +11,7 @@ export type TableChangeListener = (
   oldValue: TableScalar | undefined,
 ) => void;
 
-export type TableEventListener = (from: UserId, payload: unknown) => void;
+export type TableEventListener = (from: PlayerNumber, payload: unknown) => void;
 
 interface TableEntry {
   value: TableScalar;
@@ -34,7 +34,7 @@ type SnapshotPayload = {
 
 type StatePayload =
   | { kind: 'patch'; ops: PatchOp[] }
-  | { kind: 'event'; name: string; from: UserId; payload: unknown };
+  | { kind: 'event'; name: string; from: PlayerNumber; payload: unknown };
 
 // Locks and queues live *in* net.state: a lock/queue object at net.state path P
 // keeps its backing (type marker, lock owner, queue contents) under the reserved
@@ -84,7 +84,7 @@ type DeferredWrite =
   | { op: 'del'; before: TableEntry | undefined };
 
 interface LockWaiter {
-  userId: UserId;
+  player: PlayerNumber;
   reqId?: string;
   grant?: () => void;
 }
@@ -155,7 +155,7 @@ export class SharedTableSession implements Destroyable {
   private readonly changeSubs: { regex: RegExp; cb: TableChangeListener }[] = [];
   private readonly eventSubs = new Map<string, Set<TableEventListener>>();
   private readonly errorSubs = new Set<(path: string, reason: string) => void>();
-  private readonly peerSubs = new Map<PeerEvent, Set<(userId: UserId) => void>>();
+  private readonly peerSubs = new Map<PeerEvent, Set<(player: PlayerNumber) => void>>();
   private readonly endedSubs = new Set<() => void>();
   private readonly closedSubs = new Set<() => void>();
 
@@ -188,14 +188,14 @@ export class SharedTableSession implements Destroyable {
       });
     }
 
-    transport.on('peerJoined', (userId) => {
-      this.onPeerJoined(userId);
+    transport.on('peerJoined', (player) => {
+      this.onPeerJoined(player);
     });
-    transport.on('peerRejoined', (userId) => {
-      this.sendSnapshot(userId);
+    transport.on('peerRejoined', (player) => {
+      this.sendSnapshot(player);
     });
-    transport.on('peerLeft', (userId) => {
-      this.onPeerLeft(userId);
+    transport.on('peerLeft', (player) => {
+      this.onPeerLeft(player);
     });
     transport.on('ended', () => {
       this.endedSubs.forEach((cb) => {
@@ -227,8 +227,8 @@ export class SharedTableSession implements Destroyable {
     return this.hosting;
   }
 
-  get selfUserId(): UserId {
-    return this.transport.selfUserId;
+  get selfPlayer(): PlayerNumber {
+    return this.transport.selfPlayer;
   }
 
   getValue(path: string): TableScalar | undefined {
@@ -361,7 +361,7 @@ export class SharedTableSession implements Destroyable {
       this.transport.broadcastState({
         kind: 'event',
         name,
-        from: this.transport.selfUserId,
+        from: this.transport.selfPlayer,
         payload,
       });
       return;
@@ -392,8 +392,8 @@ export class SharedTableSession implements Destroyable {
     this.errorSubs.add(cb);
   }
 
-  onPeer(event: PeerEvent, cb: (userId: UserId) => void): void {
-    const set = this.peerSubs.get(event) ?? new Set<(userId: UserId) => void>();
+  onPeer(event: PeerEvent, cb: (player: PlayerNumber) => void): void {
+    const set = this.peerSubs.get(event) ?? new Set<(player: PlayerNumber) => void>();
     set.add(cb);
     this.peerSubs.set(event, set);
   }
@@ -412,18 +412,18 @@ export class SharedTableSession implements Destroyable {
 
   acquireLock(path: string, onGranted: () => void): void {
     if (this.hosting) {
-      this.hostAcquire(this.transport.selfUserId, path, undefined, onGranted);
+      this.hostAcquire(this.transport.selfPlayer, path, undefined, onGranted);
       return;
     }
 
-    const reqId = `${this.transport.selfUserId}-lock-${this.reqCounter++}`;
+    const reqId = `${this.transport.selfPlayer}-lock-${this.reqCounter++}`;
     this.pendingLocks.set(reqId, onGranted);
     this.sendOrdered({ kind: 'lock', reqId, path, action: 'acquire' });
   }
 
   releaseLock(path: string): void {
     if (this.hosting) {
-      this.hostRelease(this.transport.selfUserId, path);
+      this.hostRelease(this.transport.selfPlayer, path);
       return;
     }
 
@@ -445,7 +445,7 @@ export class SharedTableSession implements Destroyable {
       return;
     }
 
-    const reqId = `${this.transport.selfUserId}-pop-${this.reqCounter++}`;
+    const reqId = `${this.transport.selfPlayer}-pop-${this.reqCounter++}`;
     this.pendingPops.set(reqId, onResult);
     this.sendOrdered({ kind: 'queue', reqId, path, op: 'pop' });
   }
@@ -455,8 +455,8 @@ export class SharedTableSession implements Destroyable {
   }
 
   /** Round-trip time to a peer in ms, or null when the transport cannot measure it yet. */
-  peerPing(userId: UserId): number | null {
-    return this.transport.pingTo?.(userId) ?? null;
+  peerPing(player: PlayerNumber): number | null {
+    return this.transport.pingTo?.(player) ?? null;
   }
 
   queueLength(path: string): number {
@@ -540,8 +540,8 @@ export class SharedTableSession implements Destroyable {
       if (!next) {
         return;
       }
-      this.hostSet(path, next.userId);
-      this.grantLock(next.userId, next.reqId, next.grant);
+      this.hostSet(path, next.player);
+      this.grantLock(next.player, next.reqId, next.grant);
     });
   }
 
@@ -581,7 +581,7 @@ export class SharedTableSession implements Destroyable {
       return;
     }
 
-    const reqId = `${this.transport.selfUserId}-${this.reqCounter++}`;
+    const reqId = `${this.transport.selfPlayer}-${this.reqCounter++}`;
     const ops = [...this.pendingWrite];
     this.pendingWrite.length = 0;
 
@@ -661,7 +661,7 @@ export class SharedTableSession implements Destroyable {
     }
   }
 
-  private onRequest(from: UserId, payload: RequestPayload): void {
+  private onRequest(from: PlayerNumber, payload: RequestPayload): void {
     if (!isRecord(payload)) {
       return;
     }
@@ -742,7 +742,7 @@ export class SharedTableSession implements Destroyable {
     }
   }
 
-  private handleWrite(from: UserId, payload: { reqId: string; ops: WriteOp[] }): void {
+  private handleWrite(from: PlayerNumber, payload: { reqId: string; ops: WriteOp[] }): void {
     // Untrusted peer input: drop a malformed frame rather than let a bad shape
     // throw (e.g. ops.filter on a non-array) or store a non-scalar value.
     if (
@@ -994,89 +994,89 @@ export class SharedTableSession implements Destroyable {
     }
   }
 
-  private onPeerJoined(userId: UserId): void {
-    this.sendSnapshot(userId);
-    this.dispatchPeer('joined', userId);
+  private onPeerJoined(player: PlayerNumber): void {
+    this.sendSnapshot(player);
+    this.dispatchPeer('joined', player);
   }
 
-  private onPeerLeft(userId: UserId): void {
+  private onPeerLeft(player: PlayerNumber): void {
     // Free any lock the departing peer still held.
     const owned: string[] = [];
     for (const [key, entry] of this.store) {
-      if (key.endsWith(OWNER_SUFFIX) && entry.value === userId) {
+      if (key.endsWith(OWNER_SUFFIX) && entry.value === player) {
         owned.push(key.slice(0, key.length - OWNER_SUFFIX.length));
       }
     }
     for (const [path, waiters] of this.lockWaiters) {
       this.lockWaiters.set(
         path,
-        waiters.filter((waiter) => waiter.userId !== userId),
+        waiters.filter((waiter) => waiter.player !== player),
       );
     }
     for (const path of owned) {
-      this.hostRelease(userId, path);
+      this.hostRelease(player, path);
     }
 
-    this.dispatchPeer('left', userId);
+    this.dispatchPeer('left', player);
   }
 
-  private dispatchPeer(event: PeerEvent, userId: UserId): void {
+  private dispatchPeer(event: PeerEvent, player: PlayerNumber): void {
     this.peerSubs.get(event)?.forEach((cb) => {
-      cb(userId);
+      cb(player);
     });
   }
 
   private hostAcquire(
-    userId: UserId,
+    player: PlayerNumber,
     path: string,
     reqId: string | undefined,
     grant: (() => void) | undefined,
   ): void {
     if (this.lockOwnerOf(path) === null) {
-      this.hostSet(path + OWNER_SUFFIX, userId);
-      this.grantLock(userId, reqId, grant);
+      this.hostSet(path + OWNER_SUFFIX, player);
+      this.grantLock(player, reqId, grant);
       return;
     }
 
     const waiters = this.lockWaiters.get(path) ?? [];
-    waiters.push({ userId, reqId, grant });
+    waiters.push({ player, reqId, grant });
     this.lockWaiters.set(path, waiters);
   }
 
-  private hostRelease(userId: UserId, path: string): void {
-    if (this.lockOwnerOf(path) !== userId) {
+  private hostRelease(player: PlayerNumber, path: string): void {
+    if (this.lockOwnerOf(path) !== player) {
       return;
     }
 
     const next = this.lockWaiters.get(path)?.shift();
 
     if (next) {
-      this.hostSet(path + OWNER_SUFFIX, next.userId);
-      this.grantLock(next.userId, next.reqId, next.grant);
+      this.hostSet(path + OWNER_SUFFIX, next.player);
+      this.grantLock(next.player, next.reqId, next.grant);
     } else {
       this.hostDelete(path + OWNER_SUFFIX);
     }
   }
 
   private grantLock(
-    userId: UserId,
+    player: PlayerNumber,
     reqId: string | undefined,
     grant: (() => void) | undefined,
   ): void {
-    if (userId === this.transport.selfUserId) {
+    if (player === this.transport.selfPlayer) {
       grant?.();
     } else if (reqId !== undefined) {
       this.flush();
-      this.transport.respondTo(userId, { kind: 'lock-grant', reqId });
+      this.transport.respondTo(player, { kind: 'lock-grant', reqId });
     }
   }
 
   /** Who holds the lock at `path` (editor tooling). */
-  lockOwner(path: string): UserId | null {
+  lockOwner(path: string): PlayerNumber | null {
     return this.lockOwnerOf(path);
   }
 
-  private lockOwnerOf(path: string): UserId | null {
+  private lockOwnerOf(path: string): PlayerNumber | null {
     const owner = this.getValue(path + OWNER_SUFFIX);
     return typeof owner === 'number' ? owner : null;
   }
@@ -1129,7 +1129,7 @@ export class SharedTableSession implements Destroyable {
     return items;
   }
 
-  private sendSnapshot(userId: UserId): void {
+  private sendSnapshot(player: PlayerNumber): void {
     const entries = [...this.store.entries()]
       .filter(([path]) => this.permissions.canClientRead(ownerPathOf(path)))
       .map(([path, entry]) => ({
@@ -1138,7 +1138,7 @@ export class SharedTableSession implements Destroyable {
         version: entry.version,
       }));
 
-    this.transport.respondTo(userId, { kind: 'snapshot', entries });
+    this.transport.respondTo(player, { kind: 'snapshot', entries });
   }
 
   private writeEntry(path: string, value: TableScalar, version: number): void {
@@ -1193,8 +1193,8 @@ export class SharedTableSession implements Destroyable {
     }
   }
 
-  private dispatchEvent(name: string, from: UserId, payload: unknown): void {
-    if (from === this.transport.selfUserId) {
+  private dispatchEvent(name: string, from: PlayerNumber, payload: unknown): void {
+    if (from === this.transport.selfPlayer) {
       return;
     }
 

@@ -1,0 +1,128 @@
+<span class="sr-only" aria-live="polite" aria-atomic="true">
+  {{ pageStatus()(current() + 1, layout().pages) }}
+</span>
+<div class="flex flex-wrap items-center gap-[18px]">
+  <h3 class="font-display text-[28px] leading-[1.2] text-ink" [id]="ids.heading">
+    {{ heading() }}
+  </h3>
+  @if (count() !== null) {
+    <nc-chip>{{ count() }}</nc-chip>
+  }
+  <span class="flex-1"></span>
+  @if (layout().pages > 1) {
+    <ng-content select="[shelfMore]" />
+  }
+  <ng-content select="[shelfAction]" />
+</div>
+<div class="row mt-[18px] flex items-center gap-[6px]">
+  <button
+    type="button"
+    class="arrow raised-sm bevel-bare hover:bevel-lit hover:bevel-fill-raised active:bevel-down"
+    [class.invisible]="current() === 0"
+    [attr.aria-label]="previousLabel()"
+    [attr.aria-controls]="ids.rail"
+    (click)="go(current() - 1)">
+    <nc-mark name="chevron-left" />
+  </button>
+  <div
+    class="window"
+    [style.--opening-x.px]="opening().x"
+    [style.--opening-w.px]="opening().width"
+    (pointerleave)="leave($event)">
+    @for (veil of veils(); track $index) {
+      <span
+        aria-hidden="true"
+        class="veil"
+        [class.after]="$index === 1"
+        [class.pointer-events-auto]="veil.shown"
+        [style.mask-position]="veil.position"
+        [style.transition]="veil.transition"
+        (click)="go(current() + ($index === 1 ? 1 : -1))"></span>
+    }
+    <div
+      #track
+      class="track"
+      [class.nc-panning]="pull() !== null"
+      (pointerdown)="down($event)"
+      (pointermove)="move($event)"
+      (pointerup)="up()"
+      (pointercancel)="up()"
+      (dragstart)="$event.preventDefault()">
+      <div
+        role="list"
+        class="rail"
+        [id]="ids.rail"
+        [class.pulled]="pull() !== null"
+        [style.left.px]="left()"
+        [style.grid-auto-columns.px]="layout().itemWidth">
+        @for (delay of dim(); track $index) {
+          <span
+            aria-hidden="true"
+            class="dim"
+            [class.on]="active() >= 0"
+            [style.mask-image]="'var(--nc-dither-' + ($index + 1) + ')'"
+            [style.transition-delay.ms]="delay"></span>
+        }
+        @for (cell of cells(); track $index) {
+          <div
+            role="listitem"
+            class="item"
+            [class.open]="$index === active()"
+            [attr.aria-label]="positionLabel()($index + 1, cells().length)"
+            [attr.inert]="cell.page === current() ? null : ''"
+            [attr.data-index]="$index"
+            [style.grid-row]="cell.gridRow"
+            [style.grid-column]="cell.gridColumn"
+            (pointerenter)="enter($event, $index, cell.placement)"
+            (pointerleave)="leave($event)"
+            (focusin)="focusIn($event, $index, cell.placement)"
+            (focusout)="focusOut($event, $index)">
+            @if (cell.placement; as placement) {
+              <nc-shelf-flyout
+                [id]="cell.flyoutId"
+                [placement]="placement"
+                [itemWidth]="layout().itemWidth"
+                [open]="$index === active()">
+                <ng-container
+                  [ngTemplateOutlet]="flyout()?.template ?? null"
+                  [ngTemplateOutletContext]="{ $implicit: cell.item }" />
+              </nc-shelf-flyout>
+            }
+            @if (cell.near) {
+              <div class="lift">
+                <ng-container
+                  [ngTemplateOutlet]="template()"
+                  [ngTemplateOutletContext]="{
+                    $implicit: cell.item,
+                    open: $index === active(),
+                    flyoutId: cell.flyoutId,
+                  }" />
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+  <button
+    type="button"
+    class="arrow raised-sm bevel-bare hover:bevel-lit hover:bevel-fill-raised active:bevel-down"
+    [class.invisible]="current() >= layout().pages - 1"
+    [attr.aria-label]="nextLabel()"
+    [attr.aria-controls]="ids.rail"
+    (click)="go(current() + 1)">
+    <nc-mark name="chevron-right" />
+  </button>
+</div>
+<!-- A shelf of one page keeps its pager's room, hidden, so every shelf is as tall as the next. -->
+<nc-pager
+  class="mt-[18px] justify-self-center"
+  [class.invisible]="layout().pages <= 1"
+  [attr.aria-hidden]="layout().pages <= 1 ? 'true' : null"
+  [arrows]="false"
+  [count]="layout().pages"
+  [value]="current()"
+  [controls]="ids.rail"
+  [label]="pagesLabel()"
+  [pageLabel]="pageLabel()"
+  (valueChange)="go($event)" />

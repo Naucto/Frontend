@@ -1,102 +1,127 @@
-// Generates packages/ui/src/icons/paths.ts from pixelarticons (MIT) for the icon subset in tools/icons.json.
+// Packs the cell drawings in packages/ui/src/icons into the table `nc-icon` and `nc-mark` draw from.
 // Run: node tools/build-icons.mjs
 import { readFile, writeFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 
-const require = createRequire(import.meta.url);
-const root = resolve(import.meta.dirname, '..');
-const aliases = JSON.parse(await readFile(resolve(root, 'tools/icons.json'), 'utf8'));
-const svgDir = dirname(require.resolve('pixelarticons/package.json')) + '/svg';
+import { format, resolveConfig } from 'prettier';
+
+const ICONS = resolve(import.meta.dirname, '../packages/ui/src/icons');
+const TARGET = resolve(ICONS, 'glyphs.ts');
 
 /**
- * Glyphs taken from the design rather than from pixelarticons, on the same 24-grid.
- * `overrides` names every one of them that intentionally shadows an `icons.json` entry of the
- * same name; a glyph on both sides that is not listed there is caught below, since otherwise
- * editing `icons.json` for one of these silently does nothing and nothing says so.
+ * The glyphs of one source: for each name, its rows of cells. `box` is the side of the box in
+ * cells; `exact` asks for a drawing that fills it, margins drawn, where the default is a drawing
+ * cut to its ink.
  */
-const { glyphs: CUSTOM, overrides } = JSON.parse(
-  await readFile(resolve(root, 'tools/icons-custom.json'), 'utf8'),
+async function drawings(file, box, exact = false) {
+  const found = new Map();
+  let rows;
+  for (const line of (await readFile(resolve(ICONS, file), 'utf8')).split('\n')) {
+    const header = /^([a-z0-9-]+):$/.exec(line);
+    if (header) {
+      if (found.has(header[1])) {
+        throw new Error(`${file}: '${header[1]}' is drawn twice`);
+      }
+      rows = [];
+      found.set(header[1], rows);
+    } else if (rows && /^[.#]+$/.test(line)) {
+      rows.push(line);
+    } else if (rows && line !== '') {
+      throw new Error(`${file}: neither a name nor a row of cells: '${line}'`);
+    }
+  }
+  for (const [name, cells] of found) {
+    const width = cells[0]?.length ?? 0;
+    const inked = (run) => run.includes('#');
+    const columns = Array.from({ length: width }, (_, x) => cells.map((row) => row[x]).join(''));
+    const problem =
+      (cells.some((row) => row.length !== width) && 'its rows differ in length') ||
+      (!cells.some(inked) && 'it holds no cell') ||
+      ((width > box || cells.length > box) && `it is larger than ${box} cells`) ||
+      (exact && (width !== box || cells.length !== box) && `it is not ${box} cells by ${box}`) ||
+      (!exact &&
+        ![cells[0], cells.at(-1), columns[0], columns.at(-1)].every(inked) &&
+        'an edge of it holds no cell');
+    if (problem) {
+      throw new Error(`${file}: '${name}': ${problem}`);
+    }
+  }
+  return found;
+}
+
+/**
+ * What `glyphPath` reads: the width in cells as one base-36 digit, then each row as hexadecimal,
+ * its first cell in the highest bit and the row filled out to whole digits.
+ */
+function packed(rows) {
+  const width = rows[0].length;
+  const digits = Math.ceil(width / 4);
+  const row = (cells) =>
+    parseInt(
+      cells
+        .replaceAll('#', '1')
+        .replaceAll('.', '0')
+        .padEnd(digits * 4, '0'),
+      2,
+    )
+      .toString(16)
+      .padStart(digits, '0');
+  return width.toString(36) + rows.map(row).join('');
+}
+
+function table(glyphs) {
+  return [...glyphs]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([name, rows]) => `'${name}': '${packed(rows)}',`)
+    .join('\n');
+}
+
+const small = await drawings('icons-18.txt', 6);
+const large = await drawings('icons-24.txt', 8);
+const marks = await drawings('marks.txt', 5, true);
+
+const lone = [...small.keys(), ...large.keys()].filter(
+  (name) => !small.has(name) || !large.has(name),
 );
-const overrideSet = new Set(overrides);
-for (const name of Object.keys(CUSTOM)) {
-  if (Object.hasOwn(aliases, name) && !overrideSet.has(name)) {
-    throw new Error(
-      `build-icons: '${name}' is defined in both icons.json and tools/icons-custom.json but is ` +
-        `not in its "overrides" list — add it there if the shadowing is deliberate, or remove ` +
-        'the duplicate.',
-    );
-  }
-}
-for (const name of overrides) {
-  if (!Object.hasOwn(aliases, name)) {
-    console.warn(
-      `build-icons: '${name}' is in icons-custom.json's "overrides" but icons.json has no such entry to override`,
-    );
-  }
+if (lone.length > 0) {
+  throw new Error(`build-icons: drawn in one of icons-18.txt and icons-24.txt only: ${lone}`);
 }
 
-const byName = new Map();
-for (const [name, file] of Object.entries(aliases)) {
-  const svg = await readFile(`${svgDir}/${file}.svg`, 'utf8');
-  const paths = [...svg.matchAll(/<path[^>]*\sd="([^"]+)"/g)].map((m) => m[1]);
-  if (paths.length === 0) {
-    throw new Error(`${name}: no <path d> found`);
-  }
-  byName.set(name, paths.join(' '));
-}
-// Last, so a design glyph replaces the pixelarticons one of the same name rather than colliding
-// with it.
-for (const [name, glyph] of Object.entries(CUSTOM)) {
-  byName.set(name, glyph.d);
-}
+const source = `// GENERATED by tools/build-icons.mjs from icons-18.txt, icons-24.txt and marks.txt. Do not edit.
 
-const entries = [...byName].map(([name, d]) => `  '${name}': '${d}',`);
-entries.sort();
-
-const out = `// GENERATED by tools/build-icons.mjs from pixelarticons ${require('pixelarticons/package.json').version} (MIT). Do not edit.
-export const ICON_PATHS = {
-${entries.join('\n')}
+/** Each icon as \`glyphPath\` reads it, under the size of the box it is drawn for. */
+export const ICON_GLYPHS = {
+  18: {
+${table(small)}
+  },
+  24: {
+${table(large)}
+  },
 } as const;
 
-export type IconName = keyof typeof ICON_PATHS;
+export type IconName = keyof (typeof ICON_GLYPHS)[24];
+
+/**
+ * The marks a control carries where an icon has no room: each is drawn for its size, on a grid
+ * of five cells by five whose cell is one kit pixel, so it is 15px across and never scaled.
+ */
+export const MARK_GLYPHS = {
+${table(marks)}
+} as const;
+
+export type MarkName = keyof typeof MARK_GLYPHS;
 `;
-const target = resolve(root, 'packages/ui/src/icons/paths.ts');
 
-// --check fails when the committed paths drift from the generator, which nothing else would notice.
-if (process.argv.includes('--check')) {
-  // Compared as name -> path, not byte for byte: the committed file is Prettier's, which wraps the
-  // long paths onto their own line, so the generator's own text never matches it verbatim.
-  const current = await readFile(target, 'utf8').catch(() => '');
-  const found = new Map();
-  for (const m of current.matchAll(/'?([a-zA-Z0-9-]+)'?:\s*\n?\s*'([^']+)'/g)) {
-    found.set(m[1], m[2]);
-  }
-
-  const drift = [];
-  for (const [name, d] of byName) {
-    if (!found.has(name)) {
-      drift.push(`missing: ${name}`);
-    } else if (found.get(name) !== d) {
-      drift.push(`different picture: ${name}`);
-    }
-  }
-  for (const name of found.keys()) {
-    if (!byName.has(name)) {
-      drift.push(`unexpected: ${name}`);
-    }
-  }
-
-  if (drift.length > 0) {
-    console.error(
-      `build-icons: packages/ui/src/icons/paths.ts disagrees with the generator ` +
-        `(${String(drift.length)}):\n  ${drift.join('\n  ')}\n` +
-        'Run `node tools/build-icons.mjs`, then Prettier, and commit the result.',
-    );
-    process.exit(1);
-  }
-  console.warn(`build-icons: paths.ts matches the generator (${byName.size} icons)`);
-} else {
-  await writeFile(target, out);
-  console.warn(`build-icons: wrote ${entries.length} icons`);
+const text = await format(source, { ...(await resolveConfig(TARGET)), filepath: TARGET });
+// --check fails when the committed table is not what the drawings give: a drawing edited without
+// a rebuild, or the table edited by hand.
+if (!process.argv.includes('--check')) {
+  await writeFile(TARGET, text);
+} else if ((await readFile(TARGET, 'utf8').catch(() => '')) !== text) {
+  console.error(
+    'build-icons: packages/ui/src/icons/glyphs.ts is not what the drawings give. ' +
+      'Run `node tools/build-icons.mjs` and commit the result.',
+  );
+  process.exit(1);
 }
+console.warn(`build-icons: ${small.size} icons in two sizes, ${marks.size} marks`);

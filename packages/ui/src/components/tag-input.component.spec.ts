@@ -19,4 +19,16 @@ describe('TagInputComponent', () => {
     await userEvent.type(screen.getByRole('textbox'), '{Backspace}');
     expect(fixture.componentInstance.tags()).toEqual(['a']);
   });
+
+  it('takes no tag and offers none to remove when disabled, in the frame of a disabled well', async () => {
+    const { fixture } = await render(TagInputComponent, {
+      inputs: { tags: ['a', 'b'], disabled: true },
+    });
+    const field = screen.getByRole('textbox');
+
+    expect(field).toBeDisabled();
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(field.parentElement).toHaveClass('bevel-edge-line', 'bevel-fill-transparent');
+    expect(fixture.componentInstance.tags()).toEqual(['a', 'b']);
+  });
 });

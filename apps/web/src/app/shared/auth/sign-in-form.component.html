@@ -48,23 +48,23 @@
   </form>
 
   <div class="my-2 flex items-center gap-2">
-    <span class="h-px flex-1 bg-line-soft"></span>
+    <span class="h-[3px] flex-1 bg-line"></span>
     <span class="label text-ink-4">{{ t('auth.or') }}</span>
-    <span class="h-px flex-1 bg-line-soft"></span>
+    <span class="h-[3px] flex-1 bg-line"></span>
   </div>
-  <div class="grid grid-cols-1 gap-1 sm:grid-cols-3">
+  <div class="flex justify-center gap-[12px]">
     @for (provider of providers(); track provider.flow.id) {
       <button
         ncButton
         variant="secondary"
-        size="sm"
+        size="xl"
+        iconOnly
         type="button"
-        class="h-[36px] text-ink-body"
         (click)="oauth(provider.flow)"
         [disabled]="busy() || !provider.configured"
-        [attr.title]="provider.configured ? null : t('auth.notConfigured')">
-        <nc-brand-mark [mark]="provider.flow.mark" [size]="12" />
-        {{ provider.flow.label }}
+        [attr.aria-label]="provider.flow.label"
+        [attr.title]="provider.configured ? provider.flow.label : t('auth.notConfigured')">
+        <nc-brand-mark [mark]="provider.flow.mark" [size]="24" />
       </button>
     }
   </div>

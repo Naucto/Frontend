@@ -5,6 +5,9 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 export type ArtTool =
   'pen' | 'fill' | 'line' | 'rect' | 'circle' | 'select' | 'eyedropper' | 'move';
 
+/** The tools that change nothing of a sheet, which is all a sheet that is only looked at offers. */
+export const ART_LOOKING_TOOLS: readonly ArtTool[] = ['select', 'eyedropper'];
+
 /** A rectangle of art pixels, inside the sheet. */
 export interface PixelRect {
   x: number;

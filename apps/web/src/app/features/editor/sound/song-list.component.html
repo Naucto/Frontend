@@ -1,10 +1,18 @@
-<div *transloco="let t" class="border-t border-line p-1.5">
+<div *transloco="let t" class="border-t-3 border-line p-1.5">
   <!-- Fixed at the same height as the sound-effect bank's head, so the two sections stay the same
        size. -->
-  <div class="nc-density-small mb-1 flex h-(--nc-transport-h) items-center gap-1">
+  <div class="mb-1 flex h-(--nc-h-md) items-center gap-1">
     <span class="label shrink-0 text-ink-3">{{ t('editor.sound.music') }}</span>
+    <span class="flex-1"></span>
+    <nc-help-dot [title]="t('editor.sound.music')" [text]="t('editor.sound.musicHelp')" />
+  </div>
+  <!-- A row of its own, and one that wraps: the slot and the transport together are wider than the
+       narrow column. -->
+  <div class="mb-1 flex flex-wrap items-center gap-1">
+    <!-- Which music is shown, not what it holds. -->
     <nc-number-field
-      class="h-(--nc-transport-h) shrink-0"
+      ncLooksOnly
+      class="h-(--nc-h-md) min-w-[96px] flex-1"
       fill
       [label]="t('editor.sound.musicSlot')"
       [value]="slot()"
@@ -23,17 +31,16 @@
       (paused)="paused.emit()"
       (rewound)="rewound.emit()"
       (stopped)="stopped.emit()" />
-    <span class="flex-1"></span>
-    <nc-help-dot [title]="t('editor.sound.music')" [text]="t('editor.sound.musicHelp')" />
   </div>
 
   <div class="overflow-y-auto" [style.height]="height" [style.scrollbar-gutter]="'stable'">
     <div class="grid gap-0.5" [style.grid-template-columns]="columnTrack" role="group">
       @for (cell of cells(); track cell.index) {
         <nc-number-field
-          class="h-(--nc-control-h-xs) w-full"
+          class="h-(--nc-h-sm) w-full"
           size="sm"
           fill
+          plain
           clearable
           [pad]="2"
           placeholder="--"

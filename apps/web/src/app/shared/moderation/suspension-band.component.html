@@ -1,13 +1,17 @@
-@if (auth.suspension()) {
-  <nc-notice *transloco="let t" variant="band" tone="danger" data-testid="suspension-band">
-    {{
-      until()
-        ? t('moderation.suspended.until', { until: until() })
+@if (auth.suspension(); as suspension) {
+  <nc-notice
+    *transloco="let t"
+    variant="band"
+    tone="danger"
+    data-testid="suspension-band"
+    [title]="
+      suspension.until
+        ? t('moderation.suspended.until', { until: suspension.until | date: 'MMM d, y, h:mm a' })
         : t('moderation.suspended.indefinite')
-    }}
+    ">
     {{ t('moderation.suspended.rule') }}
     @if (features.moderation()) {
-      <a routerLink="/settings/standing" class="underline underline-offset-2 hover:text-ink">
+      <a actions ncButton variant="ghost" size="sm" routerLink="/settings/standing">
         {{ t('moderation.suspended.why') }}
       </a>
     }

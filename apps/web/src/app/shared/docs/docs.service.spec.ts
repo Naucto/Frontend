@@ -87,7 +87,7 @@ describe('DocsService.search', () => {
     const hits = docs.search('flags');
     expect(hits).toHaveLength(1);
     expect(hits[0]?.fragment).toBe('grid-and-flags');
-    expect(hits[0]?.subtitle.startsWith('Grid and Flags · ')).toBe(true);
+    expect(hits[0]?.section).toBe('Grid and Flags');
   });
 });
 

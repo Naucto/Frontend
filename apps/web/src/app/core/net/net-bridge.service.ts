@@ -14,6 +14,7 @@ import {
 } from '@naucto/api-client';
 import {
   type NetHostOptions,
+  type NetInvite,
   type NetPermissions,
   type NetUi,
   type RelayUsage,
@@ -39,6 +40,17 @@ export interface NetSessionInfo {
   joinCode: string | null;
   maxPlayers: number;
   title: string;
+  /** In the browse list, instead of reached by its code alone. */
+  listed: boolean;
+}
+
+/** The session a screen was opened on: its game's `net.join()` enters it instead of asking which. */
+export interface SessionInvite {
+  uuid: string;
+  /** What lets someone who is not in it yet into a session reached by code. */
+  code: string | null;
+  /** What `net.invite()` tells the game: null once the session has closed, undefined until it is known. */
+  session: NetInvite | null | undefined;
 }
 
 /** A room someone else has open, as the join dialog lists it. */
@@ -46,7 +58,7 @@ export interface OpenSession {
   uuid: string;
   title: string;
   host: string;
-  hostId: number;
+  hostId: string;
   players: number;
   max: number;
   /** Reachable by code only — it is not in anyone's browse list. */
@@ -72,6 +84,7 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
   readonly peers = signal<number[]>([]);
   readonly permissions = signal<NetPermissions | undefined>(undefined);
   readonly role = computed(() => this.info()?.role ?? null);
+  private readonly departedListeners = new Set<(uuid: string) => void>();
 
   host(options: NetHostOptions, onReady: (session: SharedTableSession | null) => void): void {
     this.open({ kind: 'host', hostOptions: options, resolve: onReady });
@@ -81,15 +94,32 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
     this.open({ kind: 'join', resolve: onReady });
   }
 
+  /**
+   * Told, as it happens, the session the player walked out of or that its host ended. One torn
+   * down with its run (a restart, a reload of the code) is neither: the run that follows may go
+   * back in.
+   */
+  onDeparted(listener: (uuid: string) => void): void {
+    this.departedListeners.add(listener);
+  }
+
+  private departed(uuid: string): void {
+    for (const listener of this.departedListeners) {
+      listener(uuid);
+    }
+  }
+
   leave(): void {
+    const uuid = this.info()?.uuid;
     this.session()?.destroy();
+    if (uuid) {
+      this.departed(uuid);
+    }
   }
 
   /** Closing the screen (or the editor's test rig) must free the slot on the backend too. */
   ngOnDestroy(): void {
-    if (this.session()) {
-      this.leave();
-    }
+    this.session()?.destroy();
   }
 
   cancel(): void {
@@ -111,7 +141,7 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
   readonly relayOnly = signal(false);
 
   async createSession(
-    projectId: number,
+    projectId: string,
     options: NetHostOptions,
     editorTest = false,
   ): Promise<void> {
@@ -125,7 +155,7 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
           title: options.title ?? this.transloco.translate('net.host.defaultTitle'),
           maxPlayers,
           // The backend mints a join code for this visibility only, and a join code is how a host
-          // invites.
+          // invites: a room the game wants listed is listed once it has its code.
           visibility: 'INVITE_CODE',
           editorTest,
         },
@@ -134,15 +164,20 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
     this.connect(
       conn,
       'host',
-      { maxPlayers, title: options.title ?? '' },
+      { maxPlayers, title: options.title ?? '', listed: false },
       editorTest ? null : projectId,
     );
     // Announced as soon as the session exists, not on the first peer: friends can only join a
     // session their presence list shows.
     this.presence.announce({ kind: 'HOSTING', projectId });
+    if (options.listed) {
+      // The room is open by now: a listing that fails leaves it reached by its code, which is what
+      // its switch then shows.
+      await this.setListed(conn.sessionUuid, true).catch(() => undefined);
+    }
   }
 
-  async listSessions(projectId: number): Promise<OpenSession[]> {
+  async listSessions(projectId: string): Promise<OpenSession[]> {
     const res = unwrap(await multiplayerControllerList({ query: { projectId } }));
     return res.sessions.map((session) => ({
       uuid: session.sessionUuid,
@@ -170,7 +205,9 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
     );
     // The server narrows the visibility to the host's join policy without saying so.
     const applied = unwrap(await multiplayerControllerGet({ path: { sessionId: uuid } }));
-    return applied.visibility === 'PUBLIC';
+    const applies = applied.visibility === 'PUBLIC';
+    this.info.update((info) => (info?.uuid === uuid ? { ...info, listed: applies } : info));
+    return applies;
   }
 
   /** `editorTest` takes a live seat under an id of its own, counted as a player but never persisted as a session member. */
@@ -193,12 +230,18 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
    * Title and slot count of a session we joined. Without it the panel reads "players 2 / —",
    * because only the host knows what it asked for.
    */
-  private async sessionInfo(uuid: string): Promise<{ maxPlayers: number; title: string }> {
+  private async sessionInfo(
+    uuid: string,
+  ): Promise<Pick<NetSessionInfo, 'maxPlayers' | 'title' | 'listed'>> {
     try {
       const session = unwrap(await multiplayerControllerGet({ path: { sessionId: uuid } }));
-      return { maxPlayers: session.maxPlayers, title: session.title };
+      return {
+        maxPlayers: session.maxPlayers,
+        title: session.title,
+        listed: session.visibility === 'PUBLIC',
+      };
     } catch {
-      return { maxPlayers: 0, title: '' };
+      return { maxPlayers: 0, title: '', listed: false };
     }
   }
 
@@ -215,8 +258,8 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
   private connect(
     conn: GameSessionConnectionResponseDto,
     role: SessionRole,
-    meta: { maxPlayers: number; title: string },
-    hostedGame: number | null = null,
+    meta: Pick<NetSessionInfo, 'maxPlayers' | 'title' | 'listed'>,
+    hostedGame: string | null = null,
   ): void {
     const signaling = conn.webrtcConfig.signaling[0];
     if (!signaling) {
@@ -231,9 +274,10 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
     );
     const transport = new SyncedSessionTransport({
       role,
-      // The id the ticket was minted for, which is what the relay addresses every frame by. It is
-      // the account id for everyone but the editor's test rig, which plays under a synthetic one.
-      selfUserId: conn.playerId,
+      // The number the ticket was minted for, which is what the relay addresses every frame by
+      // and what the game reads as net.id(): the player number of the account, or a synthetic
+      // one for the editor's test rig. An integer, and never the account's id.
+      selfPlayer: conn.playerId,
       signalingUrl: this.config.reachable(signaling),
       ticket: conn.connectionTicket,
       ticketIssuedAt: Date.now(),
@@ -247,7 +291,7 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
               body: { ticket: current },
             }),
           );
-          // A ticket for another id would reconnect this transport as someone else, and the room
+          // A ticket for another player would reconnect this transport as someone else, and the room
           // would then hold two clients claiming one seat. Better to drop than to become them.
           if (fresh.playerId !== conn.playerId) {
             return null;
@@ -269,8 +313,7 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
       uuid: conn.sessionUuid,
       role,
       joinCode: conn.joinCode ?? null,
-      maxPlayers: meta.maxPlayers,
-      title: meta.title,
+      ...meta,
     };
     const releaseHosting =
       hostedGame === null
@@ -282,7 +325,10 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
       this.info.set(null);
       this.peers.set([]);
     };
-    session.onEnded(forget);
+    session.onEnded(() => {
+      forget();
+      this.departed(info.uuid);
+    });
     // Closed while still ours means we walked out, whoever pulled the plug (our UI, a restart, a
     // reload): the backend frees the seat or ends the room only when told.
     session.onClosed(() => {

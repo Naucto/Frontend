@@ -41,7 +41,7 @@ interface AnonymousSegment {
 }
 
 interface Play {
-  releaseId: number;
+  releaseId: string;
   clock: PlayClock;
   /** Whether the server already counted this play, so every later stretch is a continuation. */
   counted: boolean;
@@ -76,7 +76,7 @@ export class PlayReporter {
     });
   }
 
-  begin(releaseId: number, clock: PlayClock): void {
+  begin(releaseId: string, clock: PlayClock): void {
     this.end('stopped');
     this.play = { releaseId, clock, counted: false, refused: false, segment: null };
     this.sync();
@@ -102,12 +102,10 @@ export class PlayReporter {
   }
 
   /** Counts a view of the game, under the visitor when the browser agreed to it. */
-  registerView(releaseId: number): void {
+  registerView(releaseId: string): void {
     const body =
       untracked(() => this.mode()) === 'consented' ? { visitorId: ensureVisitorId() } : {};
-    void this.transport
-      .post(`/projects/releases/${String(releaseId)}/view`, body)
-      .catch(() => undefined);
+    void this.transport.post(`/projects/releases/${releaseId}/view`, body).catch(() => undefined);
   }
 
   /** Brings the current stretch in line with the reporting mode and the browser's identity. */

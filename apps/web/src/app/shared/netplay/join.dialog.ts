@@ -5,9 +5,10 @@ import {
   ButtonDirective,
   DialogShellComponent,
   FieldComponent,
-  IconComponent,
   InputDirective,
+  MarkComponent,
   SearchComponent,
+  StatComponent,
   ToastService,
   TooltipDirective,
 } from '@naucto/ui';
@@ -19,7 +20,7 @@ import { qk } from '../queries/query-keys';
 
 export interface JoinDialogData {
   bridge: NetUiBridgeService;
-  projectId: number;
+  projectId: string;
 }
 
 /**
@@ -31,11 +32,12 @@ export interface JoinDialogData {
 @Component({
   selector: 'nc-join-dialog',
   imports: [
+    StatComponent,
     TranslocoDirective,
     ButtonDirective,
     DialogShellComponent,
     FieldComponent,
-    IconComponent,
+    MarkComponent,
     InputDirective,
     SearchComponent,
     TooltipDirective,

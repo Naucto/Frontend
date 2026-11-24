@@ -31,11 +31,34 @@ export { buildFontAtlas, FONT_HEIGHT, FONT_WIDTH } from './gfx/Font';
 export { hexToRgb, rgbToHex, WebGlError } from './gfx/glUtils';
 export { RecordingBackend } from './gfx/RecordingBackend';
 export { WebGL2Backend } from './gfx/WebGL2Backend';
-export * from './input/ActionMap';
-export { GAMEPAD_DEADZONE, GamepadSource } from './input/GamepadSource';
+export {
+  ACTION_DESCRIPTION_MAX,
+  ACTION_LABEL_MAX,
+  ACTION_NAME_MAX,
+  type ActionDraft,
+  type ActionInput,
+  type ActionNameIssue,
+  actionsUsing,
+  canonicalKey,
+  type GameAction,
+  type KeyboardPlayer,
+  MAX_ACTIONS,
+  MAX_PLAYERS,
+  PAD_CONTROLS,
+  type PadControl,
+} from './input/actions';
+export type { ActionTable } from './input/ActionTable';
+export { GAMEPAD_DEADZONE, GamepadSource, isPadControlDown } from './input/GamepadSource';
 export type { InputSource } from './input/InputSource';
 export { InputState } from './input/InputState';
 export { KeyboardSource } from './input/KeyboardSource';
+export { INPUT_PRESET_IDS, INPUT_PRESETS, type InputPresetId } from './input/presets';
+export {
+  TOUCH_CONTROLS,
+  type TouchControl,
+  touchControlsOf,
+  touchUnreachable,
+} from './input/touch-pad';
 export { TouchSource } from './input/TouchSource';
 export { ConsoleBuffer, type ConsoleEntry, type ConsoleEvent } from './loop/ConsoleBuffer';
 export { GameLoop, type LoopDriver, STEP_MS } from './loop/GameLoop';
@@ -51,13 +74,13 @@ export {
   schemaVersionOf,
 } from './migrations';
 export { ALLOW_ALL, type NetPermissions } from './net/NetPermissions';
-export type { NetHostOptions, NetUi } from './net/NetUi';
+export type { NetHostOptions, NetInvite, NetUi } from './net/NetUi';
 export type {
+  PlayerNumber,
   RelayUsage,
   SessionRole,
   SessionTransport,
   SessionTransportEvents,
-  UserId,
 } from './net/SessionTransport';
 export { SharedTableSession, type TableScalar } from './net/SharedTableSession';
 export { Engine, type EngineOptions, type EngineState } from './runtime/Engine';

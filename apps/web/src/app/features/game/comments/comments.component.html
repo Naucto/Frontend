@@ -1,26 +1,36 @@
-<section *transloco="let t">
-  <div class="mb-2 flex items-center justify-between">
-    <nc-label>{{ t('comments.title') }} · {{ total() }}</nc-label>
+<section *transloco="let t" class="grid gap-[18px]">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1">
+      <h2 class="font-display text-title text-ink">{{ t('comments.title') }}</h2>
+      <nc-chip>{{ total() }}</nc-chip>
+    </div>
     <span class="label text-ink-4">{{ t('comments.newest') }}</span>
   </div>
 
   @if (auth.isAuthenticated()) {
-    <form class="mb-3 flex gap-1" (ngSubmit)="post()">
+    <form class="flex items-start gap-[18px]" (ngSubmit)="post()">
       <nc-avatar
         [name]="auth.displayName()"
         [src]="auth.user()?.profileImageUrl ?? null"
         [id]="auth.userId() ?? undefined"
-        [size]="28" />
-      <div class="flex-1">
-        <textarea
-          ncInput
-          name="comment"
-          rows="2"
-          [maxlength]="maxLen"
-          [(ngModel)]="draft"
-          [placeholder]="t('comments.placeholder')"></textarea>
-        <div class="mt-0.5 flex items-center justify-between">
-          <span class="text-label text-ink-4">{{ draft.length }} / {{ maxLen }}</span>
+        [size]="40" />
+      <div class="grid min-w-0 flex-1 gap-1">
+        <div class="relative">
+          <span class="tail tail-well" aria-hidden="true"></span>
+          <textarea
+            ncInput
+            name="comment"
+            rows="2"
+            class="resize-y pl-[18px]"
+            [maxlength]="maxLen"
+            [(ngModel)]="draft"
+            [attr.aria-label]="t('comments.placeholder')"
+            [placeholder]="t('comments.placeholder')"></textarea>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-label text-ink-4">
+            {{ t('count', { n: draft.length, max: maxLen }) }}
+          </span>
           <button
             ncButton
             variant="primary"
@@ -34,109 +44,138 @@
     </form>
   }
 
-  <ul class="divide-y divide-line">
+  <ul class="grid gap-[18px]">
     @for (comment of comments(); track comment.id) {
-      <li class="py-2">
+      <li class="grid gap-1.5">
         <ng-container *ngTemplateOutlet="item; context: { entry: comment, depth: 0 }" />
         @for (reply of comment.replies ?? []; track reply.id) {
-          <div class="mt-1 ml-4 border-l border-line pl-2">
+          <div class="ml-3 sm:ml-[58px]">
             <ng-container *ngTemplateOutlet="item; context: { entry: reply, depth: 1 }" />
           </div>
+        }
+        @if (replyTo() === comment.id) {
+          <form
+            class="ml-3 flex animate-rise items-start gap-[18px] sm:ml-[58px]"
+            (ngSubmit)="postReply(comment.id)">
+            <nc-avatar
+              [name]="auth.displayName()"
+              [src]="auth.user()?.profileImageUrl ?? null"
+              [id]="auth.userId() ?? undefined"
+              [size]="40" />
+            <div class="grid min-w-0 flex-1 gap-1">
+              <div class="relative">
+                <span class="tail tail-well" aria-hidden="true"></span>
+                <textarea
+                  ncInput
+                  name="reply"
+                  rows="2"
+                  class="resize-y pl-[18px]"
+                  [maxlength]="maxLen"
+                  [(ngModel)]="replyDraft"
+                  [attr.aria-label]="t('comments.replyPlaceholder')"
+                  [placeholder]="t('comments.replyPlaceholder')"
+                  (keydown.enter)="$event.preventDefault(); postReply(comment.id)"
+                  (keydown.escape)="replyTo.set(null)"></textarea>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-label text-ink-4">
+                  {{ t('count', { n: replyDraft.length, max: maxLen }) }}
+                </span>
+                <button
+                  ncButton
+                  variant="primary"
+                  size="sm"
+                  type="submit"
+                  [disabled]="!replyDraft.trim()">
+                  {{ t('comments.post') }}
+                </button>
+              </div>
+            </div>
+          </form>
         }
       </li>
     } @empty {
       @if (query.isError()) {
         <!-- "No comments yet" would be a claim about the conversation; we do not know. -->
-        <li class="py-3 text-center text-body text-hot-ink">{{ t('comments.loadFailed') }}</li>
+        <li>
+          <nc-notice tone="danger">{{ t('comments.loadFailed') }}</nc-notice>
+        </li>
       } @else if (query.isPending()) {
-        <li class="grid gap-1 py-3">
-          <nc-skeleton height="0.9rem" width="35%" />
-          <nc-skeleton height="0.75rem" width="80%" />
+        <li class="flex items-start gap-[18px]">
+          <nc-skeleton width="40px" height="40px" />
+          <div class="grid flex-1 gap-1 pt-0.5">
+            <nc-skeleton height="14px" width="35%" />
+            <nc-skeleton height="14px" width="80%" />
+          </div>
         </li>
       } @else {
-        <li class="py-3 text-center text-body text-ink-3">{{ t('comments.empty') }}</li>
+        <li>
+          <nc-empty-state icon="message" [title]="t('comments.empty')" />
+        </li>
       }
     }
   </ul>
   @if (hasMore()) {
-    <button ncButton variant="ghost" class="mt-2 w-full" (click)="loadMore()">
+    <button ncButton variant="ghost" class="w-full" (click)="loadMore()">
       {{ t('comments.loadMore') }}
     </button>
   }
 
   <ng-template #item let-entry="entry" let-depth="depth">
-    <div class="flex items-start gap-1">
-      <a [routerLink]="['/u', entry.author.username]" class="shrink-0">
-        <nc-user-avatar
-          [name]="entry.author.username"
-          [userId]="entry.author.id"
-          [size]="depth ? 22 : 28" />
-      </a>
-      <div class="min-w-0 flex-1">
-        <div class="flex items-center gap-1">
-          <a
-            [routerLink]="['/u', entry.author.username]"
-            class="truncate text-ui text-ink hover:text-gold-ink">
-            {{ entry.author.nickname || entry.author.username }}
-          </a>
-          @if (entry.author.id === authorId()) {
-            <nc-chip tone="gold">{{ t('comments.author') }}</nc-chip>
-          }
-          <span class="label text-ink-4">{{ entry.createdAt | ncRelativeTime }}</span>
-          <span class="flex-1"></span>
-          @if (depth === 0 && auth.isAuthenticated()) {
+    @let creator = entry.author.id === authorId();
+    <nc-comment-bubble
+      [authorId]="entry.author.id"
+      [name]="entry.author.nickname || entry.author.username"
+      [username]="entry.author.username"
+      [creator]="creator">
+      @if (creator) {
+        <nc-chip meta tone="gold">{{ t('comments.author') }}</nc-chip>
+      }
+      <span meta class="text-micro tracking-wide text-ink-4 uppercase">
+        {{ entry.createdAt | ncRelativeTime }}
+      </span>
+      @if (entry.deleted && entry.removedBy === 'MODERATION') {
+        <nc-notice tone="info" data-testid="comment-moderated">
+          {{ t('comments.removedByModeration') }}
+        </nc-notice>
+      } @else {
+        <!-- Bound, not interpolated: under whitespace-pre-wrap the template newlines around an
+             interpolation render as spaces, and Prettier will not keep the tag on one line. -->
+        <p
+          class="text-body leading-[1.55] wrap-anywhere whitespace-pre-wrap"
+          [class.text-ink-4]="entry.deleted"
+          [class.text-ink-body]="!entry.deleted"
+          [textContent]="entry.deleted ? t('comments.deleted') : entry.content"></p>
+      }
+      <div actions class="mt-0.5 -ml-[13px] flex items-center gap-[3px] empty:hidden">
+        @if (auth.isAuthenticated()) {
+          @if (depth === 0) {
             <button
+              ncButton
+              variant="ghost"
+              size="sm"
               type="button"
-              class="label flex items-center gap-0.75 text-ink-3 hover:text-ink"
+              [pressed]="replyTo() === entry.id"
+              [attr.aria-expanded]="replyTo() === entry.id"
               (click)="replyTo.set(replyTo() === entry.id ? null : entry.id)">
-              <nc-icon name="corner-down-right" [size]="12" />
               {{ t('comments.reply') }}
             </button>
           }
           @if (
-            auth.isAuthenticated() &&
-            (entry.author.id === auth.userId() || authorId() === auth.userId()) &&
-            !entry.deleted
+            (entry.author.id === auth.userId() || authorId() === auth.userId()) && !entry.deleted
           ) {
-            <button
-              type="button"
-              class="label text-ink-3 hover:text-hot-ink"
-              (click)="remove(entry.id)">
+            <button ncButton variant="ghost" size="sm" type="button" (click)="remove(entry.id)">
               {{ t('comments.delete') }}
             </button>
           }
-          @if (canReport(entry)) {
-            <button type="button" class="label text-ink-3 hover:text-ink" (click)="report(entry)">
-              {{ t('moderation.reportComment') }}
-            </button>
-          }
-        </div>
-        <!-- Bound, not interpolated: under whitespace-pre-wrap the template newlines around an
-             interpolation render as spaces, and Prettier will not keep the tag on one line. -->
-        <p
-          class="text-body whitespace-pre-wrap"
-          [class.text-ink-4]="entry.deleted"
-          [class.text-ink-body]="!entry.deleted"
-          [textContent]="entry.deleted ? t(removalKey(entry)) : entry.content"></p>
-        @if (replyTo() === entry.id) {
-          <form class="mt-1 flex gap-1" (ngSubmit)="postReply(entry.id)">
-            <input
-              ncInput
-              name="reply"
-              [maxlength]="maxLen"
-              [(ngModel)]="replyDraft"
-              [placeholder]="t('comments.replyPlaceholder')" />
-            <button
-              ncButton
-              variant="primary"
-              size="sm"
-              type="submit"
-              [disabled]="!replyDraft.trim()">
-              {{ t('comments.post') }}
-            </button>
-          </form>
+        }
+        @if (canReport(entry)) {
+          <button ncButton variant="ghost" size="sm" type="button" (click)="report(entry)">
+            <nc-mark name="flag" />
+            {{ t('moderation.reportComment') }}
+          </button>
         }
       </div>
-    </div>
+    </nc-comment-bubble>
   </ng-template>
 </section>

@@ -1,0 +1,64 @@
+<ng-container *transloco="let t">
+  <ng-template #checklist>
+    <nc-popover-panel
+      class="w-[340px] max-w-[calc(100vw-32px)]"
+      [title]="t('collections.add.label')">
+      @if (mine.isError()) {
+        <p role="alert" class="p-1.5 text-meta text-hot-ink">
+          {{ t('collections.add.loadFailed') }}
+        </p>
+      } @else if (mine.data()?.length) {
+        <div
+          class="grid max-h-[min(50vh,348px)] grid-cols-[minmax(0,1fr)] gap-[3px] overflow-y-auto p-[6px]">
+          @for (collection of mine.data(); track collection.id) {
+            <!-- One moderation withholds takes no new game; a game it holds can still leave it. -->
+            <nc-checkbox
+              class="w-full [&>button]:h-(--nc-h-md) [&>button]:min-w-0 [&>button]:flex-1 [&>button]:px-[6px]"
+              [checked]="collection.contains ?? false"
+              [disabled]="!!collection.hiddenAt && !collection.contains"
+              [attr.title]="collection.hiddenAt ? t('collections.hiddenBlocked') : null"
+              (checkedChange)="set(collection, $event)">
+              <span
+                class="min-w-0 flex-1 truncate text-left text-body tracking-copy text-ink normal-case">
+                {{ collection.title }}
+              </span>
+              @if (collection.hiddenAt) {
+                <nc-chip tone="hot">{{ t('collections.hidden') }}</nc-chip>
+              } @else {
+                <nc-visibility-chip [visibility]="collection.visibility" />
+              }
+              <nc-chip>{{ collection.gameCount }}</nc-chip>
+            </nc-checkbox>
+          }
+        </div>
+      }
+      <div class="border-line p-[6px]" [class.border-t-3]="mine.data()?.length">
+        <button type="button" ncOption shape="menu" data-testid="new-collection" (click)="create()">
+          <nc-icon name="plus" />
+          {{ t('collections.new') }}
+        </button>
+      </div>
+    </nc-popover-panel>
+  </ng-template>
+
+  @if (auth.isAuthenticated() && !auth.suspension()) {
+    <button
+      ncButton
+      data-testid="add-to-collection"
+      popoverAlign="end"
+      [pressed]="open()"
+      [ncPopover]="checklist"
+      [(popoverOpen)]="open">
+      <nc-icon name="folder-plus" />
+      {{ t('collections.add.label') }}
+      @if (holding(); as count) {
+        <nc-chip data-testid="holding">{{ count }}</nc-chip>
+      }
+    </button>
+  } @else {
+    <button ncButton data-testid="add-to-collection" (click)="ask()">
+      <nc-icon name="folder-plus" />
+      {{ t('collections.add.label') }}
+    </button>
+  }
+</ng-container>

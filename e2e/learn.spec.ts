@@ -87,7 +87,10 @@ test.describe('learn', () => {
     await expect(tree.getByRole('button', { name: 'Rendering', exact: true })).toBeHidden();
   });
 
-  /** Ctrl-K belongs to the docs search and the slash key to the top bar. */
+  /**
+   * Ctrl-K belongs to the docs search and the slash key to the top bar. The command palette
+   * answers the same key everywhere else, and must stay shut here.
+   */
   test('Ctrl-K focuses the docs search, and "/" still focuses the top bar', async ({ page }) => {
     await page.goto('/learn');
     const docs = page.getByPlaceholder('Search', { exact: true });
@@ -96,6 +99,7 @@ test.describe('learn', () => {
 
     await page.keyboard.press('Control+k');
     await expect(docs).toBeFocused();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
 
     await docs.blur();
     await page.keyboard.press('/');
@@ -114,12 +118,12 @@ test.describe('learn', () => {
     await step3.evaluate((el) => {
       el.scrollIntoView({ block: 'start' });
     });
-    await expect(bar).toContainText('Step 3/5');
+    await expect(bar).toContainText('Step 3 of 5');
     await expect(bar).toContainText('Walk into walls');
 
     await bar.getByRole('button', { name: 'Next step' }).click();
     await expect(page.locator('h2[data-step="4"]')).toBeInViewport();
-    await expect(bar).toContainText('Step 4/5');
+    await expect(bar).toContainText('Step 4 of 5');
     await expect(page).toHaveURL(/#step-4-/);
   });
 

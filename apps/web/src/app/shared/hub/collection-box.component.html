@@ -1,0 +1,80 @@
+<div
+  *transloco="let t"
+  role="group"
+  class="group absolute inset-0 text-ink"
+  [attr.aria-label]="
+    t('hub.collection.label', { title: title(), n: total(), name: curator().username })
+  ">
+  <span
+    aria-hidden="true"
+    class="flat-sm bevel-fill-inset absolute inset-x-[12px] top-[80px] bottom-0"></span>
+  <span class="row">
+    @for (item of shown(); track item.game.id; let place = $index) {
+      <button
+        type="button"
+        class="disk"
+        [attr.data-place]="place"
+        [attr.aria-label]="item.game.name"
+        [style.left.px]="poses()[place]?.left"
+        [style.z-index]="poses()[place]?.z"
+        [style.transform]="poses()[place]?.transform"
+        (focus)="onFocus(place)"
+        (blur)="onBlur($event)"
+        (click)="picked.emit(item.game)">
+        <nc-floppy [disk]="item.disk" [cover]="item.game.coverUrl ?? null" />
+      </button>
+    }
+    @if (more() > 0) {
+      <span
+        class="disk h-[98px]"
+        [style.left.px]="poses()[shown().length]?.left"
+        [style.z-index]="poses()[shown().length]?.z"
+        [style.transform]="poses()[shown().length]?.transform">
+        <a
+          class="raised-sm hover:bevel-lit active:bevel-down flex size-full flex-col items-center justify-center gap-[4px] text-ink-body hover:text-gold-ink"
+          [routerLink]="link()"
+          [attr.data-place]="shown().length"
+          [attr.aria-label]="t('hub.collection.showAll', { n: total(), title: title() })"
+          (focus)="onFocus(shown().length)"
+          (blur)="onBlur($event)">
+          <span class="inline-flex items-center gap-[3px] text-title leading-none">
+            <nc-mark name="plus" />
+            {{ more() }}
+          </span>
+          <span class="text-[10px] tracking-strip text-ink-3 uppercase">
+            {{ t('hub.collection.more') }}
+          </span>
+        </a>
+      </span>
+    }
+  </span>
+  <a
+    data-plate
+    class="raised-lg bevel-fill-raised group-hover:bevel-lit active:bevel-down absolute inset-x-0 bottom-0 z-[200] grid h-[116px] grid-cols-[minmax(0,1fr)] content-center gap-[10px] px-[20px] text-ink"
+    [routerLink]="link()"
+    [attr.aria-label]="
+      t('hub.collection.open', {
+        label: t('hub.collection.label', { title: title(), n: total(), name: curator().username }),
+      })
+    ">
+    <span
+      ncFitText
+      class="min-w-0 overflow-hidden font-display text-[22px] leading-[1.1] whitespace-nowrap">
+      <span class="inline-block origin-left truncate align-top">{{ title() }}</span>
+    </span>
+    <span class="flex min-w-0 items-center gap-[8px] text-meta text-ink-3">
+      @if (hidden()) {
+        <nc-chip class="flex-none" tone="hot" data-testid="collection-hidden">
+          {{ t('collections.hidden') }}
+        </nc-chip>
+      } @else if (visibility(); as visibility) {
+        <nc-visibility-chip [visibility]="visibility" />
+      } @else {
+        <nc-avatar aria-hidden="true" [name]="curator().username" [id]="curator().id" [size]="24" />
+        <span class="min-w-0 truncate">{{ curator().username }}</span>
+      }
+      <span class="flex-1"></span>
+      <nc-chip class="flex-none">{{ t('hub.collection.count', { n: total() }) }}</nc-chip>
+    </span>
+  </a>
+</div>

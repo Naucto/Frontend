@@ -1,11 +1,19 @@
-/* Naucto design tokens — the only place colours, fonts and grid values are defined.
+/* Naucto design tokens — the only place colours, fonts, sizes and the pixel bevels are defined.
    Dark is the default; light applies with [data-theme="light"] or the OS preference when no
    explicit theme is set. Every component consumes these through Tailwind utilities. */
 
 @font-face {
   font-family: 'HD44780';
   src: url('/fonts/hd44780-variable.ttf') format('truetype');
-  font-weight: 400;
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+/* Datasaur is the same file as the variable LCD face: one download, two names. */
+@font-face {
+  font-family: 'Datasaur';
+  src: url('/fonts/hd44780-variable.ttf') format('truetype');
+  font-weight: 100 900;
   font-style: normal;
   font-display: block;
 }
@@ -16,49 +24,55 @@
   font-style: normal;
   font-display: block;
 }
+/* Ticketing is drawn small on its em: the adjustment puts its x-height beside the LCD faces. */
+@font-face {
+  font-family: 'Ticketing';
+  src: url('/fonts/Ticketing.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+  size-adjust: 125%;
+}
 
 @theme {
   /* Reset Tailwind's default palette so only Naucto tokens exist. */
   --color-*: initial;
   --font-*: initial;
   --spacing: 8px;
+  /* Corners are stepped by the bevel utilities, never rounded: there is no radius scale. */
   --radius-*: initial;
-  --radius-xs: 2px;
-  --radius-sm: 3px;
-  /* The design's ladder is 2 / 3 / 4 — 4px is the card and the panel, 5px barely appears. */
-  --radius-md: 4px;
-  /* Type scale lifted from the design: labels and meta live in the mono face, copy in the UI face. */
   --tracking-label: 0.14em;
   --tracking-button: 0.06em;
-  /* Codes, LCD readouts and keycaps: the widest step the design uses. */
+  /* Codes, LCD readouts and keycaps. */
   --tracking-wide: 0.1em;
   /* Chips and presence tags sit between label and button tracking. */
   --tracking-tag: 0.08em;
-  /* The UI face is set with a hair of tracking. The design varies how much from screen to screen —
-     it gives names and titles a shade more than running copy — so this is the value it reaches for
-     most, spent on both rather than split into two steps nobody could tell apart. */
   --tracking-copy: 0.02em;
-  /* Tags and figures: a hair tighter than a button's, which is a word to press rather than read. */
-  --tracking-data: 0.04em;
-  /* Strip headings: a step of its own in the design, one notch tighter than `label`. */
+  /* Strip headings and the buttons on a large bevel. */
   --tracking-strip: 0.12em;
-  /* One step below `label`, for the micro-meta the design sets at 9px mono ("2 DAYS AGO"). */
-  --text-micro: 9px;
+  /* The line above a page title. */
+  --tracking-kicker: 0.2em;
+  --text-micro: 11px;
   --text-micro--line-height: 1.2;
-  --text-label: 10px;
+  --text-label: 12px;
   --text-label--line-height: 1.2;
-  --text-meta: 11px;
+  --text-meta: 13px;
   --text-meta--line-height: 1.4;
-  --text-body: 12px;
-  --text-body--line-height: 1.65;
-  --text-ui: 13px;
+  /* The mono face in code, and the one control size that sits between meta and body. */
+  --text-small: 14px;
+  --text-small--line-height: 1.5;
+  --text-body: 15px;
+  --text-body--line-height: 1.5;
+  --text-ui: 16px;
   --text-ui--line-height: 1.5;
-  --text-title: 16px;
-  --text-title--line-height: 1.25;
-  --text-display: 24px;
-  --text-display--line-height: 1.15;
-  --text-hero: 30px;
-  --text-hero--line-height: 1.1;
+  --text-title: 20px;
+  --text-title--line-height: 1.2;
+  --text-display: 30px;
+  --text-display--line-height: 1.05;
+  --text-hero: 38px;
+  --text-hero--line-height: 1;
+  --text-banner: 48px;
+  --text-banner--line-height: 1;
   --breakpoint-*: initial;
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;
@@ -66,20 +80,35 @@
   --breakpoint-xl: 1280px;
   --breakpoint-doc: 1600px;
 
-  --font-ui: 'HD44780', ui-sans-serif, system-ui, sans-serif;
+  /* Three faces: Ticketing for the interface, Datasaur for headings, the LCD mono for code and
+     figures. The LCD face stands behind the other two, so a glyph either lacks still lands on the
+     pixel grid. */
+  --font-ui: 'Ticketing', 'HD44780', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Datasaur', 'HD44780', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'HD44780 Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
+  /* Named so the role utilities of a bevel can ask for no colour, as the built-in ones can. */
+  --color-transparent: transparent;
   /* Surfaces */
   --color-page: var(--nc-page);
   --color-panel: var(--nc-panel);
   --color-raised: var(--nc-raised);
   --color-inset: var(--nc-inset);
+  /* The rim of a well: the dark top and sides that make a field read as sunk. */
+  --color-well: var(--nc-well);
+  --color-scrim: var(--nc-scrim);
   /* The piano keyboard, which has no theme twin: a key stands for ivory or ebony, and neither
      depends on how the room is lit. Written out rather than pointing at a private name for the
      same reason — the private layer is there so a theme can swap it. */
   --color-key: #c8bfb3;
   --color-key-lit: #ede6da;
   --color-key-sharp: #17140f;
+  /* The keycap: beige with a black legend in the dark theme, charcoal with a white one in light. */
+  --color-key-face: var(--nc-key-face);
+  --color-key-hl: var(--nc-key-hl);
+  --color-key-side: var(--nc-key-side);
+  --color-key-edge: #000000;
+  --color-key-ink: var(--nc-key-ink);
   --color-lcd: var(--nc-lcd);
   --color-lcd-ink: var(--nc-lcd-ink);
   --color-lcd-dim: var(--nc-lcd-dim);
@@ -97,24 +126,58 @@
   --color-ink-3: var(--nc-ink-3);
   --color-ink-4: var(--nc-ink-4);
   --color-gutter: var(--nc-gutter);
-  /* Accents (fill) and their ink variants */
+  /* The ink of whatever is hovered, pressed, selected or current, and the edge that lights with it. */
+  --color-active-ink: var(--nc-active-ink);
+  /* Accents: the fill, its -ink twin for text, its -wash twin for a tinted ground. */
   --color-gold: var(--nc-gold);
   --color-gold-ink: var(--nc-gold-ink);
+  --color-gold-wash: var(--nc-gold-wash);
   --color-hot: var(--nc-hot);
   --color-hot-ink: var(--nc-hot-ink);
+  --color-hot-wash: var(--nc-hot-wash);
   --color-jade: var(--nc-jade);
   --color-jade-ink: var(--nc-jade-ink);
+  --color-jade-wash: var(--nc-jade-wash);
   --color-sky: var(--nc-sky);
   --color-sky-ink: var(--nc-sky-ink);
+  --color-sky-wash: var(--nc-sky-wash);
   --color-orange: var(--nc-orange);
   --color-orange-ink: var(--nc-orange-ink);
   --color-blush: var(--nc-blush);
   --color-blush-ink: var(--nc-blush-ink);
   --color-lime: var(--nc-lime);
   --color-magenta: var(--nc-magenta);
-  --color-gold-wash: var(--nc-gold-wash);
-  --color-jade-wash: var(--nc-jade-wash);
-  /* Ink drawn ON an accent fill */
+  /* An accent thinned to a tint that is dithered over a row, an unread notification for one. */
+  --color-wash-gold: color-mix(in srgb, var(--nc-gold) var(--nc-wash-opacity), transparent);
+  --color-wash-jade: color-mix(in srgb, var(--nc-jade) var(--nc-wash-opacity), transparent);
+  --color-wash-sky: color-mix(in srgb, var(--nc-sky) var(--nc-wash-opacity), transparent);
+  --color-wash-orange: color-mix(in srgb, var(--nc-orange) var(--nc-wash-opacity), transparent);
+  /* The primary action: gold in the dark theme, ink in the light one. */
+  --color-primary: var(--nc-primary);
+  --color-primary-hover: var(--nc-primary-hover);
+  --color-primary-edge: var(--nc-primary-edge);
+  --color-primary-skirt: var(--nc-primary-skirt);
+  --color-on-primary: var(--nc-on-primary);
+  /* A coloured button's bevel: the edge is its fill lifted towards white, the skirt the same fill
+     sunk towards black, in the proportions the gold one is drawn with. */
+  --color-hot-hover: #ff3d82;
+  --color-hot-edge: color-mix(in srgb, var(--nc-hot) 55%, white);
+  --color-hot-skirt: color-mix(in srgb, var(--nc-hot) 54%, black);
+  --color-on-hot: #fafdff;
+  --color-gold-edge: color-mix(in srgb, var(--nc-gold) 55%, white);
+  --color-gold-skirt: color-mix(in srgb, var(--nc-gold) 54%, black);
+  --color-jade-edge: color-mix(in srgb, var(--nc-jade) 55%, white);
+  --color-jade-skirt: #066e3f;
+  --color-sky-edge: color-mix(in srgb, var(--nc-sky) 55%, white);
+  --color-sky-skirt: color-mix(in srgb, var(--nc-sky) 54%, black);
+  /* The skirt under a neutral raised bevel, and under one that is lit. */
+  --color-skirt: var(--nc-skirt);
+  --color-lit-skirt: var(--nc-lit-skirt);
+  /* The frame around what its author wrote. */
+  --color-creator: var(--nc-creator);
+  /* A tick on the filled part of a track. */
+  --color-tick-on: var(--nc-tick-on);
+  --color-glare: var(--nc-glare);
   /*
    * Ink drawn on a bright accent fill. Not the palette's near-black (#16171A): that one is itself a
    * dark fill that takes light ink.
@@ -125,12 +188,6 @@
    * Scrims laid over artwork, so that --color-on-accent-dark stays legible whatever the art is.
    * Identical in both themes, because the ink over them does not flip either.
    */
-  --nc-scrim-hero: linear-gradient(
-    to top,
-    rgb(11 10 9 / 0.96) 0%,
-    rgb(11 10 9 / 0.55) 42%,
-    transparent 72%
-  );
   --nc-scrim-video: linear-gradient(
     to top,
     rgb(8 7 6 / 0.88) 0%,
@@ -141,6 +198,8 @@
   --color-presence-sky: #68aed4;
   --color-presence-blush: #ff80a4;
   --color-presence-jade: #10d275;
+
+  --animate-rise: nc-rise 180ms ease-out both;
 }
 
 :root {
@@ -149,6 +208,9 @@
   --nc-panel: #131110;
   --nc-raised: #1c1917;
   --nc-inset: #0a0806;
+  --nc-well: #020101;
+  --nc-scrim: #0b0a09;
+  --nc-skirt: #211d19;
   --nc-lcd: #071108;
   --nc-lcd-ink: #10d275;
   --nc-lcd-dim: #0e8a5a;
@@ -184,75 +246,252 @@
   --nc-lime: #bfff3c;
   --nc-magenta: #94216a;
   --nc-gold-wash: #332a0c;
-  /* The ground a granted permission chip sits on in the NET tree: jade at the depth of the page,
-     so the chip reads as filled without the border disappearing into it. */
+  --nc-hot-wash: #2a0d18;
   --nc-jade-wash: #0b2417;
+  --nc-sky-wash: #0e2231;
+  --nc-wash-opacity: 20%;
+  --nc-primary: #ffd100;
+  --nc-primary-hover: #ffdb33;
+  --nc-primary-edge: #ffe873;
+  --nc-primary-skirt: #8a7000;
+  --nc-on-primary: #0b0a09;
+  /* Follows the gold ink into the light theme, where both are the navy that reads on paper. */
+  --nc-active-ink: var(--nc-gold-ink);
+  --nc-lit-skirt: #8a7000;
+  --nc-creator: #ffd100;
+  --nc-tick-on: rgb(0 0 0 / 0.35);
+  --nc-glare: rgb(255 255 255 / 0.78);
+  --nc-key-face: #d6c8a4;
+  --nc-key-hl: #ece2c6;
+  --nc-key-side: #9e8b62;
+  --nc-key-ink: #1c170e;
+
+  /* The floppy disk, which has no theme twin: its shutter is steel, its label paper and its window
+     dark in any light, and only the plastic around them is the game's to colour. */
+  --nc-disk-steel: #c9cdd5;
+  --nc-disk-steel-lit: #eef0f3;
+  --nc-disk-steel-shade: #9aa1ad;
+  --nc-disk-steel-foot: #8e95a2;
+  --nc-disk-paper: #f4f1e6;
+  --nc-disk-ink: #16171a;
+  --nc-disk-window: #1d1a17;
+  --nc-disk-media: #3a2e24;
+
+  /* One pixel of the kit. Every stroke is a whole number of these: borders, bevel edges and
+     skirts, separators, ticks, the travel of a press, the focus ring. Boxes, paddings and gaps are
+     free of it. */
+  --nc-px: 3px;
+  /* The height ladder of a control, borders and skirt included. */
+  --nc-h-xs: 28px;
+  --nc-h-sm: 30px;
+  --nc-h-md: 36px;
+  --nc-h-lg: 40px;
+  --nc-h-xl: 44px;
+  --nc-h-bar: 48px;
+  --nc-h-hero: 56px;
+
+  /* The ordered dither, on 3px cells in a 12px tile. The four cell pairs (1 to 4) are disjoint, so
+     stacking them is how the steps between 12% and 50% are made, and a shelf fades its dim layers in
+     by them; the heavier steps are single images because a mask that composites them with something
+     else needs one layer each. */
+  --nc-dither-1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h3v3H0zM6 6h3v3H6z'/%3E%3C/svg%3E");
+  --nc-dither-2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath d='M6 0h3v3H6zM0 6h3v3H0z'/%3E%3C/svg%3E");
+  --nc-dither-3: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath d='M3 3h3v3H3zM9 9h3v3H9z'/%3E%3C/svg%3E");
+  --nc-dither-4: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath d='M9 3h3v3H9zM3 9h3v3H3z'/%3E%3C/svg%3E");
+  --nc-dither-12: var(--nc-dither-1);
+  --nc-dither-25: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h3v3H0zM6 6h3v3H6zM6 0h3v3H6zM0 6h3v3H0z'/%3E%3C/svg%3E");
+  --nc-dither-37: var(--nc-dither-25), var(--nc-dither-3);
+  --nc-dither-50: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h3v3H0zM6 6h3v3H6zM6 0h3v3H6zM0 6h3v3H0zM3 3h3v3H3zM9 9h3v3H9zM9 3h3v3H9zM3 9h3v3H3z'/%3E%3C/svg%3E");
+  --nc-dither-75: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h3v3H0zM6 6h3v3H6zM6 0h3v3H6zM0 6h3v3H0zM3 3h3v3H3zM9 9h3v3H9zM9 3h3v3H9zM3 9h3v3H3zM3 0h3v3H3zM9 6h3v3H9zM9 0h3v3H9zM3 6h3v3H3z'/%3E%3C/svg%3E");
+  --nc-dither-87: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h3v3H0zM6 6h3v3H6zM6 0h3v3H6zM0 6h3v3H0zM3 3h3v3H3zM9 9h3v3H9zM9 3h3v3H9zM3 9h3v3H3zM3 0h3v3H3zM9 6h3v3H9zM9 0h3v3H9zM3 6h3v3H3zM0 3h3v3H0zM6 9h3v3H6z'/%3E%3C/svg%3E");
+  --nc-dither-none: linear-gradient(transparent, transparent);
+  --nc-dither-full: linear-gradient(#000, #000);
 }
 
 [data-theme='light'] {
   color-scheme: light;
-  --nc-page: #e8e4da;
-  --nc-panel: #f6f3ec;
+  --nc-page: #e6e8ec;
+  --nc-panel: #f2f3f6;
   --nc-raised: #ffffff;
-  --nc-inset: #ded8cb;
+  --nc-inset: #dcdfe5;
+  --nc-well: #8e95a2;
+  --nc-scrim: #8e95a2;
+  --nc-skirt: #8e95a2;
   --nc-lcd: #a9c79b;
   --nc-lcd-ink: #12300f;
   --nc-lcd-dim: #3e5a34;
   --nc-lcd-veil: rgb(18 48 15 / 0.07);
   --nc-paper: #fffdf8;
   --nc-sunken: #eee9de;
-  --nc-line: #cfc7b7;
-  --nc-line-strong: #b9b0a0;
+  --nc-line: #c3c8d1;
+  --nc-line-strong: #a7aeba;
   --nc-line-soft: #ddd6c7;
   --nc-line-faint: #e4ded1;
-  --nc-ink: #17140f;
-  --nc-ink-body: #3a342c;
-  --nc-ink-2: #5c544a;
-  --nc-ink-3: #726a5e;
-  --nc-ink-4: #7a7166;
+  --nc-ink: #15181d;
+  --nc-ink-body: #333941;
+  --nc-ink-2: #4f5661;
+  --nc-ink-3: #646c78;
+  --nc-ink-4: #7b8390;
   --nc-gutter: #7f7669;
-  --nc-gold-ink: #7a5a00;
-  --nc-hot-ink: #c41e5c;
+  --nc-gold-ink: #234975;
+  --nc-hot-ink: #b8174f;
   --nc-jade-ink: #0a7a4a;
   --nc-sky-ink: #1f6285;
   --nc-orange-ink: #a34e10;
   --nc-blush-ink: #b03a5e;
-  --nc-gold-wash: #f7ecc0;
-  --nc-jade-wash: #cfe9dc;
+  --nc-gold-wash: #fff3bf;
+  --nc-hot-wash: #ffdbe6;
+  --nc-jade-wash: #cfeedd;
+  --nc-sky-wash: #d6e9f4;
+  --nc-wash-opacity: 32%;
+  --nc-primary: #15181d;
+  --nc-primary-hover: #232830;
+  --nc-primary-edge: #474d57;
+  --nc-primary-skirt: #000000;
+  --nc-on-primary: #dde8f7;
+  --nc-lit-skirt: #234975;
+  --nc-creator: #1f6285;
+  --nc-tick-on: rgb(221 232 247 / 0.45);
+  --nc-glare: rgb(120 128 142 / 0.62);
+  --nc-key-face: #2e333b;
+  --nc-key-hl: #474d57;
+  --nc-key-side: #15181d;
+  --nc-key-ink: #f2f3f6;
 }
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
     color-scheme: light;
-    --nc-page: #e8e4da;
-    --nc-panel: #f6f3ec;
+    --nc-page: #e6e8ec;
+    --nc-panel: #f2f3f6;
     --nc-raised: #ffffff;
-    --nc-inset: #ded8cb;
+    --nc-inset: #dcdfe5;
+    --nc-well: #8e95a2;
+    --nc-scrim: #8e95a2;
+    --nc-skirt: #8e95a2;
     --nc-lcd: #a9c79b;
     --nc-lcd-ink: #12300f;
     --nc-lcd-dim: #3e5a34;
     --nc-lcd-veil: rgb(18 48 15 / 0.07);
     --nc-paper: #fffdf8;
     --nc-sunken: #eee9de;
-    --nc-line: #cfc7b7;
-    --nc-line-strong: #b9b0a0;
+    --nc-line: #c3c8d1;
+    --nc-line-strong: #a7aeba;
     --nc-line-soft: #ddd6c7;
     --nc-line-faint: #e4ded1;
-    --nc-ink: #17140f;
-    --nc-ink-body: #3a342c;
-    --nc-ink-2: #5c544a;
-    --nc-ink-3: #726a5e;
-    --nc-ink-4: #7a7166;
+    --nc-ink: #15181d;
+    --nc-ink-body: #333941;
+    --nc-ink-2: #4f5661;
+    --nc-ink-3: #646c78;
+    --nc-ink-4: #7b8390;
     --nc-gutter: #7f7669;
-    --nc-gold-ink: #7a5a00;
-    --nc-hot-ink: #c41e5c;
+    --nc-gold-ink: #234975;
+    --nc-hot-ink: #b8174f;
     --nc-jade-ink: #0a7a4a;
     --nc-sky-ink: #1f6285;
     --nc-orange-ink: #a34e10;
     --nc-blush-ink: #b03a5e;
-    --nc-gold-wash: #f7ecc0;
-    --nc-jade-wash: #cfe9dc;
+    --nc-gold-wash: #fff3bf;
+    --nc-hot-wash: #ffdbe6;
+    --nc-jade-wash: #cfeedd;
+    --nc-sky-wash: #d6e9f4;
+    --nc-wash-opacity: 32%;
+    --nc-primary: #15181d;
+    --nc-primary-hover: #232830;
+    --nc-primary-edge: #474d57;
+    --nc-primary-skirt: #000000;
+    --nc-on-primary: #dde8f7;
+    --nc-lit-skirt: #234975;
+    --nc-creator: #1f6285;
+    --nc-tick-on: rgb(221 232 247 / 0.45);
+    --nc-glare: rgb(120 128 142 / 0.62);
+    --nc-key-face: #2e333b;
+    --nc-key-hl: #474d57;
+    --nc-key-side: #15181d;
+    --nc-key-ink: #f2f3f6;
   }
+}
+
+/*
+ * The roles and the geometry of a bevel. Registered so that none inherits: a bevel inside another
+ * starts from the initial values rather than from its parent's, and a role a shape does not name
+ * is transparent rather than borrowed. `--bv-fill` being a typed colour is also what lets it
+ * transition.
+ */
+@property --bv-edge {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+@property --bv-hi {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+@property --bv-lo {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+@property --bv-skirt {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+@property --bv-fill {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+@property --bv-t {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 3px;
+}
+@property --bv-r {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 3px;
+}
+@property --bv-b {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 3px;
+}
+@property --bv-l {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 3px;
+}
+@property --bv-steps {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
+}
+@property --bv-flat {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+@property --bv-foot {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@property --bv-sink {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@property --bv-drop {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@property --bv-shade {
+  syntax: '<length-percentage>';
+  inherits: false;
+  initial-value: 100%;
 }
 
 @layer base {
@@ -266,20 +505,47 @@
     border-color: transparent;
     color: var(--nc-ink-2);
   }
-  /*
-   * No border colour here: the variants disagree about what an unavailable button's border becomes,
-   * so there is nothing for this to match. It keeps the transparent the rule above sets, which is
-   * the quieter of the two to arrive on.
-   */
   [ncButton]:disabled {
     color: var(--nc-ink-4);
+  }
+  /*
+   * What a shape is painted with when nothing names a role. In `base` so that a role utility on the
+   * same element wins whatever order the two are generated in. The top and the bottom line follow
+   * the edge until one is named.
+   */
+  .flat-sm,
+  .flat-lg,
+  .raised-sm,
+  .raised-lg,
+  .well {
+    --bv-hi: var(--bv-edge);
+    --bv-lo: var(--bv-edge);
+  }
+  .flat-sm {
+    --bv-edge: var(--nc-line);
+  }
+  .flat-lg,
+  .raised-sm,
+  .raised-lg {
+    --bv-edge: var(--nc-line-strong);
+  }
+  .raised-sm,
+  .raised-lg {
+    --bv-skirt: var(--nc-skirt);
+    --bv-fill: var(--nc-raised);
+  }
+  .well {
+    --bv-edge: var(--nc-well);
+    --bv-lo: var(--nc-line-strong);
+    --bv-fill: var(--nc-inset);
   }
   html {
     background: var(--nc-page);
     color: var(--nc-ink);
     font-family: var(--font-ui);
-    font-size: 14px;
-    -webkit-font-smoothing: antialiased;
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: none;
     text-rendering: geometricPrecision;
   }
   body {
@@ -319,10 +585,19 @@
   :is(.font-mono, code, pre, kbd, samp) {
     --nc-tracking: normal;
   }
-  .font-ui {
+  .font-ui,
+  .font-display {
     --nc-tracking: var(--tracking-copy);
   }
-  /* Interactive elements: pointer cursor and a short colour transition for hover states. */
+  /* The pixel faces carry one weight; a heading is told apart by its face and its size. */
+  h1,
+  h2,
+  h3,
+  h4,
+  strong,
+  b {
+    font-weight: 400;
+  }
   button,
   [role='button'],
   [role='tab'],
@@ -357,13 +632,21 @@
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
   :focus-visible {
-    outline: 2px solid var(--nc-gold);
-    outline-offset: 1px;
+    outline: var(--nc-px) solid var(--nc-gold);
+    outline-offset: var(--nc-px);
   }
   ::selection {
     background: var(--nc-gold);
-    color: #17140f;
+    color: var(--color-on-accent);
   }
 }
 
@@ -376,7 +659,7 @@
 }
 
 @utility label {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: var(--text-label);
   line-height: var(--text-label--line-height);
   --nc-tracking: var(--tracking-label);
@@ -421,8 +704,12 @@
 
 /* CDK overlay hooks */
 @layer components {
+  /* The scrim: the page seen through a half dither, reached in four held steps. */
   .nc-dialog-backdrop {
-    background: color-mix(in srgb, var(--nc-page) 70%, transparent);
+    background: var(--nc-scrim);
+    mask-image: var(--nc-dither-50);
+    mask-size: 12px 12px;
+    animation: nc-scrim-in 180ms step-end both;
   }
   .nc-dialog-panel {
     outline: none;
@@ -468,58 +755,508 @@
 }
 
 /*
- * Density: how big a bar and the controls in it are drawn.
+ * The bevel: one stack of strips for every frame in the kit, painted over a transparent border so
+ * the box keeps the measurements the border gives it.
  *
- * `small` is the default and is the artboards' own measurements; `big` is the editor's own strips.
- * One class names the choice, so a screen either asks for it or does not.
+ * Each straight edge is a strip that stops short of the corner, which is what leaves the corner
+ * pixel empty and steps the outline. A large bevel steps twice: its lines stop two pixels short and
+ * a single pixel sits in the angle. The skirt is the lower half of the frame drawn again one rise
+ * further down. The fill is one rectangle a pixel inside the outline, under everything else.
  *
- * Two of the three things it changes cannot be a multiplication:
- *
- * - the **type step**, because the face is a pixel face and 10 × 1.25 is 12.5. It moves up the
- *   design's own ladder instead, to the step the page's header bar already uses — which is what
- *   makes a button in an editor strip read as the same kind of button as SHARE and PUBLISH.
- * - the **icon step**, which is not a CSS length at all but an attribute on an SVG, and is
- *   12 | 24 | 48 on purpose: a glyph drawn on a 24 grid only stays crisp at exact halves and
- *   doubles of it. A bar at `big` takes 24; there is no rung between.
- *
- * The boxes do multiply, and the factor stays a single declaration.
+ * The shapes below only set the geometry; the colours are the five roles (`--bv-edge`, `--bv-hi`,
+ * `--bv-lo`, `--bv-skirt`, `--bv-fill`). A `bg-*` utility has no place on a bevelled element: the
+ * background colour lies under the strips and would show in the corner pixels.
  */
-:root,
-.nc-density-small {
-  --nc-density: 1;
-  --nc-control-text: var(--text-label);
-  --nc-control-leading: var(--text-label--line-height);
-}
-
-.nc-density-big {
-  --nc-density: 1.25;
-  --nc-control-text: var(--text-body);
-  --nc-control-leading: var(--text-body--line-height);
+@utility bevel {
+  --bv-nt: calc(var(--bv-t) * var(--bv-steps));
+  --bv-nr: calc(var(--bv-r) * var(--bv-steps));
+  --bv-nb: calc(var(--bv-b) * var(--bv-steps));
+  --bv-nl: calc(var(--bv-l) * var(--bv-steps));
+  --bv-step: calc(var(--nc-px) * (var(--bv-steps) - 1));
+  --bv-run: calc(100% - var(--bv-nl) - var(--bv-nr));
+  --bv-rise: calc(var(--bv-foot) * (1 - var(--bv-flat)));
+  --bv-skirt-h: calc(var(--bv-rise) - var(--bv-drop));
+  --bv-border-t: calc(var(--bv-nt) + var(--bv-sink));
+  --bv-border-b: calc(var(--bv-nb) + var(--bv-foot));
+  box-sizing: border-box;
+  border-style: solid;
+  border-color: transparent;
+  border-width: var(--bv-border-t) var(--bv-nr) var(--bv-border-b) var(--bv-nl);
+  background:
+    linear-gradient(var(--bv-hi) 0 0) var(--bv-nl) 0 / var(--bv-run) var(--bv-t),
+    linear-gradient(var(--bv-lo) 0 0) var(--bv-nl) calc(100% - var(--bv-rise)) / var(--bv-run)
+      var(--bv-b),
+    linear-gradient(var(--bv-edge) var(--bv-shade), var(--bv-lo) 0) 0 var(--bv-nt) / var(--bv-l)
+      calc(100% - var(--bv-nt) - var(--bv-nb) - var(--bv-rise)),
+    linear-gradient(var(--bv-edge) var(--bv-shade), var(--bv-lo) 0) 100% var(--bv-nt) / var(--bv-r)
+      calc(100% - var(--bv-nt) - var(--bv-nb) - var(--bv-rise)),
+    linear-gradient(var(--bv-edge) 0 0) var(--nc-px) var(--nc-px) / var(--bv-step) var(--bv-step),
+    linear-gradient(var(--bv-edge) 0 0) calc(100% - var(--nc-px)) var(--nc-px) / var(--bv-step)
+      var(--bv-step),
+    linear-gradient(var(--bv-edge) 0 0) var(--nc-px) calc(100% - var(--nc-px) - var(--bv-rise)) /
+      var(--bv-step) var(--bv-step),
+    linear-gradient(var(--bv-edge) 0 0) calc(100% - var(--nc-px))
+      calc(100% - var(--nc-px) - var(--bv-rise)) / var(--bv-step) var(--bv-step),
+    linear-gradient(var(--bv-skirt) 0 0) 0 calc(100% - var(--bv-nb)) / var(--bv-l) var(--bv-skirt-h),
+    linear-gradient(var(--bv-skirt) 0 0) 100% calc(100% - var(--bv-nb)) / var(--bv-r)
+      var(--bv-skirt-h),
+    linear-gradient(var(--bv-skirt) 0 0) var(--nc-px) calc(100% - var(--nc-px)) / var(--bv-step)
+      var(--bv-skirt-h),
+    linear-gradient(var(--bv-skirt) 0 0) calc(100% - var(--nc-px)) calc(100% - var(--nc-px)) /
+      var(--bv-step) var(--bv-skirt-h),
+    linear-gradient(var(--bv-skirt) 0 0) var(--bv-nl) 100% / var(--bv-run) var(--bv-skirt-h),
+    linear-gradient(var(--bv-fill) 0 0) var(--bv-l) var(--bv-t) /
+      calc(100% - var(--bv-l) - var(--bv-r)) calc(100% - var(--bv-t) - var(--bv-b) - var(--bv-rise));
+  background-repeat: no-repeat;
+  background-origin: border-box;
+  background-clip: border-box;
+  translate: 0 var(--bv-drop);
+  transition:
+    translate 90ms,
+    --bv-fill 180ms,
+    color 180ms;
 }
 
 /*
- * Declared on all three selectors, and that is not redundant: a custom property is substituted
- * where it is *declared*, so a --nc-bar-h written only on :root would compute against the root's
- * density and inherit that number — naming a density deeper down would then change nothing.
+ * The five shapes. Each `@utility` holds its geometry only; the strips are written once for the
+ * five class names, so a stylesheet carries one copy of them rather than one per shape. That rule
+ * has no specificity: any utility on the same element still wins over it, as it would over a
+ * utility generated ahead of it. A shape asked for through a variant or `@apply` therefore brings
+ * its geometry alone, and stands on an element that is a `bevel` already.
  */
-:root,
-.nc-density-small,
-.nc-density-big {
-  /* The strip every editor tab and every panel puts its title in. */
-  --nc-bar-h: calc(40px * var(--nc-density));
-  /* A tool button in that strip: the icon-only box, and the width the active one keeps. */
-  --nc-control-h: calc(26px * var(--nc-density));
-  --nc-tool-w: calc(30px * var(--nc-density));
-  /* The two shorter buttons that appear in a strip rather than in a form. */
-  --nc-control-h-xs: calc(22px * var(--nc-density));
-  --nc-control-h-sm: calc(24px * var(--nc-density));
-  /* The transport: its short buttons in a frame of their own, and what sits beside it in a bar
-     takes this height too, so a strip that holds one reads as one row. */
-  --nc-transport-h: calc(var(--nc-control-h-sm) + 10px);
+@layer utilities {
+  :where(.flat-sm, .flat-lg, .raised-sm, .raised-lg, .well) {
+    @apply bevel;
+  }
+}
+/* A flat frame: everything that is neither pressed nor typed in. */
+@utility flat-sm {
+  --bv-clip: var(--nc-clip-sm);
+}
+@utility flat-lg {
+  --bv-steps: 2;
+  --bv-clip: var(--nc-clip-lg);
+}
+/* Raised: whatever can be pressed. The bottom border is a pixel deeper, and the skirt fills it. */
+@utility raised-sm {
+  --bv-foot: var(--nc-px);
+  --bv-clip: var(--nc-clip-sm);
+}
+@utility raised-lg {
+  --bv-steps: 2;
+  --bv-foot: var(--nc-px);
+  --bv-clip: var(--nc-clip-lg);
+}
+/* A well: whatever can be typed in. A flat frame whose content sits a pixel lower, under a dark rim. */
+@utility well {
+  --bv-sink: var(--nc-px);
+  --bv-clip: var(--nc-clip-sm);
 }
 
-/** The type a control in a bar is set in, which is the density's to decide. */
-@utility control-type {
-  font-size: var(--nc-control-text);
-  line-height: var(--nc-control-leading);
+/*
+ * An edge left open: its line is not drawn and its neighbours run to the end, square. A tab opens
+ * onto its panel (`bevel-open-b`, or `bevel-open-r` in a rail), a joined segment onto the next
+ * (`bevel-open-r` on the first, both sides in the middle, `bevel-open-l` on the last). Small bevels
+ * only.
+ */
+@utility bevel-open-t {
+  --bv-t: 0px;
+}
+@utility bevel-open-r {
+  --bv-r: 0px;
+}
+@utility bevel-open-b {
+  --bv-b: 0px;
+}
+@utility bevel-open-l {
+  --bv-l: 0px;
+}
+
+/* A raised shape drawn flat, keeping the room of its skirt so nothing inside it moves. */
+@utility bevel-level {
+  --bv-flat: 1;
+}
+/* And back, for the state that raises it again. */
+@utility bevel-lift {
+  --bv-flat: 0;
+}
+/* Pressed or latched: the box travels the height of its skirt and the skirt is gone. */
+@utility bevel-down {
+  --bv-drop: var(--bv-rise);
+}
+
+@utility bevel-edge-* {
+  --bv-edge: --value(--color-*, [color]);
+}
+@utility bevel-hi-* {
+  --bv-hi: --value(--color-*, [color]);
+}
+@utility bevel-lo-* {
+  --bv-lo: --value(--color-*, [color]);
+}
+@utility bevel-skirt-* {
+  --bv-skirt: --value(--color-*, [color]);
+}
+@utility bevel-fill-* {
+  --bv-fill: --value(--color-*, [color]);
+}
+
+/* The roles that travel together. `lit` is hover, press and selection on anything neutral. */
+@utility bevel-lit {
+  --bv-edge: var(--color-active-ink);
+  --bv-skirt: var(--color-lit-skirt);
+}
+/*
+ * A frame lit from above: the top line and the top quarter of each side keep the edge, the rest of
+ * the sides darkens to the bottom line's colour. It is how a person's square is framed. The quarter
+ * is rounded to a whole pixel, half up, so the step never lands between two rows.
+ */
+@utility bevel-shade {
+  --bv-lo: var(--color-skirt);
+  --bv-shade: round(25%, 1px);
+}
+/* No frame until a state gives it one. */
+@utility bevel-bare {
+  --bv-edge: transparent;
+  --bv-skirt: transparent;
+  --bv-fill: transparent;
+}
+@utility bevel-primary {
+  --bv-edge: var(--color-primary-edge);
+  --bv-skirt: var(--color-primary-skirt);
+  --bv-fill: var(--color-primary);
+}
+@utility bevel-gold {
+  --bv-edge: var(--color-gold-edge);
+  --bv-skirt: var(--color-gold-skirt);
+  --bv-fill: var(--color-gold);
+}
+@utility bevel-hot {
+  --bv-edge: var(--color-hot-edge);
+  --bv-skirt: var(--color-hot-skirt);
+  --bv-fill: var(--color-hot);
+}
+@utility bevel-jade {
+  --bv-edge: var(--color-jade-edge);
+  --bv-skirt: var(--color-jade-skirt);
+  --bv-fill: var(--color-jade);
+}
+@utility bevel-sky {
+  --bv-edge: var(--color-sky-edge);
+  --bv-skirt: var(--color-sky-skirt);
+  --bv-fill: var(--color-sky);
+}
+
+/*
+ * The glare: one band of light crossing a coloured call to action when the pointer arrives. It is a
+ * signal of importance, so it is asked for by name and only by those; a neutral control stays
+ * still. The band has a solid core, a 50% checker around it and a 25% checker around that; the
+ * checkers stay fixed on the element while the band slides through them, so pixels switch on and
+ * off instead of blending. It covers the whole bevel and is cut to its stepped outline.
+ */
+@utility glare {
+  position: relative;
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    &:hover::after {
+      content: '';
+      position: absolute;
+      inset: calc(var(--bv-border-t) * -1) calc(var(--bv-nr) * -1) calc(var(--bv-border-b) * -1)
+        calc(var(--bv-nl) * -1);
+      pointer-events: none;
+      clip-path: var(--bv-clip);
+      background: linear-gradient(
+          115deg,
+          transparent calc(50% - 25% * var(--nc-glare-s)),
+          var(--nc-glare) calc(50% - 25% * var(--nc-glare-s)) calc(50% + 25% * var(--nc-glare-s)),
+          transparent calc(50% + 25% * var(--nc-glare-s))
+        )
+        no-repeat;
+      background-size: var(--nc-glare-w) 100%;
+      mask-image:
+        linear-gradient(
+          115deg,
+          transparent calc(50% - 7% * var(--nc-glare-s)),
+          #000 calc(50% - 7% * var(--nc-glare-s)) calc(50% + 7% * var(--nc-glare-s)),
+          transparent calc(50% + 7% * var(--nc-glare-s))
+        ),
+        var(--nc-dither-25),
+        linear-gradient(
+          115deg,
+          transparent calc(50% - 16% * var(--nc-glare-s)),
+          #000 calc(50% - 16% * var(--nc-glare-s)) calc(50% + 16% * var(--nc-glare-s)),
+          transparent calc(50% + 16% * var(--nc-glare-s))
+        ),
+        var(--nc-dither-50);
+      mask-size:
+        var(--nc-glare-w) 100%,
+        12px 12px,
+        var(--nc-glare-w) 100%,
+        12px 12px;
+      mask-repeat: no-repeat, repeat, no-repeat, repeat;
+      mask-composite: add, add, intersect, add;
+      animation: nc-glide 650ms cubic-bezier(0.4, 0, 0.2, 1) 1 both;
+    }
+  }
+  /* Held, latched or unavailable: nothing sweeps. */
+  &:active::after,
+  &:disabled::after,
+  &[aria-disabled='true']::after,
+  &[aria-pressed='true']::after,
+  &[aria-checked='true']::after,
+  &[aria-selected='true']::after,
+  &[data-pressed]::after {
+    content: none;
+  }
+}
+[data-reduce-motion] .glare::after {
+  content: none;
+}
+
+@keyframes nc-glide {
+  from {
+    background-position: calc(var(--nc-glare-w) * -1) 0;
+    mask-position:
+      calc(var(--nc-glare-w) * -1) 0,
+      0 0,
+      calc(var(--nc-glare-w) * -1) 0,
+      0 0;
+  }
+  to {
+    background-position: calc(100% + var(--nc-glare-w)) 0;
+    mask-position:
+      calc(100% + var(--nc-glare-w)) 0,
+      0 0,
+      calc(100% + var(--nc-glare-w)) 0,
+      0 0;
+  }
+}
+
+:root {
+  --nc-glare-w: 72px;
+  --nc-glare-s: 1;
+  /* The outline of a small and of a large bevel, skirt included: what a glare is cut to. */
+  --nc-clip-sm: polygon(
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px),
+    0 3px,
+    3px 3px
+  );
+  --nc-clip-lg: polygon(
+    6px 0,
+    calc(100% - 6px) 0,
+    calc(100% - 6px) 3px,
+    calc(100% - 3px) 3px,
+    calc(100% - 3px) 6px,
+    100% 6px,
+    100% calc(100% - 6px),
+    calc(100% - 3px) calc(100% - 6px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 6px) calc(100% - 3px),
+    calc(100% - 6px) 100%,
+    6px 100%,
+    6px calc(100% - 3px),
+    3px calc(100% - 3px),
+    3px calc(100% - 6px),
+    0 calc(100% - 6px),
+    0 6px,
+    3px 6px,
+    3px 3px,
+    6px 3px
+  );
+}
+
+/*
+ * Dither in and out: a surface appears and leaves through the ordered dither instead of through
+ * opacity. Each step is held, so the keyframes want a `step-end` timing.
+ */
+@utility dither-in {
+  mask-size: 12px 12px;
+  animation: nc-dither-in 200ms step-end both;
+}
+@utility dither-out {
+  mask-size: 12px 12px;
+  animation: nc-dither-out 200ms step-end both;
+}
+/* The seven-step ladders, for a surface large enough that four steps read as a jump. */
+@utility dither-in-fine {
+  mask-size: 12px 12px;
+  animation: nc-dither-fine 320ms step-end both;
+}
+@utility dither-out-fine {
+  mask-size: 12px 12px;
+  animation: nc-dither-fine-out 320ms step-end both;
+}
+
+@keyframes nc-dither-in {
+  0% {
+    mask-image: var(--nc-dither-none);
+  }
+  25% {
+    mask-image: var(--nc-dither-12);
+  }
+  50% {
+    mask-image: var(--nc-dither-25);
+  }
+  75% {
+    mask-image: var(--nc-dither-50);
+  }
+  100% {
+    mask-image: var(--nc-dither-full);
+  }
+}
+@keyframes nc-dither-out {
+  0% {
+    mask-image: var(--nc-dither-full);
+  }
+  25% {
+    mask-image: var(--nc-dither-50);
+  }
+  50% {
+    mask-image: var(--nc-dither-25);
+  }
+  75% {
+    mask-image: var(--nc-dither-12);
+  }
+  100% {
+    mask-image: var(--nc-dither-none);
+  }
+}
+@keyframes nc-dither-fine {
+  0% {
+    mask-image: var(--nc-dither-none);
+  }
+  16.67% {
+    mask-image: var(--nc-dither-12);
+  }
+  33.33% {
+    mask-image: var(--nc-dither-25);
+  }
+  50% {
+    mask-image: var(--nc-dither-50);
+  }
+  66.67% {
+    mask-image: var(--nc-dither-75);
+  }
+  83.33% {
+    mask-image: var(--nc-dither-87);
+  }
+  100% {
+    mask-image: var(--nc-dither-full);
+  }
+}
+@keyframes nc-dither-fine-out {
+  0% {
+    mask-image: var(--nc-dither-full);
+  }
+  16.67% {
+    mask-image: var(--nc-dither-87);
+  }
+  33.33% {
+    mask-image: var(--nc-dither-75);
+  }
+  50% {
+    mask-image: var(--nc-dither-50);
+  }
+  66.67% {
+    mask-image: var(--nc-dither-25);
+  }
+  83.33% {
+    mask-image: var(--nc-dither-12);
+  }
+  100% {
+    mask-image: var(--nc-dither-none);
+  }
+}
+/* The scrim settles at half: four steps of an eighth each. */
+@keyframes nc-scrim-in {
+  0% {
+    mask-image: var(--nc-dither-12);
+  }
+  25% {
+    mask-image: var(--nc-dither-25);
+  }
+  50% {
+    mask-image: var(--nc-dither-37);
+  }
+  75%,
+  100% {
+    mask-image: var(--nc-dither-50);
+  }
+}
+
+/* What opens over the page arrives from two pixels below. */
+@keyframes nc-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * The mark in a checkbox, on a 9px square: one pixel, then a cross, then the full square, each step
+ * held. `nc-uncheck` runs it backwards and ends on nothing.
+ */
+@keyframes nc-check {
+  0% {
+    clip-path: polygon(3px 3px, 6px 3px, 6px 6px, 3px 6px);
+  }
+  33% {
+    clip-path: polygon(
+      3px 0,
+      6px 0,
+      6px 3px,
+      9px 3px,
+      9px 6px,
+      6px 6px,
+      6px 9px,
+      3px 9px,
+      3px 6px,
+      0 6px,
+      0 3px,
+      3px 3px
+    );
+  }
+  66%,
+  100% {
+    clip-path: polygon(0 0, 9px 0, 9px 9px, 0 9px);
+  }
+}
+@keyframes nc-uncheck {
+  0% {
+    clip-path: polygon(0 0, 9px 0, 9px 9px, 0 9px);
+  }
+  33% {
+    clip-path: polygon(
+      3px 0,
+      6px 0,
+      6px 3px,
+      9px 3px,
+      9px 6px,
+      6px 6px,
+      6px 9px,
+      3px 9px,
+      3px 6px,
+      0 6px,
+      0 3px,
+      3px 3px
+    );
+  }
+  66% {
+    clip-path: polygon(3px 3px, 6px 3px, 6px 6px, 3px 6px);
+  }
+  100% {
+    clip-path: polygon(3px 3px, 3px 3px, 3px 3px, 3px 3px);
+  }
 }

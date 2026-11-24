@@ -1,0 +1,85 @@
+<ng-container *transloco="let t">
+  <div class="px-[12px] pt-[12px] pb-[6px]">
+    <label class="flex h-(--nc-h-bar) items-center gap-[12px] px-[12px] text-ink-3" [class]="well">
+      <span aria-hidden="true" class="-mt-[3px] flex-none text-ui text-gold-ink">&gt;</span>
+      <input
+        type="text"
+        role="combobox"
+        autocomplete="off"
+        spellcheck="false"
+        aria-autocomplete="list"
+        aria-expanded="true"
+        aria-controls="nc-palette-list"
+        class="-mt-[3px] min-w-0 flex-1 font-ui text-ui text-ink outline-none placeholder:text-ink-4"
+        [attr.aria-label]="t('palette.label')"
+        [attr.aria-activedescendant]="cursor() < 0 ? null : 'nc-palette-row-' + cursor()"
+        [placeholder]="t('palette.placeholder')"
+        [value]="text()"
+        (input)="text.set($any($event.target).value)" />
+    </label>
+  </div>
+
+  <div
+    id="nc-palette-list"
+    role="listbox"
+    class="max-h-[min(336px,50dvh)] scroll-pb-[24px] overflow-y-auto px-[6px]"
+    [attr.aria-label]="t('palette.results')">
+    @for (group of groups(); track group.label) {
+      <div role="group" class="grid gap-[3px]" [attr.aria-label]="group.label">
+        <p
+          aria-hidden="true"
+          class="px-[8px] pt-[12px] pb-[6px] font-ui text-micro tracking-label text-ink-4 uppercase">
+          {{ group.label }}
+        </p>
+        @for (row of group.rows; track $index) {
+          <nc-suggest-row
+            class="min-h-(--nc-h-xl) gap-[12px]!"
+            [id]="'nc-palette-row-' + (group.start + $index)"
+            [selected]="cursor() === group.start + $index"
+            (pointermove)="cursor.set(group.start + $index)"
+            (click)="run(row)">
+            <nc-icon class="flex-none" [name]="row.icon" />
+            <span class="min-w-0 flex-1 truncate text-body">
+              <nc-highlight [text]="row.label" [match]="term()" />
+            </span>
+            @if (row.meta) {
+              <span class="label min-w-0 flex-[0_1_auto] truncate text-ink-4">{{ row.meta }}</span>
+            }
+          </nc-suggest-row>
+        }
+      </div>
+    } @empty {
+      <p class="px-[8px] py-[12px] text-body text-ink-3">{{ t('palette.empty') }}</p>
+    }
+    <!-- Sits under the last row as the list's own foot, and over the rows while more lie below:
+         a row the frame would cut dissolves instead. -->
+    <div aria-hidden="true" class="pointer-events-none sticky bottom-0 grid grid-rows-2 h-[24px]">
+      <span class="bg-panel [mask-image:var(--nc-dither-50)] [mask-size:12px_12px]"></span>
+      <span class="bg-panel [mask-image:var(--nc-dither-87)] [mask-size:12px_12px]"></span>
+    </div>
+  </div>
+
+  <div
+    aria-hidden="true"
+    class="flex flex-wrap items-center gap-x-[18px] gap-y-[6px] border-t-3 border-line px-[14px] py-[9px] label text-ink-4">
+    <span class="flex items-center gap-[6px]">
+      <nc-keycap size="sm">
+        <nc-mark name="arrow-up" />
+      </nc-keycap>
+      <nc-keycap size="sm">
+        <nc-mark name="arrow-down" />
+      </nc-keycap>
+      {{ t('palette.move') }}
+    </span>
+    <span class="flex items-center gap-[6px]">
+      <nc-keycap size="sm">{{ t('palette.enterKey') }}</nc-keycap>
+      {{ t('palette.run') }}
+    </span>
+    <span class="ms-auto flex items-center gap-[6px]">
+      <nc-keycap size="sm">{{ t('palette.escKey') }}</nc-keycap>
+      {{ t('palette.close') }}
+    </span>
+  </div>
+
+  <span role="status" class="sr-only">{{ t('palette.count', { n: rows().length }) }}</span>
+</ng-container>

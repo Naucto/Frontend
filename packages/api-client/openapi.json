@@ -1,35 +1,6 @@
 {
   "openapi": "3.0.0",
   "paths": {
-    "/projects/releases": {
-      "get": {
-        "operationId": "HubController_getAllReleases",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "A JSON array of projects with collaborators and creator information",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ProjectExResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {},
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get all released projects",
-        "tags": ["projects"]
-      }
-    },
     "/projects/releases/paginated": {
       "get": {
         "operationId": "HubController_getPaginatedReleases",
@@ -215,6 +186,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -250,6 +222,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -285,6 +258,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -322,6 +296,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -359,6 +334,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -410,7 +386,8 @@
             "in": "path",
             "description": "Project ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -447,9 +424,10 @@
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Numeric ID of the published project to fork",
+            "description": "ID of the published project to fork",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -492,6 +470,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -528,6 +507,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -590,7 +570,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -633,7 +614,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -694,6 +676,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -746,6 +729,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -824,6 +808,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -870,6 +855,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -911,6 +897,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -961,6 +948,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -1001,6 +989,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -1041,6 +1030,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -1089,6 +1079,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -1138,6 +1129,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -1179,6 +1171,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -1365,6 +1358,49 @@
         "tags": ["projects"]
       }
     },
+    "/projects/legacy/{number}": {
+      "get": {
+        "description": "For links written while projects were numbered. Any project answers, published or not: the routes behind its id still decide who reads it.",
+        "operationId": "ProjectController_findLegacy",
+        "parameters": [
+          {
+            "name": "number",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": 42,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The id of the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyProjectDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not a number"
+          },
+          "404": {
+            "description": "No project was known by that number"
+          }
+        },
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Translate the number a project was once known by into its id",
+        "tags": ["projects"]
+      }
+    },
     "/projects/{id}": {
       "get": {
         "operationId": "ProjectController_findOne",
@@ -1373,9 +1409,10 @@
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Numeric ID of the project to retrieve",
+            "description": "ID of the project to retrieve",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -1418,9 +1455,10 @@
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Numeric ID of the project to update",
+            "description": "ID of the project to update",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -1473,9 +1511,10 @@
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Numeric ID of the project to delete",
+            "description": "ID of the project to delete",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -1502,6 +1541,70 @@
         "tags": ["projects"]
       }
     },
+    "/projects/{id}/disk": {
+      "patch": {
+        "operationId": "ProjectController_setDisk",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectDiskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The disk as stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectDiskDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A colour, finish or direction the disk cannot take"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Not a collaborator of the project (no `code`), or the game is withheld by moderation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectHiddenDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Choose the disk of a project, or go back to the derived one with null",
+        "tags": ["projects"]
+      }
+    },
     "/projects/{id}/add-collaborator": {
       "patch": {
         "description": "Add a collaborator to a project by providing either userId, username, or email. At least one must be provided.",
@@ -1511,9 +1614,10 @@
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Numeric ID of the project to update",
+            "description": "ID of the project to update",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -1589,9 +1693,10 @@
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Numeric ID of the project to update",
+            "description": "ID of the project to update",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -1670,7 +1775,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -1731,7 +1837,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -1762,6 +1869,103 @@
           }
         ],
         "summary": "Get CDN URL for project image (authenticated, any project status)",
+        "tags": ["projects"]
+      }
+    },
+    "/projects/{id}/clip": {
+      "post": {
+        "operationId": "ProjectController_uploadClip",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "WebM or MP4 video, 4 MiB"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Clip stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectClipDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "413": {
+            "description": "Larger than 4 MiB"
+          },
+          "422": {
+            "description": "Not a WebM or MP4 video, by its type or its content"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload the gameplay clip of a project, over the one it has",
+        "tags": ["projects"]
+      },
+      "delete": {
+        "operationId": "ProjectController_removeClip",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Clip removed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Remove the gameplay clip of a project; no-op when it has none",
         "tags": ["projects"]
       }
     },
@@ -1810,7 +2014,8 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -1843,7 +2048,7 @@
             "JWT-auth": []
           }
         ],
-        "summary": "List open game sessions from the caller's perspective, one game's or every game's",
+        "summary": "List open game sessions from the caller's perspective, the latest first: one game's, or the latest across published games",
         "tags": ["game-sessions"]
       }
     },
@@ -1893,6 +2098,15 @@
             "name": "sessionId",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "code",
+            "required": false,
+            "in": "query",
+            "description": "The join code of a session that is reached by code, for someone not in it yet",
             "schema": {
               "type": "string"
             }
@@ -2198,7 +2412,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -2256,7 +2471,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -2303,7 +2519,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -2311,7 +2528,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -2358,7 +2576,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -2366,7 +2585,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -2411,7 +2631,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -2419,7 +2640,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -2543,6 +2765,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -2685,7 +2908,8 @@
             "in": "path",
             "description": "Friend request ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -2719,7 +2943,8 @@
             "in": "path",
             "description": "Friend request ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -2794,7 +3019,8 @@
             "in": "path",
             "description": "ID of the friend to remove",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -2828,7 +3054,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -2897,7 +3124,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -2954,75 +3182,6 @@
         ]
       }
     },
-    "/admin/featured-release": {
-      "put": {
-        "operationId": "AdminFeaturedReleaseController_setFeatured",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetFeaturedReleaseDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "The new featured release",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FeaturedReleaseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Project is not published"
-          },
-          "401": {
-            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
-          },
-          "403": {
-            "description": "Admin role required"
-          },
-          "404": {
-            "description": "Project not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Feature a published project (replaces the current pick)",
-        "tags": ["admin"]
-      },
-      "delete": {
-        "operationId": "AdminFeaturedReleaseController_clearFeatured",
-        "parameters": [],
-        "responses": {
-          "204": {
-            "description": "No featured release remains"
-          },
-          "401": {
-            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
-          },
-          "403": {
-            "description": "Admin role required"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Clear the current featured release",
-        "tags": ["admin"]
-      }
-    },
     "/admin/featured-release/history": {
       "get": {
         "operationId": "AdminFeaturedReleaseController_getHistory",
@@ -3069,6 +3228,651 @@
         ],
         "summary": "List past and current featured releases",
         "tags": ["admin"]
+      }
+    },
+    "/hub": {
+      "get": {
+        "operationId": "HubFeedController_getHub",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HubResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The hub of the day: its hero and the shelves it opens on",
+        "tags": ["hub"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/hub/shelves": {
+      "get": {
+        "operationId": "HubFeedController_getShelves",
+        "parameters": [
+          {
+            "name": "keys",
+            "required": true,
+            "in": "query",
+            "description": "Comma-separated shelf keys, 12 at most",
+            "schema": {
+              "example": "tag:Platformer,tag:Puzzle",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HubShelvesResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A key names no shelf, or too many were asked for"
+          }
+        },
+        "summary": "Shelves by key, fetched as the page scrolls",
+        "tags": ["hub"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/hub/shelves/{key}": {
+      "get": {
+        "operationId": "HubFeedController_getShelf",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "description": "popular, trending, friends or tag:<tag>",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number, from 1",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Games per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 24,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Defaults to the shelf's own order: the draw of the day, or the most played",
+            "schema": {
+              "type": "string",
+              "enum": ["fresh", "popular", "liked", "discussed", "name"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HubShelfPageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The key names no shelf"
+          }
+        },
+        "summary": "One page of everything a shelf lists",
+        "tags": ["hub"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/collections": {
+      "get": {
+        "operationId": "CollectionsController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number, from 1",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Collections per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 24,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "popular: the most played games inside; recent: the newest collection; games: the most games",
+            "schema": {
+              "default": "popular",
+              "type": "string",
+              "enum": ["popular", "recent", "games"]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "What was typed: only the collections whose title or description contains it, whatever the case, are listed. Blank means no search",
+            "schema": {
+              "maxLength": 100,
+              "example": "co-op",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionsPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "The public collections holding a game, a page at a time",
+        "tags": ["collections"]
+      },
+      "post": {
+        "operationId": "CollectionsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCollectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, or the caller holds as many collections as they may",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionLimitDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create a collection",
+        "tags": ["collections"]
+      }
+    },
+    "/collections/{id}": {
+      "get": {
+        "description": "One moderation withholds answers its owner alone, with `hiddenAt` set, and everyone else as a gap.",
+        "operationId": "CollectionsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such collection, or one of someone else that is private or withheld by moderation"
+          }
+        },
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "A collection and its games",
+        "tags": ["collections"]
+      },
+      "patch": {
+        "operationId": "CollectionsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCollectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "The collection is not the caller’s (no `code`), or it is theirs and moderation withholds it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionHiddenDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such collection, or one of someone else that is private or withheld by moderation"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Change the title, the description or who may read a collection",
+        "tags": ["collections"]
+      },
+      "delete": {
+        "operationId": "CollectionsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "The collection is not the caller’s"
+          },
+          "404": {
+            "description": "No such collection, or one of someone else that is private or withheld by moderation"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete a collection, withheld by moderation or not",
+        "tags": ["collections"]
+      }
+    },
+    "/collections/{id}/games": {
+      "put": {
+        "operationId": "CollectionsController_reorder",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderCollectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "A game named is not in it"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "The collection is not the caller’s (no `code`), or it is theirs and moderation withholds it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionHiddenDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such collection, or one of someone else that is private or withheld by moderation"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Reorder the games of a collection",
+        "tags": ["collections"]
+      }
+    },
+    "/collections/{id}/games/{projectId}": {
+      "put": {
+        "operationId": "CollectionsController_addGame",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "The collection lists as many games as it may",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionLimitDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "The collection is not the caller’s (no `code`), or it is theirs and moderation withholds it; or the game is one the caller works on and moderation withholds it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/CollectionHiddenDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProjectHiddenDto"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such collection, or one of someone else that is private or withheld by moderation; or the game is not on the hub, a game of someone else that moderation withholds included"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Add a published game to a collection, last; no-op when it is there",
+        "tags": ["collections"]
+      },
+      "delete": {
+        "description": "Open on a collection moderation withholds, unlike every other change to it.",
+        "operationId": "CollectionsController_removeGame",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "The collection is not the caller’s"
+          },
+          "404": {
+            "description": "No such collection, or one of someone else that is private or withheld by moderation"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Remove a game from a collection; no-op when it is not there",
+        "tags": ["collections"]
+      }
+    },
+    "/users/me/collections": {
+      "get": {
+        "operationId": "UserCollectionsController_mine",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "description": "A game: each collection then says whether it lists it",
+            "schema": {
+              "format": "uuid",
+              "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MyCollectionDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "The caller's collections, private ones included",
+        "tags": ["collections"]
+      }
+    },
+    "/users/public/{id}/collections": {
+      "get": {
+        "operationId": "UserCollectionsController_publicOf",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CollectionPreviewDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "A user's public collections",
+        "tags": ["collections"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
       }
     },
     "/analytics/events": {
@@ -3356,7 +4160,7 @@
             "name": "dimension",
             "required": false,
             "in": "query",
-            "description": "One value of a dimension of the metric, as `release:42`; the total when absent",
+            "description": "One value of a dimension of the metric, as `release:3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b`; the total when absent",
             "schema": {
               "type": "string"
             }
@@ -3833,7 +4637,8 @@
             "in": "query",
             "description": "Only what concerns this published project",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -4069,7 +4874,7 @@
             "name": "query",
             "required": false,
             "in": "query",
-            "description": "Part of the name of a published game, or its id as `12` or `#12`",
+            "description": "Part of the name of a published game, or its id, with or without a leading `#`",
             "schema": {
               "maxLength": 100,
               "type": "string"
@@ -4081,7 +4886,7 @@
             "in": "query",
             "description": "Comma-separated project ids to name, published or not. The query is then ignored",
             "schema": {
-              "example": "12,40",
+              "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b,7c9e6679-7425-40de-944b-e07fc1f90ae7",
               "type": "string"
             }
           },
@@ -4133,7 +4938,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -4293,7 +5099,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -4344,7 +5151,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -4693,7 +5501,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -4895,7 +5704,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -5255,7 +6065,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -5296,7 +6107,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -5349,7 +6161,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -5422,7 +6235,7 @@
             "JWT-auth": []
           }
         ],
-        "summary": "Report a game, a comment or a profile to staff",
+        "summary": "Report a profile, or something an account made, to staff",
         "tags": ["moderation"]
       }
     },
@@ -5487,6 +6300,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -5541,6 +6355,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -5719,7 +6534,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -5770,7 +6586,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -5905,7 +6722,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -5946,7 +6764,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6002,7 +6821,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6055,7 +6875,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6108,7 +6929,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6164,7 +6986,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6259,7 +7082,8 @@
             "in": "query",
             "description": "Only the games this account created",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6299,7 +7123,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6340,7 +7165,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6396,7 +7222,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6423,6 +7250,43 @@
         "tags": ["admin"]
       }
     },
+    "/admin/moderation/projects/{id}/clip": {
+      "get": {
+        "operationId": "AdminModerationProjectController_clip",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The video"
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Moderator role required"
+          },
+          "404": {
+            "description": "No clip"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "The clip of a game, served privately even while it is hidden",
+        "tags": ["admin"]
+      }
+    },
     "/admin/moderation/projects/{id}/hide": {
       "post": {
         "operationId": "AdminModerationProjectController_hide",
@@ -6432,7 +7296,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6488,7 +7353,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6578,7 +7444,8 @@
             "in": "query",
             "description": "Only the comments on this game",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -6587,7 +7454,8 @@
             "in": "query",
             "description": "Only the comments of this account",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -6635,7 +7503,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6691,7 +7560,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6747,7 +7617,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6794,6 +7665,177 @@
         "tags": ["admin"]
       }
     },
+    "/admin/moderation/collections/{id}/hide": {
+      "post": {
+        "operationId": "AdminModerationCollectionController_hide",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentDecisionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationActionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "The role is missing, or the collection is the caller's own (OWN_CASE)"
+          },
+          "404": {
+            "description": "No such collection"
+          },
+          "409": {
+            "description": "Hidden already (ALREADY_HIDDEN)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Hide a collection from everyone but its owner, for a restore to undo",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/collections/{id}/restore": {
+      "post": {
+        "operationId": "AdminModerationCollectionController_restore",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationActionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "The role is missing, or the collection is the caller's own (OWN_CASE)"
+          },
+          "404": {
+            "description": "No such collection"
+          },
+          "409": {
+            "description": "Not hidden (NOT_HIDDEN)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Put a hidden collection back as it was",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/collections/{id}": {
+      "delete": {
+        "operationId": "AdminModerationCollectionController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentDecisionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationActionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "The role is missing, or the collection is the caller's own (OWN_CASE)\n\nAdmin role required"
+          },
+          "404": {
+            "description": "No such collection"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          },
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete a collection for good; the games it listed stay",
+        "tags": ["admin"]
+      }
+    },
     "/admin/moderation/log": {
       "get": {
         "operationId": "AdminModerationLogController_list",
@@ -6835,7 +7877,8 @@
             "in": "query",
             "description": "Only the actions of this staff member",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -6844,7 +7887,8 @@
             "in": "query",
             "description": "Only the actions that bore on this account",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -6861,7 +7905,8 @@
             "in": "query",
             "description": "With targetType, the history of one target",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -7445,7 +8490,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -7498,7 +8544,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -7537,7 +8584,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -7578,7 +8626,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -7631,7 +8680,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -7716,7 +8766,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -7794,7 +8845,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -7849,7 +8901,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -7913,7 +8966,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -7968,7 +9022,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -8023,7 +9078,8 @@
             "in": "path",
             "description": "Project ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -8064,7 +9120,8 @@
             "in": "path",
             "description": "Project ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -8098,7 +9155,8 @@
             "in": "path",
             "description": "Project ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -8142,7 +9200,8 @@
             "in": "path",
             "description": "Project ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -8218,12 +9277,55 @@
       }
     },
     "schemas": {
+      "DiskFinish": {
+        "type": "string",
+        "enum": ["solid", "stripes", "checker", "dots", "gradient", "gold", "silver", "holo"]
+      },
+      "DiskGradDir": {
+        "type": "string",
+        "enum": ["h", "v", "d", "d2", "r"],
+        "description": "The direction of a gradient"
+      },
+      "DiskStyleDto": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "description": "Any colour, as `#rrggbb`; answered in lower case",
+            "example": "#ff8426",
+            "pattern": "^#[0-9a-f]{6}$"
+          },
+          "finish": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskFinish"
+              }
+            ]
+          },
+          "color2": {
+            "type": "string",
+            "description": "The second colour, for a finish that takes two, as `#rrggbb`",
+            "example": "#ffd100",
+            "pattern": "^#[0-9a-f]{6}$"
+          },
+          "gradDir": {
+            "description": "The direction of a gradient",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskGradDir"
+              }
+            ]
+          }
+        },
+        "required": ["color", "finish"]
+      },
       "UserBasicInfoDto": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b",
             "description": "The unique identifier of the user"
           },
           "username": {
@@ -8238,8 +9340,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
             "description": "The unique identifier of the project"
           },
           "name": {
@@ -8266,11 +9369,41 @@
               "type": "string"
             }
           },
+          "palette": {
+            "description": "The colours the game draws with, as lower-case `#rrggbb` in the order the game indexes them. Empty until its editor wrote them",
+            "example": ["#16171a", "#7f0622", "#d62411"],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "iconUrl": {
             "type": "string",
             "description": "URL to the project icon",
             "example": "https://example.com/icons/MySuperVideoGame.png",
             "nullable": true
+          },
+          "coverUrl": {
+            "type": "string",
+            "description": "Address of the cover, usable as is: it changes when the cover does. Null without a cover. Absent from answers that neither list nor open a project",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/image?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "clipUrl": {
+            "type": "string",
+            "description": "Address of the short gameplay clip, usable as is: it changes when the clip does. Null without a clip. Absent from answers that neither list nor open a project",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/clip?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "disk": {
+            "description": "The disk its author chose. Null when none was chosen: a client then derives a colour from the id. Absent from answers that neither list nor open a project",
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskStyleDto"
+              }
+            ]
           },
           "status": {
             "type": "string",
@@ -8291,8 +9424,9 @@
             "nullable": true
           },
           "userId": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b",
             "description": "The ID of the user who owns this project"
           },
           "createdAt": {
@@ -8345,8 +9479,9 @@
             "description": "The number of forks created from this project"
           },
           "forkedFromId": {
-            "type": "number",
-            "example": 42,
+            "type": "string",
+            "format": "uuid",
+            "example": "c1a5f0de-3b7a-4f2e-9d6c-8e4b2a1f0c3d",
             "description": "The ID of the project this was forked from, if any",
             "nullable": true
           },
@@ -8372,6 +9507,7 @@
           "shortDesc",
           "longDesc",
           "tags",
+          "palette",
           "iconUrl",
           "status",
           "monetization",
@@ -8498,7 +9634,7 @@
         "properties": {
           "url": {
             "type": "string",
-            "example": "https://cdn.example.com/projects/42/image",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/image",
             "description": "The public CDN URL for the image"
           }
         },
@@ -8508,8 +9644,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
             "description": "The unique identifier of the project"
           },
           "name": {
@@ -8536,11 +9673,41 @@
               "type": "string"
             }
           },
+          "palette": {
+            "description": "The colours the game draws with, as lower-case `#rrggbb` in the order the game indexes them. Empty until its editor wrote them",
+            "example": ["#16171a", "#7f0622", "#d62411"],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "iconUrl": {
             "type": "string",
             "description": "URL to the project icon",
             "example": "https://example.com/icons/MySuperVideoGame.png",
             "nullable": true
+          },
+          "coverUrl": {
+            "type": "string",
+            "description": "Address of the cover, usable as is: it changes when the cover does. Null without a cover. Absent from answers that neither list nor open a project",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/image?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "clipUrl": {
+            "type": "string",
+            "description": "Address of the short gameplay clip, usable as is: it changes when the clip does. Null without a clip. Absent from answers that neither list nor open a project",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/clip?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "disk": {
+            "description": "The disk its author chose. Null when none was chosen: a client then derives a colour from the id. Absent from answers that neither list nor open a project",
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskStyleDto"
+              }
+            ]
           },
           "status": {
             "type": "string",
@@ -8561,8 +9728,9 @@
             "nullable": true
           },
           "userId": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b",
             "description": "The ID of the user who owns this project"
           },
           "createdAt": {
@@ -8615,8 +9783,9 @@
             "description": "The number of forks created from this project"
           },
           "forkedFromId": {
-            "type": "number",
-            "example": 42,
+            "type": "string",
+            "format": "uuid",
+            "example": "c1a5f0de-3b7a-4f2e-9d6c-8e4b2a1f0c3d",
             "description": "The ID of the project this was forked from, if any",
             "nullable": true
           },
@@ -8642,6 +9811,7 @@
           "shortDesc",
           "longDesc",
           "tags",
+          "palette",
           "iconUrl",
           "status",
           "monetization",
@@ -8663,7 +9833,7 @@
         "properties": {
           "signedUrl": {
             "type": "string",
-            "example": "https://cdn.example.com/release/123?v=abc123",
+            "example": "https://cdn.example.com/release/7c9e6679-7425-40de-944b-e07fc1f90ae7?v=abc123",
             "description": "The CDN URL of the file"
           }
         },
@@ -8754,8 +9924,9 @@
         "type": "object",
         "properties": {
           "projectId": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
             "description": "Project ID"
           },
           "contentSize": {
@@ -8782,8 +9953,9 @@
             "example": "Project published successfully"
           },
           "id": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
             "description": "The project acted on"
           }
         },
@@ -8908,6 +10080,18 @@
         },
         "required": ["message", "name"]
       },
+      "LegacyProjectDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+            "description": "The id of the project the number named"
+          }
+        },
+        "required": ["id"]
+      },
       "CreateProjectDto": {
         "type": "object",
         "properties": {
@@ -8938,8 +10122,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
             "description": "The unique identifier of the project"
           },
           "name": {
@@ -8966,11 +10151,41 @@
               "type": "string"
             }
           },
+          "palette": {
+            "description": "The colours the game draws with, as lower-case `#rrggbb` in the order the game indexes them. Empty until its editor wrote them",
+            "example": ["#16171a", "#7f0622", "#d62411"],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "iconUrl": {
             "type": "string",
             "description": "URL to the project icon",
             "example": "https://example.com/icons/MySuperVideoGame.png",
             "nullable": true
+          },
+          "coverUrl": {
+            "type": "string",
+            "description": "Address of the cover, usable as is: it changes when the cover does. Null without a cover. Absent from answers that neither list nor open a project",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/image?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "clipUrl": {
+            "type": "string",
+            "description": "Address of the short gameplay clip, usable as is: it changes when the clip does. Null without a clip. Absent from answers that neither list nor open a project",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/clip?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "disk": {
+            "description": "The disk its author chose. Null when none was chosen: a client then derives a colour from the id. Absent from answers that neither list nor open a project",
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskStyleDto"
+              }
+            ]
           },
           "status": {
             "type": "string",
@@ -8991,8 +10206,9 @@
             "nullable": true
           },
           "userId": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b",
             "description": "The ID of the user who owns this project"
           },
           "createdAt": {
@@ -9045,8 +10261,9 @@
             "description": "The number of forks created from this project"
           },
           "forkedFromId": {
-            "type": "number",
-            "example": 42,
+            "type": "string",
+            "format": "uuid",
+            "example": "c1a5f0de-3b7a-4f2e-9d6c-8e4b2a1f0c3d",
             "description": "The ID of the project this was forked from, if any",
             "nullable": true
           }
@@ -9057,6 +10274,7 @@
           "shortDesc",
           "longDesc",
           "tags",
+          "palette",
           "iconUrl",
           "status",
           "monetization",
@@ -9101,6 +10319,15 @@
               "type": "string"
             }
           },
+          "palette": {
+            "description": "The colours the game draws with, as `#rrggbb` in the order the game indexes them: the palette of its content, mirrored here so a client reads it without the engine",
+            "example": ["#16171a", "#7f0622", "#d62411"],
+            "maxItems": 64,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "status": {
             "type": "string",
             "description": "Project status",
@@ -9121,13 +10348,52 @@
         },
         "required": ["name", "shortDesc"]
       },
+      "ProjectDiskDto": {
+        "type": "object",
+        "properties": {
+          "disk": {
+            "nullable": true,
+            "description": "Null for no chosen style: a client then derives a colour from the project id",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskStyleDto"
+              }
+            ]
+          }
+        },
+        "required": ["disk"]
+      },
+      "ProjectHiddenDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 403
+          },
+          "error": {
+            "type": "string",
+            "example": "Forbidden"
+          },
+          "code": {
+            "type": "string",
+            "enum": ["PROJECT_HIDDEN"]
+          },
+          "message": {
+            "type": "string",
+            "example": "This game is unavailable"
+          }
+        },
+        "required": ["statusCode", "error", "code", "message"]
+      },
       "AddCollaboratorDto": {
         "type": "object",
         "properties": {
           "userId": {
-            "type": "number",
+            "type": "string",
             "description": "User ID of the user to add as collaborator",
-            "example": 42
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -9145,9 +10411,10 @@
         "type": "object",
         "properties": {
           "userId": {
-            "type": "number",
+            "type": "string",
             "description": "User ID of the user to remove as collaborator",
-            "example": 42
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -9161,12 +10428,25 @@
           }
         }
       },
+      "ProjectClipDto": {
+        "type": "object",
+        "properties": {
+          "clipUrl": {
+            "type": "string",
+            "description": "Address of the clip just stored, usable as is",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/clip?v=5d41402abc4b2a76b9719d911017c592"
+          }
+        },
+        "required": ["clipUrl"]
+      },
       "CreateGameSessionDto": {
         "type": "object",
         "properties": {
           "projectId": {
-            "type": "number",
-            "description": "ID of the project this session is played on"
+            "type": "string",
+            "description": "ID of the project this session is played on",
+            "format": "uuid",
+            "example": "8c5d2a7e-41b3-4f6a-9e0d-2b7c6a5f4e3d"
           },
           "title": {
             "type": "string",
@@ -9253,8 +10533,8 @@
             "type": "string"
           },
           "playerId": {
-            "type": "number",
-            "description": "Player id assigned to this connection"
+            "type": "integer",
+            "description": "Player number assigned to this connection: what the game reads as net.id(), never an account id"
           },
           "webrtcConfig": {
             "$ref": "#/components/schemas/WebRTCOfferDto"
@@ -9284,6 +10564,26 @@
         },
         "required": ["joinCode"]
       },
+      "GameSessionRosterEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User ID",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
+          },
+          "username": {
+            "type": "string",
+            "example": "alice"
+          },
+          "nickname": {
+            "type": "string",
+            "description": "Display nickname, if set"
+          }
+        },
+        "required": ["id", "username"]
+      },
       "GameSessionResponseDto": {
         "type": "object",
         "properties": {
@@ -9298,8 +10598,10 @@
             "enum": ["PUBLIC", "FRIENDS_ONLY", "INVITE_CODE"]
           },
           "hostId": {
-            "type": "number",
-            "description": "ID of the host user"
+            "type": "string",
+            "description": "ID of the host user",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "hostUsername": {
             "type": "string",
@@ -9310,8 +10612,10 @@
             "description": "Display nickname of the host, if set"
           },
           "projectId": {
-            "type": "number",
-            "description": "ID of the game (project) being played"
+            "type": "string",
+            "description": "ID of the game (project) being played",
+            "format": "uuid",
+            "example": "8c5d2a7e-41b3-4f6a-9e0d-2b7c6a5f4e3d"
           },
           "projectName": {
             "type": "string",
@@ -9324,6 +10628,35 @@
           "playerCount": {
             "type": "number",
             "description": "Current number of players, host included"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the session was opened",
+            "example": "2026-11-20T18:30:00Z"
+          },
+          "roster": {
+            "description": "Who is in the session, host first",
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GameSessionRosterEntryDto"
+            }
+          },
+          "coverUrl": {
+            "type": "string",
+            "description": "Address of the cover of the game, usable as is; null without a cover",
+            "nullable": true
+          },
+          "disk": {
+            "description": "The disk the author of the game chose. Null when none was chosen: a client then derives a colour from the project id",
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskStyleDto"
+              }
+            ]
           }
         },
         "required": [
@@ -9335,7 +10668,11 @@
           "projectId",
           "projectName",
           "maxPlayers",
-          "playerCount"
+          "playerCount",
+          "startedAt",
+          "roster",
+          "coverUrl",
+          "disk"
         ]
       },
       "GameSessionListResponseDto": {
@@ -9354,9 +10691,10 @@
         "type": "object",
         "properties": {
           "userId": {
-            "type": "number",
+            "type": "string",
             "description": "User ID",
-            "example": 42
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -9372,9 +10710,14 @@
             "type": "boolean",
             "description": "Whether this player is hosting",
             "example": false
+          },
+          "playerId": {
+            "type": "integer",
+            "description": "Player number of this player: what the game reads as net.id() and the playerId of that player's connection, never an account id",
+            "example": 1042
           }
         },
-        "required": ["userId", "username", "host"]
+        "required": ["userId", "username", "host", "playerId"]
       },
       "SessionRosterResponseDto": {
         "type": "object",
@@ -9397,9 +10740,10 @@
         "type": "object",
         "properties": {
           "userId": {
-            "type": "number",
+            "type": "string",
             "description": "Who to invite",
-            "example": 42
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           }
         },
         "required": ["userId"]
@@ -9449,8 +10793,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -9473,8 +10818,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1
+            "type": "string",
+            "format": "uuid",
+            "example": "9b2f7a4c-1d3e-4f5a-8b6c-7d8e9f0a1b2c"
           },
           "content": {
             "type": "string",
@@ -9486,8 +10832,9 @@
             "example": "2023-04-15T12:00:00Z"
           },
           "projectId": {
-            "type": "number",
-            "example": 1
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
           },
           "author": {
             "$ref": "#/components/schemas/CommentAuthorDto"
@@ -9596,11 +10943,13 @@
         "properties": {
           "id": {
             "type": "string",
-            "example": "7"
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
           },
           "userId": {
-            "type": "number",
-            "example": 42,
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b",
             "description": "ID of the user notified"
           },
           "title": {
@@ -9707,8 +11056,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -9731,8 +11081,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -9750,8 +11101,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 12
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
           },
           "from": {
             "$ref": "#/components/schemas/UserSummaryDto"
@@ -9778,7 +11130,8 @@
         "type": "object",
         "properties": {
           "userId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "description": "ID of the user to befriend"
           },
           "username": {
@@ -9800,8 +11153,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -9853,8 +11207,9 @@
         "type": "object",
         "properties": {
           "userId": {
-            "type": "number",
-            "example": 1
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -9874,12 +11229,14 @@
             ]
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true,
             "description": "Released project being played (PLAYING)"
           },
           "projectId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true,
             "description": "Project being edited (BUILDING) or hosted (HOSTING)"
           },
@@ -9937,8 +11294,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -9951,18 +11309,21 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 7,
+            "type": "string",
+            "format": "uuid",
+            "example": "5a1c3e7b-2d4f-4a6b-9c8d-0e1f2a3b4c5d",
             "description": "Featured entry ID"
           },
           "projectId": {
-            "type": "number",
-            "example": 42,
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
             "description": "Featured project ID"
           },
           "note": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "description": "What a curator wrote about the pick; null for a pick the hub made itself"
           },
           "startsAt": {
             "format": "date-time",
@@ -9975,6 +11336,7 @@
           },
           "featuredBy": {
             "nullable": true,
+            "description": "The curator of a pick made by hand; null for a pick the hub made itself",
             "type": "object",
             "allOf": [
               {
@@ -10009,29 +11371,13 @@
         },
         "required": ["featured"]
       },
-      "SetFeaturedReleaseDto": {
-        "type": "object",
-        "properties": {
-          "projectId": {
-            "type": "number",
-            "example": 42,
-            "description": "ID of the published project"
-          },
-          "note": {
-            "type": "string",
-            "example": "Editor's pick: a tight one-button platformer",
-            "description": "Optional curator note shown next to the featured game",
-            "maxLength": 280
-          }
-        },
-        "required": ["projectId"]
-      },
       "FeaturedProjectSummaryDto": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 42
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
           },
           "name": {
             "type": "string",
@@ -10044,18 +11390,21 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 7,
+            "type": "string",
+            "format": "uuid",
+            "example": "5a1c3e7b-2d4f-4a6b-9c8d-0e1f2a3b4c5d",
             "description": "Featured entry ID"
           },
           "projectId": {
-            "type": "number",
-            "example": 42,
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
             "description": "Featured project ID"
           },
           "note": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "description": "What a curator wrote about the pick; null for a pick the hub made itself"
           },
           "startsAt": {
             "format": "date-time",
@@ -10068,6 +11417,7 @@
           },
           "featuredBy": {
             "nullable": true,
+            "description": "The curator of a pick made by hand; null for a pick the hub made itself",
             "type": "object",
             "allOf": [
               {
@@ -10104,6 +11454,744 @@
           }
         },
         "required": ["items", "total", "page", "limit"]
+      },
+      "HubReasonGameDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+          },
+          "name": {
+            "type": "string",
+            "example": "Moon Lander"
+          }
+        },
+        "required": ["id", "name"]
+      },
+      "HubGameDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+            "description": "The unique identifier of the project"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the project",
+            "example": "MySuperVideoGame"
+          },
+          "shortDesc": {
+            "type": "string",
+            "description": "A short description of the project",
+            "example": "A 2D platformer game with pixel art graphics"
+          },
+          "longDesc": {
+            "type": "string",
+            "description": "A detailed description of the project",
+            "example": "This game features multiple levels, power-ups, and boss fights.",
+            "nullable": true
+          },
+          "tags": {
+            "description": "Tags associated with the project",
+            "example": ["Roguelike", "Action", "Custom Jam"],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "iconUrl": {
+            "type": "string",
+            "description": "URL to the project icon",
+            "example": "https://example.com/icons/MySuperVideoGame.png",
+            "nullable": true
+          },
+          "coverUrl": {
+            "type": "string",
+            "description": "Address of the cover, usable as is: it changes when the cover does. Null without a cover",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/image?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "clipUrl": {
+            "type": "string",
+            "description": "Address of the short gameplay clip, usable as is: it changes when the clip does. Null without a clip",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/clip?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "disk": {
+            "description": "The disk its author chose. Null when none was chosen: a client then derives a colour from the id",
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskStyleDto"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "description": "The current status of the project",
+            "enum": ["IN_PROGRESS", "COMPLETED", "ARCHIVED"],
+            "example": "IN_PROGRESS"
+          },
+          "monetization": {
+            "type": "string",
+            "description": "The monetization strategy for this project",
+            "enum": ["NONE", "ADS", "PAID"],
+            "example": "NONE"
+          },
+          "price": {
+            "type": "number",
+            "example": 99.99,
+            "description": "The price of the project, if applicable",
+            "nullable": true
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b",
+            "description": "The ID of the user who owns this project"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2023-04-15T12:00:00Z",
+            "description": "The date and time when the project was created"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2023-05-15T12:00:00Z",
+            "description": "The date and time when the project was last updated"
+          },
+          "publishedAt": {
+            "type": "string",
+            "example": "2023-05-20T12:00:00Z",
+            "description": "The date and time when the project was last published",
+            "nullable": true
+          },
+          "hiddenAt": {
+            "type": "string",
+            "example": null,
+            "description": "Set while moderation withholds the game: it is off the hub and cannot be published",
+            "nullable": true
+          },
+          "viewCount": {
+            "type": "number",
+            "example": 123,
+            "description": "The number of times players opened this game's play page"
+          },
+          "uniquePlayers": {
+            "type": "number",
+            "example": 123,
+            "description": "The number of unique players who have interacted with this project"
+          },
+          "likes": {
+            "type": "number",
+            "example": 87,
+            "description": "The number of likes received by the project"
+          },
+          "commentCount": {
+            "type": "number",
+            "example": 12,
+            "description": "The number of comments on the project"
+          },
+          "forkCount": {
+            "type": "number",
+            "example": 7,
+            "description": "The number of forks created from this project"
+          },
+          "forkedFromId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "c1a5f0de-3b7a-4f2e-9d6c-8e4b2a1f0c3d",
+            "description": "The ID of the project this was forked from, if any",
+            "nullable": true
+          },
+          "collaborators": {
+            "description": "The users collaborating on this project",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserBasicInfoDto"
+            }
+          },
+          "creator": {
+            "description": "The creator of this project",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserBasicInfoDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "shortDesc",
+          "longDesc",
+          "tags",
+          "iconUrl",
+          "coverUrl",
+          "clipUrl",
+          "disk",
+          "status",
+          "monetization",
+          "price",
+          "userId",
+          "createdAt",
+          "updatedAt",
+          "publishedAt",
+          "hiddenAt",
+          "viewCount",
+          "uniquePlayers",
+          "likes",
+          "collaborators",
+          "creator"
+        ]
+      },
+      "HubHeroSlotDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "GAME_OF_THE_WEEK",
+              "CONTINUE",
+              "TRENDING",
+              "NEW_AND_RISING",
+              "FRIENDS_PLAY",
+              "BECAUSE_YOU_PLAYED"
+            ],
+            "description": "Why this game is put forward"
+          },
+          "reasonGame": {
+            "description": "The game the reader played, for BECAUSE_YOU_PLAYED",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HubReasonGameDto"
+              }
+            ]
+          },
+          "game": {
+            "$ref": "#/components/schemas/HubGameDto"
+          }
+        },
+        "required": ["reason", "game"]
+      },
+      "CollectionVisibility": {
+        "type": "string",
+        "enum": ["PUBLIC", "UNLISTED", "PRIVATE"]
+      },
+      "CollectionPreviewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "6f1c2f4e-8a53-4c1c-9a57-2f0f6f0d6c11"
+          },
+          "title": {
+            "type": "string",
+            "example": "Couch co-op"
+          },
+          "description": {
+            "type": "string",
+            "example": "Games to play side by side.",
+            "nullable": true
+          },
+          "visibility": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CollectionVisibility"
+              }
+            ]
+          },
+          "hiddenAt": {
+            "type": "string",
+            "example": null,
+            "description": "Set while moderation withholds the collection. Only its owner then reads it, and it takes no change but the removal of a game or its own deletion",
+            "format": "date-time",
+            "nullable": true
+          },
+          "owner": {
+            "$ref": "#/components/schemas/UserBasicInfoDto"
+          },
+          "gameCount": {
+            "type": "number",
+            "description": "Games of it on the hub: the ones a reader is shown",
+            "example": 14
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-11-20T12:00:00Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-11-20T12:00:00Z",
+            "description": "When it or its list of games last changed"
+          },
+          "games": {
+            "description": "Its first games on the hub, in order, 8 at most",
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HubGameDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "visibility",
+          "hiddenAt",
+          "owner",
+          "gameCount",
+          "createdAt",
+          "updatedAt",
+          "games"
+        ]
+      },
+      "HubShelfDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "What names the shelf to the shelf routes. They do not serve `collections`: its \"see all\" is GET /collections",
+            "example": "tag:Platformer"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["POPULAR", "TRENDING", "FRIENDS", "TAG", "COLLECTIONS"]
+          },
+          "tag": {
+            "type": "string",
+            "description": "The tag of a TAG shelf",
+            "example": "Platformer"
+          },
+          "total": {
+            "type": "number",
+            "description": "Games, or collections, its \"see all\" lists",
+            "example": 57
+          },
+          "games": {
+            "description": "Its games in order: the first 24 on the hub, one page in \"see all\". Empty for COLLECTIONS",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HubGameDto"
+            }
+          },
+          "collections": {
+            "description": "The collections of a COLLECTIONS shelf in order, one per owner, 12 at most",
+            "maxItems": 12,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CollectionPreviewDto"
+            }
+          }
+        },
+        "required": ["key", "kind", "total", "games"]
+      },
+      "HubResponseDto": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string",
+            "description": "The UTC day these shelves were drawn for",
+            "example": "2026-11-20"
+          },
+          "hero": {
+            "description": "Up to four games, each once, in the order the hero stacks them",
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HubHeroSlotDto"
+            }
+          },
+          "shelves": {
+            "description": "The shelves the page opens on; one with nothing to show is left out",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HubShelfDto"
+            }
+          },
+          "more": {
+            "description": "Keys of the shelves to fetch as the page scrolls, in order",
+            "example": ["tag:Platformer", "tag:Puzzle"],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["day", "hero", "shelves", "more"]
+      },
+      "HubShelvesResponseDto": {
+        "type": "object",
+        "properties": {
+          "shelves": {
+            "description": "The shelves asked for, in the order asked; one with nothing to show is left out",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HubShelfDto"
+            }
+          }
+        },
+        "required": ["shelves"]
+      },
+      "HubShelfPageDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "What names the shelf to the shelf routes. They do not serve `collections`: its \"see all\" is GET /collections",
+            "example": "tag:Platformer"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["POPULAR", "TRENDING", "FRIENDS", "TAG", "COLLECTIONS"]
+          },
+          "tag": {
+            "type": "string",
+            "description": "The tag of a TAG shelf",
+            "example": "Platformer"
+          },
+          "total": {
+            "type": "number",
+            "description": "Games, or collections, its \"see all\" lists",
+            "example": 57
+          },
+          "games": {
+            "description": "Its games in order: the first 24 on the hub, one page in \"see all\". Empty for COLLECTIONS",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HubGameDto"
+            }
+          },
+          "collections": {
+            "description": "The collections of a COLLECTIONS shelf in order, one per owner, 12 at most",
+            "maxItems": 12,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CollectionPreviewDto"
+            }
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "example": 24
+          }
+        },
+        "required": ["key", "kind", "total", "games", "page", "limit"]
+      },
+      "CollectionHiddenDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 403
+          },
+          "error": {
+            "type": "string",
+            "example": "Forbidden"
+          },
+          "code": {
+            "type": "string",
+            "enum": ["COLLECTION_HIDDEN"]
+          },
+          "message": {
+            "type": "string",
+            "example": "This collection is hidden by moderation"
+          }
+        },
+        "required": ["statusCode", "error", "code", "message"]
+      },
+      "CollectionsPageDto": {
+        "type": "object",
+        "properties": {
+          "collections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CollectionPreviewDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Collections the list holds",
+            "example": 128
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "example": 24
+          }
+        },
+        "required": ["collections", "total", "page", "limit"]
+      },
+      "CreateCollectionDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Couch co-op",
+            "maxLength": 40
+          },
+          "description": {
+            "type": "string",
+            "example": "Games to play side by side.",
+            "nullable": true,
+            "maxLength": 280
+          },
+          "visibility": {
+            "default": "PRIVATE",
+            "description": "PUBLIC is listed and open to anyone, UNLISTED open to whoever holds its id, PRIVATE to its owner",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CollectionVisibility"
+              }
+            ]
+          }
+        },
+        "required": ["title"]
+      },
+      "CollectionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "6f1c2f4e-8a53-4c1c-9a57-2f0f6f0d6c11"
+          },
+          "title": {
+            "type": "string",
+            "example": "Couch co-op"
+          },
+          "description": {
+            "type": "string",
+            "example": "Games to play side by side.",
+            "nullable": true
+          },
+          "visibility": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CollectionVisibility"
+              }
+            ]
+          },
+          "hiddenAt": {
+            "type": "string",
+            "example": null,
+            "description": "Set while moderation withholds the collection. Only its owner then reads it, and it takes no change but the removal of a game or its own deletion",
+            "format": "date-time",
+            "nullable": true
+          },
+          "owner": {
+            "$ref": "#/components/schemas/UserBasicInfoDto"
+          },
+          "gameCount": {
+            "type": "number",
+            "description": "Games of it on the hub: the ones a reader is shown",
+            "example": 14
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-11-20T12:00:00Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-11-20T12:00:00Z",
+            "description": "When it or its list of games last changed"
+          },
+          "games": {
+            "description": "Its games on the hub, in order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HubGameDto"
+            }
+          },
+          "unavailableGameIds": {
+            "description": "Games it lists that left the hub, for its owner to remove. Always empty for anyone else",
+            "example": ["c1a5f0de-3b7a-4f2e-9d6c-8e4b2a1f0c3d"],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "visibility",
+          "hiddenAt",
+          "owner",
+          "gameCount",
+          "createdAt",
+          "updatedAt",
+          "games",
+          "unavailableGameIds"
+        ]
+      },
+      "CollectionLimitDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "error": {
+            "type": "string",
+            "example": "Bad Request"
+          },
+          "code": {
+            "type": "string",
+            "enum": ["COLLECTIONS_LIMIT", "COLLECTION_GAMES_LIMIT"]
+          },
+          "message": {
+            "type": "string",
+            "example": "50 collections at most - delete one to create another"
+          },
+          "max": {
+            "type": "number",
+            "example": 50,
+            "description": "The count that is reached"
+          }
+        },
+        "required": ["statusCode", "error", "code", "message", "max"]
+      },
+      "UpdateCollectionDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Couch co-op",
+            "maxLength": 40
+          },
+          "description": {
+            "type": "string",
+            "example": "Games to play side by side.",
+            "nullable": true,
+            "maxLength": 280
+          },
+          "visibility": {
+            "default": "PRIVATE",
+            "description": "PUBLIC is listed and open to anyone, UNLISTED open to whoever holds its id, PRIVATE to its owner",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CollectionVisibility"
+              }
+            ]
+          }
+        }
+      },
+      "ReorderCollectionDto": {
+        "type": "object",
+        "properties": {
+          "projectIds": {
+            "description": "Games of the collection in their new order. One left out keeps its place after those listed",
+            "example": [
+              "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+              "c1a5f0de-3b7a-4f2e-9d6c-8e4b2a1f0c3d"
+            ],
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": ["projectIds"]
+      },
+      "MyCollectionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "6f1c2f4e-8a53-4c1c-9a57-2f0f6f0d6c11"
+          },
+          "title": {
+            "type": "string",
+            "example": "Couch co-op"
+          },
+          "description": {
+            "type": "string",
+            "example": "Games to play side by side.",
+            "nullable": true
+          },
+          "visibility": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CollectionVisibility"
+              }
+            ]
+          },
+          "hiddenAt": {
+            "type": "string",
+            "example": null,
+            "description": "Set while moderation withholds the collection. Only its owner then reads it, and it takes no change but the removal of a game or its own deletion",
+            "format": "date-time",
+            "nullable": true
+          },
+          "owner": {
+            "$ref": "#/components/schemas/UserBasicInfoDto"
+          },
+          "gameCount": {
+            "type": "number",
+            "description": "Games of it on the hub: the ones a reader is shown",
+            "example": 14
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-11-20T12:00:00Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-11-20T12:00:00Z",
+            "description": "When it or its list of games last changed"
+          },
+          "games": {
+            "description": "Its first games on the hub, in order, 8 at most",
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HubGameDto"
+            }
+          },
+          "contains": {
+            "type": "boolean",
+            "description": "Whether it lists the game asked about, on the hub or not. Absent when no game was asked about"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "visibility",
+          "hiddenAt",
+          "owner",
+          "gameCount",
+          "createdAt",
+          "updatedAt",
+          "games"
+        ]
       },
       "AnalyticsContextDto": {
         "type": "object",
@@ -10234,7 +12322,8 @@
             "format": "uuid"
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "description": "The published project being played"
           },
           "continued": {
@@ -10327,7 +12416,8 @@
             ]
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "description": "The published project on screen, if any"
           },
           "play": {
@@ -10378,7 +12468,8 @@
             "description": "Whether the tab refused analytics or has not answered yet, absent when neither"
           },
           "releaseId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "playMs": {
             "type": "number",
@@ -10758,7 +12849,8 @@
         "type": "object",
         "properties": {
           "releaseId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string",
@@ -10930,7 +13022,8 @@
         "type": "object",
         "properties": {
           "releaseId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string",
@@ -11146,7 +13239,8 @@
             "description": "A short code standing for one consenting browser, the same in every answer while the backend runs and never its cookie. Null when no consenting browser is involved"
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true
           },
           "game": {
@@ -11279,7 +13373,8 @@
         "type": "object",
         "properties": {
           "releaseId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string",
@@ -11299,6 +13394,21 @@
           }
         },
         "required": ["releaseId", "name", "players", "plays", "anonymousPlays"]
+      },
+      "AnalyticsPlayedGameDto": {
+        "type": "object",
+        "properties": {
+          "releaseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for a game since deleted"
+          }
+        },
+        "required": ["releaseId", "name"]
       },
       "AnalyticsArrivalDto": {
         "type": "object",
@@ -11343,10 +13453,10 @@
             "nullable": true
           },
           "games": {
-            "description": "Names of the games played, most played first",
+            "description": "The games played, most first",
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/AnalyticsPlayedGameDto"
             }
           },
           "account": {
@@ -11414,7 +13524,8 @@
         "type": "object",
         "properties": {
           "releaseId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string"
@@ -11458,7 +13569,8 @@
         "type": "object",
         "properties": {
           "releaseId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string",
@@ -11602,7 +13714,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "at": {
             "type": "string"
@@ -11626,7 +13739,8 @@
             ]
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true
           },
           "game": {
@@ -11700,7 +13814,8 @@
             ]
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "description": "The published project it is about: the game to play, or for creators the game to fork"
           }
         },
@@ -11736,7 +13851,8 @@
             ]
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true,
             "description": "The published project it is about: the game to play, or for creators the game to fork"
           }
@@ -11887,7 +14003,8 @@
             "type": "string"
           },
           "releaseId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "continued": {
             "type": "boolean"
@@ -11920,7 +14037,9 @@
             "type": "string"
           },
           "releaseId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid",
+            "description": "The nil UUID for activity outside a game"
           },
           "plays": {
             "type": "number"
@@ -11944,7 +14063,8 @@
             "type": "string"
           },
           "projectId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true
           }
         },
@@ -11954,7 +14074,8 @@
         "type": "object",
         "properties": {
           "projectId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "day": {
             "type": "string"
@@ -12061,7 +14182,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string"
@@ -12216,7 +14339,8 @@
             "maxLength": 1000
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "description": "The release played just before the prompt"
           }
         },
@@ -12226,7 +14350,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           }
         },
         "required": ["id"]
@@ -12290,7 +14416,7 @@
           },
           "route": {
             "type": "string",
-            "example": "/play/42",
+            "example": "/play/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b",
             "maxLength": 200
           },
           "role": {
@@ -12301,15 +14427,18 @@
             ]
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "description": "The release the page is about"
           },
           "projectId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "description": "The project open in the editor"
           },
           "ratingId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "description": "The rating the report follows, for a low score"
           },
           "appRelease": {
@@ -12366,7 +14495,7 @@
           },
           "route": {
             "type": "string",
-            "example": "/play/42"
+            "example": "/play/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "appRelease": {
             "type": "string",
@@ -12394,7 +14523,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string"
@@ -12431,7 +14562,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "name": {
             "type": "string"
@@ -12443,7 +14576,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "kind": {
             "allOf": [
@@ -12487,7 +14622,7 @@
           "route": {
             "type": "string",
             "nullable": true,
-            "example": "/play/42"
+            "example": "/play/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "release": {
             "nullable": true,
@@ -12545,7 +14680,8 @@
             "description": "Bug reports opened from this rating",
             "type": "array",
             "items": {
-              "type": "number"
+              "type": "string",
+              "format": "uuid"
             }
           },
           "category": {
@@ -12557,7 +14693,8 @@
             ]
           },
           "ratingId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true,
             "description": "The rating a bug followed"
           },
@@ -12715,7 +14852,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "score": {
             "type": "number"
@@ -12748,7 +14887,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "createdAt": {
             "format": "date-time",
@@ -12785,7 +14926,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "kind": {
             "allOf": [
@@ -12829,7 +14972,7 @@
           "route": {
             "type": "string",
             "nullable": true,
-            "example": "/play/42"
+            "example": "/play/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "release": {
             "nullable": true,
@@ -12887,7 +15030,8 @@
             "description": "Bug reports opened from this rating",
             "type": "array",
             "items": {
-              "type": "number"
+              "type": "string",
+              "format": "uuid"
             }
           },
           "category": {
@@ -12899,7 +15043,8 @@
             ]
           },
           "ratingId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true,
             "description": "The rating a bug followed"
           },
@@ -12935,7 +15080,8 @@
             "nullable": true
           },
           "projectId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true
           },
           "context": {
@@ -13007,7 +15153,7 @@
       },
       "ModerationTargetType": {
         "type": "string",
-        "enum": ["USER", "PROJECT", "COMMENT"]
+        "enum": ["USER", "PROJECT", "COMMENT", "COLLECTION"]
       },
       "ModerationReason": {
         "type": "string",
@@ -13034,9 +15180,9 @@
             ]
           },
           "targetId": {
-            "type": "number",
-            "description": "The id of the account, the game or the comment",
-            "minimum": 1
+            "type": "string",
+            "format": "uuid",
+            "description": "The id of the target, of the kind `targetType` names"
           },
           "reason": {
             "allOf": [
@@ -13056,7 +15202,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           }
         },
         "required": ["id"]
@@ -13104,6 +15251,9 @@
           "COMMENT_HIDDEN",
           "COMMENT_RESTORED",
           "COMMENT_DELETED",
+          "COLLECTION_HIDDEN",
+          "COLLECTION_RESTORED",
+          "COLLECTION_DELETED",
           "FLAGS_DISMISSED",
           "DRAFT_VIEWED"
         ]
@@ -13112,7 +15262,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "action": {
             "allOf": [
@@ -13129,12 +15280,13 @@
             ]
           },
           "targetId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "targetLabel": {
             "type": "string",
             "nullable": true,
-            "description": "What the target was called when the action was taken: the name of a game or the start of a comment. It may be gone since."
+            "description": "What the target was called when the action was taken: its name or its title, else the start of its text. It may be gone since."
           },
           "reason": {
             "nullable": true,
@@ -13200,8 +15352,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
             "description": "The unique identifier of the project"
           },
           "name": {
@@ -13228,11 +15381,41 @@
               "type": "string"
             }
           },
+          "palette": {
+            "description": "The colours the game draws with, as lower-case `#rrggbb` in the order the game indexes them. Empty until its editor wrote them",
+            "example": ["#16171a", "#7f0622", "#d62411"],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "iconUrl": {
             "type": "string",
             "description": "URL to the project icon",
             "example": "https://example.com/icons/MySuperVideoGame.png",
             "nullable": true
+          },
+          "coverUrl": {
+            "type": "string",
+            "description": "Address of the cover, usable as is: it changes when the cover does. Null without a cover. Absent from answers that neither list nor open a project",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/image?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "clipUrl": {
+            "type": "string",
+            "description": "Address of the short gameplay clip, usable as is: it changes when the clip does. Null without a clip. Absent from answers that neither list nor open a project",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/clip?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "disk": {
+            "description": "The disk its author chose. Null when none was chosen: a client then derives a colour from the id. Absent from answers that neither list nor open a project",
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskStyleDto"
+              }
+            ]
           },
           "status": {
             "type": "string",
@@ -13253,8 +15436,9 @@
             "nullable": true
           },
           "userId": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b",
             "description": "The ID of the user who owns this project"
           },
           "createdAt": {
@@ -13307,8 +15491,9 @@
             "description": "The number of forks created from this project"
           },
           "forkedFromId": {
-            "type": "number",
-            "example": 42,
+            "type": "string",
+            "format": "uuid",
+            "example": "c1a5f0de-3b7a-4f2e-9d6c-8e4b2a1f0c3d",
             "description": "The ID of the project this was forked from, if any",
             "nullable": true
           },
@@ -13338,6 +15523,7 @@
           "shortDesc",
           "longDesc",
           "tags",
+          "palette",
           "iconUrl",
           "status",
           "monetization",
@@ -13363,7 +15549,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "username": {
             "type": "string"
@@ -13404,7 +15591,8 @@
             ]
           },
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "state": {
             "allOf": [
@@ -13416,11 +15604,11 @@
           "label": {
             "type": "string",
             "nullable": true,
-            "description": "The name of the game, the handle of the account or the start of the comment"
+            "description": "What to call the target: its title or its name, else the start of its text"
           },
           "owner": {
             "nullable": true,
-            "description": "The account itself, the creator of the game or the author of the comment",
+            "description": "The account itself, or the account the content belongs to",
             "type": "object",
             "allOf": [
               {
@@ -13429,9 +15617,10 @@
             ]
           },
           "projectId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true,
-            "description": "The game a comment is on"
+            "description": "The game itself, or the game the target sits on. Null for any other target"
           },
           "projectName": {
             "type": "string",
@@ -13442,15 +15631,10 @@
             "nullable": true,
             "description": "The play page of the game, null while players cannot reach it"
           },
-          "previewPlayUrl": {
+          "editUrl": {
             "type": "string",
             "nullable": true,
-            "description": "The staff preview of the game in the player, null for an account"
-          },
-          "previewEditUrl": {
-            "type": "string",
-            "nullable": true,
-            "description": "The staff preview of the game in the editor, null for an account"
+            "description": "The game in the editor of the web app, which staff open read-only. Null without a game"
           }
         },
         "required": ["type", "id", "state"]
@@ -13544,14 +15728,33 @@
           "title": {
             "type": "string",
             "nullable": true,
-            "description": "The name of a game or the display name of an account. A comment has none."
+            "description": "What the target is called: its name or its title. Null for a target without one"
           },
           "body": {
             "type": "string",
             "nullable": true,
-            "description": "The descriptions of a game, the text of a comment or the bio of an account"
+            "description": "The text of the target: its description, or what it says when it is only text"
           }
         }
+      },
+      "ModerationTargetVisibility": {
+        "type": "string",
+        "enum": ["PUBLIC", "UNLISTED", "PRIVATE"],
+        "description": "Who its owner lets read the target: anyone, whoever holds its id, or the owner alone. Null for a target whose owner has no such choice"
+      },
+      "CaseListedGameDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name the hub shows, else the one of the draft"
+          }
+        },
+        "required": ["id", "name"]
       },
       "FlagStatus": {
         "type": "string",
@@ -13561,7 +15764,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "reporter": {
             "$ref": "#/components/schemas/ModerationAccountRefDto"
@@ -13617,7 +15821,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "action": {
             "allOf": [
@@ -13637,7 +15842,8 @@
             ]
           },
           "targetId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "targetLabel": {
             "type": "string",
@@ -13753,6 +15959,22 @@
               }
             ]
           },
+          "visibility": {
+            "nullable": true,
+            "description": "Who its owner lets read the target: anyone, whoever holds its id, or the owner alone. Null for a target whose owner has no such choice",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationTargetVisibility"
+              }
+            ]
+          },
+          "games": {
+            "description": "The games the target lists, in its order, on the hub or not. Empty for a target that lists none",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CaseListedGameDto"
+            }
+          },
           "flags": {
             "description": "Newest first",
             "type": "array",
@@ -13790,6 +16012,7 @@
           "reasons",
           "firstFlaggedAt",
           "lastFlaggedAt",
+          "games",
           "flags",
           "history",
           "ownerHistory",
@@ -13830,7 +16053,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "username": {
             "type": "string"
@@ -13935,7 +16159,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "username": {
             "type": "string"
@@ -14185,7 +16410,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string"
@@ -14229,13 +16455,9 @@
             "nullable": true,
             "description": "The play page, null while players cannot reach the game"
           },
-          "previewPlayUrl": {
+          "editUrl": {
             "type": "string",
-            "description": "The staff preview in the player of the web app"
-          },
-          "previewEditUrl": {
-            "type": "string",
-            "description": "The staff preview in the editor of the web app"
+            "description": "The game in the editor of the web app, which staff open read-only"
           }
         },
         "required": [
@@ -14247,8 +16469,7 @@
           "createdAt",
           "updatedAt",
           "openFlags",
-          "previewPlayUrl",
-          "previewEditUrl"
+          "editUrl"
         ]
       },
       "ModerationProjectListDto": {
@@ -14276,7 +16497,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string"
@@ -14320,13 +16542,9 @@
             "nullable": true,
             "description": "The play page, null while players cannot reach the game"
           },
-          "previewPlayUrl": {
+          "editUrl": {
             "type": "string",
-            "description": "The staff preview in the player of the web app"
-          },
-          "previewEditUrl": {
-            "type": "string",
-            "description": "The staff preview in the editor of the web app"
+            "description": "The game in the editor of the web app, which staff open read-only"
           },
           "longDesc": {
             "type": "string",
@@ -14345,12 +16563,17 @@
             }
           },
           "forkedFromId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true
           },
           "hasCover": {
             "type": "boolean",
             "description": "Whether the cover route has an image to serve"
+          },
+          "hasClip": {
+            "type": "boolean",
+            "description": "Whether the clip route has a video to serve"
           },
           "allowedActions": {
             "type": "array",
@@ -14368,11 +16591,11 @@
           "createdAt",
           "updatedAt",
           "openFlags",
-          "previewPlayUrl",
-          "previewEditUrl",
+          "editUrl",
           "tags",
           "collaborators",
           "hasCover",
+          "hasClip",
           "allowedActions"
         ]
       },
@@ -14412,7 +16635,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "content": {
             "type": "string",
@@ -14422,13 +16646,15 @@
             "$ref": "#/components/schemas/ModerationAccountRefDto"
           },
           "projectId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "projectName": {
             "type": "string"
           },
           "parentId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true,
             "description": "The comment it replies to"
           },
@@ -14721,9 +16947,10 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
+            "type": "string",
             "description": "User ID",
-            "example": 1
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "email": {
             "type": "string",
@@ -14760,9 +16987,10 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
+            "type": "string",
             "description": "User ID",
-            "example": 1
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "email": {
             "type": "string",
@@ -14795,13 +17023,13 @@
           "profileImageUrl": {
             "type": "string",
             "description": "Public CDN URL of the profile image (if any)",
-            "example": "https://cdn.example.com/users/1/profile?v=abc123",
+            "example": "https://cdn.example.com/users/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b/profile?v=abc123",
             "nullable": true
           },
           "backgroundImageUrl": {
             "type": "string",
             "description": "Public CDN URL of the profile background image (if any)",
-            "example": "https://cdn.example.com/users/1/background?v=abc123",
+            "example": "https://cdn.example.com/users/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b/background?v=abc123",
             "nullable": true
           },
           "suspension": {
@@ -14831,9 +17059,10 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
+            "type": "string",
             "description": "User ID",
-            "example": 1
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -14855,13 +17084,13 @@
           "profileImageUrl": {
             "type": "string",
             "description": "Public CDN URL of the profile image (if any)",
-            "example": "https://cdn.example.com/users/1/profile?v=abc123",
+            "example": "https://cdn.example.com/users/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b/profile?v=abc123",
             "nullable": true
           },
           "backgroundImageUrl": {
             "type": "string",
             "description": "Public CDN URL of the profile background image (if any)",
-            "example": "https://cdn.example.com/users/1/background?v=abc123",
+            "example": "https://cdn.example.com/users/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b/background?v=abc123",
             "nullable": true
           },
           "colour": {
@@ -15018,14 +17247,15 @@
             "example": "Profile picture uploaded successfully"
           },
           "id": {
-            "type": "number",
+            "type": "string",
             "description": "User ID",
-            "example": 12
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "resourceUrl": {
             "type": "string",
             "description": "Where the image now lives, versioned so a replacement is not served from cache",
-            "example": "https://cdn.example/users/12/profile?v=abc"
+            "example": "https://cdn.example/users/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b/profile?v=abc"
           }
         },
         "required": ["message", "id", "resourceUrl"]
@@ -15038,9 +17268,10 @@
             "example": "Profile picture removed successfully"
           },
           "id": {
-            "type": "number",
+            "type": "string",
             "description": "User ID",
-            "example": 12
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           }
         },
         "required": ["message", "id"]
@@ -15051,7 +17282,7 @@
           "resourceUrl": {
             "type": "string",
             "description": "Public CDN URL of the image, versioned so a replacement is not served from cache",
-            "example": "https://cdn.example/users/12/profile?v=abc"
+            "example": "https://cdn.example/users/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b/profile?v=abc"
           }
         },
         "required": ["resourceUrl"]
@@ -15060,9 +17291,10 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
+            "type": "string",
             "description": "User ID",
-            "example": 12
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -15078,7 +17310,7 @@
           "profileImageUrl": {
             "type": "string",
             "description": "Profile picture, null when the person has not set one",
-            "example": "https://cdn.example/users/12/profile?v=abc",
+            "example": "https://cdn.example/users/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b/profile?v=abc",
             "nullable": true
           }
         },
@@ -15116,9 +17348,10 @@
             "example": "550e8400-e29b-41d4-a716-446655440000"
           },
           "hostId": {
-            "type": "number",
+            "type": "string",
             "description": "The user ID of the session's host",
-            "example": 1
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "webrtcOffer": {
             "description": "The WebRTC offer given to the client",
@@ -15135,9 +17368,10 @@
         "type": "object",
         "properties": {
           "userId": {
-            "type": "number",
+            "type": "string",
             "description": "The ID of the user participating in the work session",
-            "example": 1
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           }
         },
         "required": ["userId"]
@@ -15147,21 +17381,24 @@
         "properties": {
           "users": {
             "description": "IDs of the users present in the work session",
-            "example": [1, 2, 3],
+            "example": ["3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"],
             "type": "array",
             "items": {
-              "type": "number"
+              "type": "string",
+              "format": "uuid"
             }
           },
           "hostId": {
-            "type": "number",
+            "type": "string",
             "description": "The ID of the session's host",
-            "example": 1
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "project": {
-            "type": "number",
+            "type": "string",
             "description": "The ID of the project this work session belongs to",
-            "example": 1
+            "format": "uuid",
+            "example": "8c5d2a7e-41b3-4f6a-9e0d-2b7c6a5f4e3d"
           },
           "startedAt": {
             "format": "date-time",
@@ -15235,7 +17472,7 @@
           },
           "to": {
             "type": "number",
-            "description": "userId of the slave this response is addressed to"
+            "description": "Player number of the slave this response is addressed to"
           },
           "data": {
             "description": "Game payload, relayed as is",
@@ -15253,7 +17490,7 @@
           },
           "to": {
             "type": "number",
-            "description": "userId of the slave the host addresses; absent from a slave to its host"
+            "description": "Player number of the slave the host addresses; absent from a slave to its host"
           },
           "data": {
             "description": "Game payload, relayed as is",
@@ -15285,7 +17522,7 @@
           },
           "from": {
             "type": "number",
-            "description": "userId of the slave that sent the request"
+            "description": "Player number of the slave that sent the request"
           },
           "data": {
             "description": "Game payload, relayed as is",
@@ -15317,7 +17554,7 @@
           },
           "from": {
             "type": "number",
-            "description": "userId of the slave that sent the signal; absent from the host to a slave"
+            "description": "Player number of the slave that sent the signal; absent from the host to a slave"
           },
           "data": {
             "description": "Game payload, relayed as is",
@@ -15335,7 +17572,7 @@
           },
           "userId": {
             "type": "number",
-            "description": "userId of the slave now at the table"
+            "description": "Player number of the slave now at the table"
           }
         },
         "required": ["type", "userId"]
@@ -15349,7 +17586,7 @@
           },
           "userId": {
             "type": "number",
-            "description": "userId of the slave that left the table"
+            "description": "Player number of the slave that left the table"
           }
         },
         "required": ["type", "userId"]
@@ -15403,12 +17640,14 @@
             ]
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true,
             "description": "Release being played"
           },
           "projectId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true,
             "description": "Project being edited"
           }
@@ -15489,8 +17728,9 @@
         "type": "object",
         "properties": {
           "userId": {
-            "type": "number",
-            "example": 1
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           }
         },
         "required": ["userId"]

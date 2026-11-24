@@ -1,0 +1,15 @@
+<div [attr.role]="level() ? 'heading' : null" [attr.aria-level]="level() ?? null">
+  <button
+    type="button"
+    [class]="buttonClass()"
+    [attr.aria-expanded]="open()"
+    [attr.aria-controls]="regionId"
+    (click)="open.set(!open())">
+    <nc-icon [name]="open() ? 'chevron-down' : 'chevron-right'" class="shrink-0" />
+    <ng-content select="[lead]" />
+    <span class="min-w-0 truncate">{{ title() }}</span>
+  </button>
+</div>
+<div [id]="regionId" [hidden]="!open()">
+  <ng-content />
+</div>

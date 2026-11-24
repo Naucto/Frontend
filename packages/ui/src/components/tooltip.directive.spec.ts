@@ -80,6 +80,24 @@ Click one to fill it."
 })
 class HelpHostComponent {}
 
+describe('TooltipDirective after a press', () => {
+  it('stays away until the pointer has left and come back', async () => {
+    await render(HostComponent);
+    const trigger = screen.getByRole('button', { name: 'Kick' });
+
+    await userEvent.hover(trigger);
+    await pastTheDelay();
+    await userEvent.click(trigger);
+    await pastTheDelay();
+    expect(panelCount()).toBe(0);
+
+    await userEvent.unhover(trigger);
+    await userEvent.hover(trigger);
+    await pastTheDelay();
+    expect(panelCount()).toBe(1);
+  });
+});
+
 describe('TooltipPanelComponent', () => {
   it('sets a titled text as paragraphs with its identifiers in code', async () => {
     await render(HelpHostComponent);
@@ -90,8 +108,8 @@ describe('TooltipPanelComponent', () => {
     expect(panel).toHaveTextContent('SFX slots');
     expect(panel.querySelectorAll('p')).toHaveLength(2);
     expect(panel.querySelector('code')).toHaveTextContent('sound.play_sfx(slot)');
-    // The heading rules the whole width: it is beside the body, not inside its padding.
-    const heading = panel.firstElementChild;
+    // The heading is the frame's first child: beside the paragraphs, not one of them.
+    const heading = panel.firstElementChild?.firstElementChild;
     expect(heading).toHaveTextContent('SFX slots');
     expect(heading?.querySelector('p')).toBeNull();
   });

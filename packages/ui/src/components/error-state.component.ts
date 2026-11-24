@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
-import { type IconName } from '../icons/paths';
+import { type IconName } from '../icons/glyphs';
 import { ButtonDirective } from './button.directive';
 import { IconComponent } from './icon.component';
 
@@ -9,16 +9,16 @@ import { IconComponent } from './icon.component';
  *
  * This is deliberately *not* `nc-empty-state` with a flag: "there is nothing here" and "we could not
  * find out whether there is anything here" are different facts, and collapsing them is how an outage
- * ends up rendering as "No games yet — be the first." It shares the empty state's 420px column so the
- * two read at the same rhythm, and adds what an error needs: a live region, a hot icon when the
- * failure is hard, and a retry.
+ * ends up rendering as "No games yet — be the first." It shares the empty state's column so the two
+ * read at the same rhythm, and adds what an error needs: a live region, a hot icon when the failure
+ * is hard, and a retry.
  */
 @Component({
   selector: 'nc-error-state',
   imports: [IconComponent, ButtonDirective],
   templateUrl: './error-state.component.html',
   host: {
-    class: 'flex flex-col items-center justify-center gap-[14px] p-[44px] text-center',
+    class: 'flex flex-col items-center justify-center gap-[10px] px-3 py-[36px] text-center',
     role: 'alert',
     'aria-live': 'polite',
   },

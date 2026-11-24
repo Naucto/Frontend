@@ -1,0 +1,131 @@
+<div class="tilt" [style.aspect-ratio]="DISK_RATIO">
+  @if (lit()) {
+    <span class="edge top"></span>
+    <span class="edge bottom"></span>
+    <span class="edge left"></span>
+    <span class="edge right"></span>
+    <span class="back"></span>
+  }
+  <span class="halo"></span>
+  <div class="face">
+    @if (finish(); as print) {
+      <span class="finish" [style.background]="print"></span>
+    }
+    <span class="grip"></span>
+    <span class="hd" aria-hidden="true">HD</span>
+    <span class="slot"></span>
+    <span class="shutter"></span>
+    <div class="disk-label">
+      <div class="cover" [class.no-cover]="!cover() && action() !== 'new'">
+        @if (cover(); as src) {
+          <img [src]="src" alt="" class="pixelated" loading="lazy" />
+        }
+        @if (preview(); as clip) {
+          <video #video [src]="clip" [muted]="true" loop playsinline preload="none"></video>
+        }
+        <span class="pin">
+          <ng-content />
+        </span>
+      </div>
+      @if (info() === 'bandBottom') {
+        <span class="info">
+          <span class="by">{{ by() }}</span>
+          <span class="counts" aria-hidden="true">
+            @if (likesText(); as count) {
+              <span>
+                <nc-mark name="heart-filled" class="heart" />
+                {{ count }}
+              </span>
+            }
+            @if (commentsText(); as count) {
+              <span>
+                <nc-mark name="message" />
+                {{ count }}
+              </span>
+            }
+          </span>
+        </span>
+      }
+    </div>
+    <span class="tabs"></span>
+    @for (sticker of stickers(); track $index) {
+      <span
+        class="sticker"
+        aria-hidden="true"
+        [class.away]="sticker.hidden"
+        [style.left.%]="sticker.x"
+        [style.top.%]="sticker.y"
+        [style.rotate.deg]="sticker.rotation">
+        @if (sticker.seat) {
+          <span class="seat">
+            <svg viewBox="0 0 12 12" shape-rendering="crispEdges">
+              <path
+                d="M3 1h2v1h1v2H5v1H3V4H2V2h1zM1 7h6v1h1v3H0V8h1zM9 2h1v2h2v1h-2v2H9V5H7V4h2z"
+                fill="currentColor" />
+            </svg>
+          </span>
+        } @else {
+          <span class="card">
+            <span
+              class="initial"
+              [style.background-color]="sticker.color"
+              [style.color]="inkFor(sticker.color)">
+              {{ sticker.initial }}
+            </span>
+          </span>
+          @if (sticker.host) {
+            <svg class="crown" viewBox="0 0 9 6" shape-rendering="crispEdges">
+              <path
+                d="M0 0h1v6H0zM8 0h1v6H8zM4 0h1v1H4zM3 1h3v2H3zM1 2h1v1H1zM7 2h1v1H7zM0 3h9v3H0z" />
+              <path class="base" d="M0 5h9v1H0z" />
+              <path class="gem" d="M4 3h1v1H4z" />
+            </svg>
+          }
+        }
+      </span>
+    }
+    @if (lit()) {
+      <span class="diffuse"></span>
+      <span class="shine">
+        @for (cell of SHINE_CELLS; track cell) {
+          <span [style.--f-level]="$index + 1" [style.background-position]="cell"></span>
+        }
+      </span>
+      <span class="rim"></span>
+    }
+    @if (ACTION_ICON[action()]; as icon) {
+      <span class="action glare" [class]="action()" aria-hidden="true" (click)="press($event)">
+        <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+          <path
+            class="rind"
+            d="M7 0h2v1H7zM6 1h4v1H6zM5 2h6v1H5zM4 3h8v1H4zM3 4h10v1H3zM2 5h12v1H2zM1 6h14v1H1zM0 7h16v1H0zM0 8h16v1H0zM1 9h14v1H1zM2 10h12v1H2zM3 11h10v1H3zM4 12h8v1H4zM5 13h6v1H5zM6 14h4v1H6zM7 15h2v1H7z" />
+          <path
+            class="fill"
+            d="M7 1h2v1H7zM6 2h4v1H6zM5 3h6v1H5zM4 4h8v1H4zM3 5h10v1H3zM2 6h12v1H2zM1 7h14v1H1zM1 8h14v1H1zM2 9h12v1H2zM3 10h10v1H3zM4 11h8v1H4zM5 12h6v1H5zM6 13h4v1H6zM7 14h2v1H7z" />
+          <path
+            class="glint"
+            d="M7 1h2v1H7zM6 2h1v1H6zM9 2h1v1H9zM5 3h1v1H5zM10 3h1v1H10zM4 4h1v1H4zM11 4h1v1H11zM3 5h1v1H3zM12 5h1v1H12zM2 6h1v1H2zM13 6h1v1H13zM1 7h1v1H1zM14 7h1v1H14z" />
+          <path
+            class="foot"
+            d="M1 7h1v1H1zM14 7h1v1H14zM1 8h2v1H1zM13 8h2v1H13zM2 9h2v1H2zM12 9h2v1H12zM3 10h2v1H3zM11 10h2v1H11zM4 11h2v1H4zM10 11h2v1H10zM5 12h2v1H5zM9 12h2v1H9zM6 13h4v1H6zM7 14h2v1H7z" />
+        </svg>
+        <nc-icon [name]="icon" class="small-glyph" />
+        <nc-icon [name]="icon" [size]="24" class="large-glyph" />
+      </span>
+    }
+  </div>
+  @if (action() === 'new') {
+    <div class="ghost">
+      <span class="grip"></span>
+      <span class="hd" aria-hidden="true">HD</span>
+      <span class="shutter"></span>
+      <span class="disk-label"></span>
+      <span class="tabs"></span>
+    </div>
+    <span class="caption">
+      <nc-icon name="plus" class="small-glyph" />
+      <nc-icon name="plus" [size]="24" class="large-glyph" />
+      {{ caption() }}
+    </span>
+  }
+</div>

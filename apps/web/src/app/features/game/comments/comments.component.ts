@@ -1,8 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   type CommentResponseDto,
   projectCommentControllerCreateComment,
@@ -14,9 +13,11 @@ import {
   AvatarComponent,
   ButtonDirective,
   ChipComponent,
-  IconComponent,
+  DialogService,
+  EmptyStateComponent,
   InputDirective,
-  LabelComponent,
+  MarkComponent,
+  NoticeComponent,
   RelativeTimePipe,
   SkeletonComponent,
   ToastService,
@@ -26,10 +27,10 @@ import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-quer
 import { unwrap } from '../../../core/api/api-errors';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { FeaturesService } from '../../../core/config/features.service';
+import { CommentBubbleComponent } from '../../../shared/comments/comment-bubble.component';
 import { ContentFlagLauncher } from '../../../shared/moderation/content-flag-launcher.service';
 import { GoodStandingAction } from '../../../shared/moderation/good-standing-action';
 import { qk } from '../../../shared/queries/query-keys';
-import { UserAvatarComponent } from '../../../shared/user-avatar.component';
 
 const PAGE = 20;
 const MAX_LEN = 500;
@@ -39,27 +40,30 @@ const MAX_LEN = 500;
   imports: [
     NgTemplateOutlet,
     FormsModule,
-    RouterLink,
     TranslocoDirective,
     AvatarComponent,
     ButtonDirective,
     ChipComponent,
-    IconComponent,
+    EmptyStateComponent,
     InputDirective,
-    LabelComponent,
+    MarkComponent,
+    NoticeComponent,
     RelativeTimePipe,
     SkeletonComponent,
-    UserAvatarComponent,
+    CommentBubbleComponent,
   ],
   templateUrl: './comments.component.html',
+  styleUrl: '../../../shared/comments/speech-tail.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CommentsComponent {
-  readonly projectId = input.required<number>();
-  readonly authorId = input<number | null>(null);
+  readonly projectId = input.required<string>();
+  readonly authorId = input<string | null>(null);
   protected readonly auth = inject(AuthStore);
   private readonly qc = inject(QueryClient);
   private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(DialogService);
+  private readonly transloco = inject(TranslocoService);
   private readonly features = inject(FeaturesService);
   private readonly flags = inject(ContentFlagLauncher);
   private readonly standing = inject(GoodStandingAction);
@@ -67,7 +71,7 @@ export class CommentsComponent {
   protected readonly maxLen = MAX_LEN;
   protected draft = '';
   protected replyDraft = '';
-  protected readonly replyTo = signal<number | null>(null);
+  protected readonly replyTo = signal<string | null>(null);
   private readonly loaded = signal<CommentResponseDto[]>([]);
 
   protected readonly query = injectQuery(() => ({
@@ -83,7 +87,7 @@ export class CommentsComponent {
   protected readonly total = computed(() => this.query.data()?.total ?? 0);
   protected readonly comments = computed(() => {
     const current = this.query.data()?.comments ?? [];
-    const seen = new Set<number>();
+    const seen = new Set<string>();
     return [...this.loaded(), ...current].filter((comment) =>
       seen.has(comment.id) ? false : (seen.add(comment.id), true),
     );
@@ -127,7 +131,7 @@ export class CommentsComponent {
     });
   }
 
-  protected postReply(commentId: number): void {
+  protected postReply(commentId: string): void {
     const text = this.replyDraft.trim();
     if (!text) {
       return;
@@ -137,7 +141,7 @@ export class CommentsComponent {
     });
   }
 
-  private async sendReply(commentId: number, text: string): Promise<void> {
+  private async sendReply(commentId: string, text: string): Promise<void> {
     try {
       unwrap(
         await projectCommentControllerCreateReply({
@@ -154,7 +158,15 @@ export class CommentsComponent {
     await this.refresh();
   }
 
-  protected async remove(commentId: number): Promise<void> {
+  protected async remove(commentId: string): Promise<void> {
+    const confirmed = await this.dialogs.confirmDanger({
+      title: this.transloco.translate('comments.deleteTitle'),
+      message: this.transloco.translate('comments.deleteMessage'),
+      confirmLabel: this.transloco.translate('comments.delete'),
+    });
+    if (!confirmed) {
+      return;
+    }
     try {
       unwrap(
         await projectCommentControllerDeleteComment({
@@ -168,11 +180,6 @@ export class CommentsComponent {
     await this.refresh();
   }
 
-  /** What stands in for a comment that no longer reads: who took it down changes what is said. */
-  protected removalKey(comment: CommentResponseDto): string {
-    return comment.removedBy === 'MODERATION' ? 'comments.removedByModeration' : 'comments.deleted';
-  }
-
   /** A comment that still reads, written by someone else: nobody reports their own words. */
   protected canReport(comment: CommentResponseDto): boolean {
     return (
@@ -183,7 +190,15 @@ export class CommentsComponent {
   }
 
   protected report(comment: CommentResponseDto): void {
-    this.flags.report({ targetType: 'COMMENT', targetId: comment.id, label: comment.content });
+    this.flags.report({
+      targetType: 'COMMENT',
+      targetId: comment.id,
+      label: comment.content,
+      author: {
+        id: comment.author.id,
+        name: comment.author.nickname ?? comment.author.username,
+      },
+    });
   }
 
   private fail(error: unknown): void {

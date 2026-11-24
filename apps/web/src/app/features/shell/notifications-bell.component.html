@@ -4,60 +4,122 @@
     variant="ghost"
     size="bar"
     iconOnly
+    [pressed]="open()"
     [ncPopover]="panel"
     popoverAlign="end"
     [(popoverOpen)]="open"
     class="relative"
-    [attr.aria-label]="t('notifications.title')">
-    <nc-icon
-      name="notification"
-      [size]="24"
-      [class]="store.unread() > 0 ? 'text-gold-ink' : 'text-ink-3'" />
+    [attr.aria-label]="
+      store.unread() > 0
+        ? t('notifications.titleUnread', { n: store.unread() })
+        : t('notifications.title')
+    ">
+    <nc-icon [name]="store.unread() > 0 ? 'notification-filled' : 'notification'" [size]="24" />
     @if (store.unread() > 0) {
-      <span class="absolute top-[4px] right-[4px] h-[8px] w-[8px] bg-hot" aria-hidden="true"></span>
+      <span
+        class="pointer-events-none absolute top-0 right-0 z-1 inline-flex h-[18px] min-w-[18px] items-center justify-center bg-hot px-[3px] text-label leading-none text-on-hot"
+        aria-hidden="true">
+        {{ store.unread() }}
+      </span>
     }
   </button>
   <ng-template #panel>
-    <nc-popover-panel class="w-[360px]">
-      <div class="flex h-4 items-center gap-1 border-b border-line px-2">
-        <span class="label text-ink">{{ t('notifications.title') }}</span>
+    <nc-popover-panel
+      class="w-[360px] max-w-[calc(100vw-28px)] animate-rise"
+      [title]="t('notifications.title')"
+      [header]="false">
+      <div class="flex h-[46px] items-center gap-[10px] pr-[8px] pl-[14px]">
+        <span class="font-ui text-label tracking-label text-ink uppercase">
+          {{ t('notifications.title') }}
+        </span>
         @if (store.unread() > 0) {
-          <span class="rounded-xs bg-hot px-0.5 font-mono text-[10px] text-on-accent-dark">
-            {{ store.unread() }}
-          </span>
+          <nc-chip tone="hot">{{ store.unread() }}</nc-chip>
         }
         <span class="flex-1"></span>
         <button
           ncButton
           variant="ghost"
           size="sm"
+          type="button"
           (click)="store.markAllRead()"
           [disabled]="store.unread() === 0">
           {{ t('notifications.markAllRead') }}
         </button>
       </div>
-      <ul class="max-h-[360px] overflow-auto">
-        @for (notification of store.items(); track notification.id) {
-          <li
-            class="flex gap-1 border-b border-line px-2 py-1.5 last:border-b-0"
-            [class.bg-raised]="!notification.read">
-            <span
-              class="mt-0.5 w-[2px] shrink-0 self-stretch"
-              [class.bg-sky]="notification.type === 'INFO'"
-              [class.bg-orange]="notification.type === 'WARNING'"></span>
-            <button type="button" class="flex-1 text-left" (click)="act(notification)">
-              <div class="text-ui text-ink">{{ notification.title }}</div>
-              <div class="text-meta text-ink-2">{{ notification.message }}</div>
-              <div class="label mt-0.5 text-ink-4">
-                {{ notification.createdAt | slice: 0 : 10 }}
-              </div>
+      <ul
+        class="grid max-h-[min(420px,calc(100dvh-140px))] gap-[3px] overflow-y-auto px-[6px] pb-[6px]">
+        @for (row of rows(); track row.notification.id) {
+          @let notification = row.notification;
+          <!-- The answers to a request lie over the foot of its row, beside the button rather than
+               inside it: a button may not hold another. -->
+          <li class="grid">
+            <button
+              type="button"
+              ncOption
+              class="col-start-1 row-start-1"
+              [class]="row.request ? 'pb-[45px]!' : ''"
+              [wash]="notification.read ? undefined : row.tone"
+              (click)="act(notification)">
+              @if (row.request; as request) {
+                <nc-user-avatar
+                  [userId]="request.from.id"
+                  [name]="request.from.nickname || request.from.username"
+                  [size]="30" />
+              } @else {
+                <span
+                  aria-hidden="true"
+                  class="inline-flex size-[30px] shrink-0 items-center justify-center"
+                  [class]="INK[row.tone]">
+                  <nc-icon [name]="row.icon" />
+                </span>
+              }
+              <span class="grid min-w-0 flex-1 gap-[2px]">
+                <span
+                  class="text-small leading-[1.35]"
+                  [class]="notification.read ? 'text-ink' : INK[row.tone]">
+                  {{ notification.title }}
+                </span>
+                <span class="text-meta text-ink-2">{{ notification.message }}</span>
+                <span class="text-micro tracking-wide text-ink-4 uppercase">
+                  {{ notification.createdAt | ncRelativeTime }}
+                </span>
+              </span>
+              @if (row.invite) {
+                <span
+                  aria-hidden="true"
+                  class="shrink-0 self-center text-meta tracking-button text-jade-ink uppercase">
+                  {{ t('net.join.join') }}
+                </span>
+              }
             </button>
-            @if (!notification.read) {
-              <span class="mt-1 h-1 w-1 shrink-0 rounded-xs bg-hot" aria-hidden="true"></span>
+            @if (row.request; as request) {
+              <div
+                class="pointer-events-none z-1 col-start-1 row-start-1 flex gap-[6px] self-end pb-[9px] pl-[56px] *:pointer-events-auto">
+                <button
+                  ncButton
+                  variant="jade"
+                  size="sm"
+                  type="button"
+                  [disabled]="answering() !== null"
+                  (click)="answer(notification.id, request.id, true)">
+                  {{ t('friends.accept') }}
+                </button>
+                <button
+                  ncButton
+                  size="sm"
+                  type="button"
+                  [disabled]="answering() !== null"
+                  (click)="answer(notification.id, request.id, false)">
+                  {{ t('notifications.ignore') }}
+                </button>
+              </div>
             }
           </li>
         } @empty {
-          <li class="p-3 text-center text-body text-ink-3">{{ t('notifications.empty') }}</li>
+          <li
+            class="px-[14px] pt-[22px] pb-[26px] text-center font-ui text-label tracking-label text-ink-3 uppercase">
+            {{ t('notifications.empty') }}
+          </li>
         }
       </ul>
     </nc-popover-panel>

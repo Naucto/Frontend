@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { ButtonDirective, IconComponent } from '@naucto/ui';
 
+import { copyCodeOnClick } from './copy-code';
 import { type ApiEntry } from './docs.service';
 import { signatureHtml, typeHtml } from './type-tone';
 
@@ -11,7 +12,7 @@ import { signatureHtml, typeHtml } from './type-tone';
   selector: 'nc-api-card',
   imports: [TranslocoDirective, ButtonDirective, IconComponent],
   templateUrl: './api-card.component.html',
-  host: { class: 'block' },
+  host: { class: 'block', '(click)': 'onClick($event)' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ApiCardComponent {
@@ -20,6 +21,7 @@ export class ApiCardComponent {
   readonly insert = output<ApiEntry>();
   readonly navigate = output<string>();
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly i18n = inject(TranslocoService);
 
   /** Docs HTML is built at compile time from our own repository; it never carries user input. */
   protected trust(html: string): SafeHtml {
@@ -39,4 +41,8 @@ export class ApiCardComponent {
     }
     return this.trust(returnType ? `${typeHtml(returnType)} ${returns}` : returns);
   });
+
+  protected onClick(event: MouseEvent): void {
+    copyCodeOnClick(event, this.i18n.translate('docs.codeCopied'));
+  }
 }

@@ -1,0 +1,16 @@
+<div class="grid gap-[10px]">
+  <span class="line-clamp-2 font-display text-[28px] leading-[1.1] text-balance text-ink">
+    {{ game().name }}
+  </span>
+  <p class="line-clamp-4 text-body leading-[1.55] text-pretty text-ink-body">
+    {{ game().shortDesc }}
+  </p>
+  <nc-stat class="mt-[4px]" icon="play" [value]="game().viewCount" compact />
+</div>
+@if (game().tags.length) {
+  <div class="flex flex-wrap items-center gap-[8px]">
+    @for (tag of game().tags; track tag) {
+      <nc-chip kind="tag">{{ tag }}</nc-chip>
+    }
+  </div>
+}

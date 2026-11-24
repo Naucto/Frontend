@@ -3,13 +3,12 @@
   role="checkbox"
   [attr.aria-checked]="checked()"
   [attr.aria-label]="label()"
-  [disabled]="disabled()"
-  (click)="checked.set(!checked())"
-  [class]="buttonClass()">
-  <span [class]="boxClass()">
-    @if (checked()) {
-      <nc-icon name="check" [size]="12" />
-    }
+  [disabled]="closed()"
+  (click)="toggle()"
+  class="group inline-flex items-center gap-[10px] font-ui text-meta uppercase tracking-button text-ink-3 enabled:aria-checked:text-active-ink disabled:cursor-not-allowed disabled:text-ink-4">
+  <span
+    class="flat-sm bevel-edge-line-strong bevel-fill-inset inline-flex size-[22px] flex-none items-center justify-center group-enabled:group-aria-checked:bevel-edge-active-ink group-disabled:bevel-edge-line">
+    <span class="bg-primary group-disabled:bg-ink-4" [class]="markClass()"></span>
   </span>
   <ng-content />
 </button>

@@ -4,7 +4,7 @@ import { type Instrument } from '@naucto/engine';
 import {
   ButtonDirective,
   HelpDotComponent,
-  IconComponent,
+  MarkComponent,
   type SlotCell,
   SlotGridComponent,
   slotRange,
@@ -21,7 +21,7 @@ const COLUMNS = 4;
   imports: [
     TranslocoDirective,
     ButtonDirective,
-    IconComponent,
+    MarkComponent,
     HelpDotComponent,
     TooltipDirective,
     SlotGridComponent,

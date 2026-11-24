@@ -169,6 +169,27 @@ export default tseslint.config(
     },
   },
   {
+    // A write that asks for an account asks that the account be in good standing too, so the gate
+    // that only asks for one has a single caller. The rule is the typed twin of the one above: under
+    // the same name this list would replace the dependency rule's in core and shared.
+    files: ['apps/web/src/app/**/*.ts'],
+    ignores: ['apps/web/src/app/shared/moderation/good-standing-action.ts', '**/*.spec.ts'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/signed-in-action'],
+              message:
+                'Go through GoodStandingAction (shared/moderation), which asks for the sign-in and tells a suspended account why nothing happens.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.html'],
     extends: [...angular.configs.templateRecommended, ...angular.configs.templateAccessibility],
     plugins: { naucto: { rules: { 'template-child-per-line': templateChildPerLine } } },
@@ -183,6 +204,12 @@ export default tseslint.config(
             ':matches(TextAttribute, LiteralPrimitive)[value=/(^|\\s)[a-z:-]*(gap|gap-x|gap-y|p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|w|h|top|bottom|left|right|inset|space-x|space-y)-[0-9]+[.](125|375|625|875)(\\s|$)/]',
           message:
             'Tailwind does not generate eighth-step spacing (…-1.375, …-0.625). It fails silently — use an arbitrary value like gap-[11px].',
+        },
+        {
+          // The parser keeps the kind of binding here; 1 is an attribute binding.
+          selector: "BoundAttribute[name='disabled'][__originalType=1]",
+          message:
+            'Bind [disabled]. A kit control writes the attribute itself, from its input and from the scope above it, and two writers of one attribute leave whichever wrote last.',
         },
       ],
     },

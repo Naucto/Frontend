@@ -1,7 +1,12 @@
-<nc-icon [name]="icon()" [size]="48" class="text-ink-4" />
-<h3 class="text-title text-ink-body">{{ title() }}</h3>
+<span
+  class="flat-sm bevel-fill-inset mb-[6px] flex h-[48px] w-[48px] items-center justify-center text-ink-4">
+  <nc-icon [name]="icon()" [size]="24" />
+</span>
+<h3 class="font-display text-title text-ink">{{ title() }}</h3>
 @if (hint()) {
-  <p class="max-w-[420px] text-meta leading-[1.6] text-ink-3">{{ hint() }}</p>
+  <p class="max-w-[36ch] text-small text-ink-3">{{ hint() }}</p>
 }
 <ng-content select="[hint]" />
-<ng-content />
+<div class="mt-1 flex flex-col items-center gap-[10px] empty:hidden">
+  <ng-content />
+</div>

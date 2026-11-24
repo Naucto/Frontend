@@ -1,33 +1,182 @@
-<div *transloco="let t" class="grid gap-4">
+<div
+  *transloco="let t"
+  class="grid grid-cols-[minmax(0,1fr)] gap-[56px] [--nc-page-gutter:16px] md:[--nc-page-gutter:24px] xl:px-[72px] xl:[--nc-page-gutter:96px]">
+  <ng-template #newCollectionBox>
+    <div class="relative h-[290px]">
+      <button
+        type="button"
+        data-testid="new-collection"
+        class="raised-lg bevel-level bevel-edge-line bevel-fill-transparent hover:bevel-lift hover:bevel-lit active:bevel-down absolute inset-x-0 top-[64px] bottom-0 flex cursor-pointer flex-col items-center justify-center gap-1 text-ink-3 hover:text-active-ink"
+        (click)="newCollection()">
+        <nc-icon name="plus" [size]="24" />
+        <span class="text-body tracking-button uppercase">{{ t('collections.new') }}</span>
+      </button>
+    </div>
+  </ng-template>
+
   @if (query.isError()) {
-    <!-- Never the "you have no games" copy: someone with a shelf full of them would read that
-         as having lost the lot. -->
+    <!-- Never an empty shelf: someone with a shelf full of games would read that as having lost
+         the lot. -->
     <nc-error-state
       [title]="t('games.loadFailed')"
       [hint]="t('hub.rowError')"
       [retryLabel]="t('game.retry')"
       (retry)="query.refetch()" />
   } @else if (query.isPending()) {
-    <div class="grid gap-1">
-      <nc-skeleton height="1.25rem" width="30%" />
-      <nc-skeleton height="112px" radius="rounded-md" />
-      <nc-skeleton height="112px" radius="rounded-md" />
-    </div>
-  } @else if (!all().length) {
-    <nc-empty-state icon="file-plus" [title]="t('games.emptyTitle')" [hint]="t('games.emptyHint')">
-      <a ncButton variant="primary" routerLink="/games/new">+ {{ t('nav.newGame') }}</a>
-    </nc-empty-state>
+    <nc-skeleton height="480px" />
   } @else {
-    <nc-hub-row
-      [title]="t('games.drafts')"
-      [games]="drafts()"
-      [count]="drafts().length"
-      [empty]="t('games.noDrafts')"
-      [opensEditor]="true" />
-    <nc-hub-row
-      [title]="t('games.published')"
-      [games]="published()"
-      [empty]="t('games.noPublished')"
-      [opensEditor]="true" />
+    @switch (opened()) {
+      @case ('collections') {
+        <section class="grid grid-cols-[minmax(0,1fr)] gap-3">
+          <div class="flex flex-wrap items-center gap-[14px]">
+            <a ncButton variant="ghost" size="sm" routerLink="/games">
+              <nc-mark name="arrow-left" />
+              {{ t('games.title') }}
+            </a>
+            <h1 class="font-display text-[28px] leading-[1.2] text-ink">
+              {{ t('collections.title') }}
+            </h1>
+            <nc-chip>{{ collections.data()?.length ?? 0 }}</nc-chip>
+          </div>
+          <div
+            class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-x-[20px] gap-y-1">
+            <ng-container [ngTemplateOutlet]="newCollectionBox" />
+            @for (collection of collections.data(); track collection.id) {
+              <nc-collection-box
+                [title]="collection.title"
+                [curator]="collection.owner"
+                [games]="collection.games"
+                [total]="collection.gameCount"
+                [visibility]="collection.visibility"
+                [hidden]="!!collection.hiddenAt"
+                [link]="['/collections', collection.id]"
+                (picked)="router.navigate(['/play', $event.id])" />
+            }
+          </div>
+        </section>
+      }
+      @case (null) {
+        @if (drafts().length || !published().length) {
+          <nc-shelf
+            rows="2"
+            data-testid="shelf-drafts"
+            [heading]="t('games.drafts')"
+            [count]="drafts().length">
+            <a
+              shelfMore
+              routerLink="/games"
+              class="inline-flex items-center gap-[6px] text-label tracking-wide text-gold-ink uppercase"
+              [queryParams]="{ all: 'drafts' }">
+              {{ t('hub.seeAll') }}
+              <nc-mark name="arrow-right" />
+            </a>
+            <ng-container
+              *ncShelfItem="let game of draftItems(); open as open; flyoutId as flyoutId">
+              @if (game) {
+                <nc-shelf-disk
+                  action="edit"
+                  [game]="game"
+                  [link]="['/edit', game.id]"
+                  [open]="open"
+                  [flyoutId]="flyoutId" />
+              } @else {
+                <a routerLink="/games/new" class="block">
+                  <nc-floppy action="new" [caption]="t('nav.newGame')" />
+                </a>
+              }
+            </ng-container>
+            <ng-container *ncShelfFlyout="let game of draftItems(); when: isGame">
+              @if (game) {
+                <nc-game-flyout [game]="game" />
+              }
+            </ng-container>
+          </nc-shelf>
+        }
+        @if (published().length) {
+          <nc-shelf
+            rows="2"
+            data-testid="shelf-published"
+            [heading]="t('games.published')"
+            [count]="published().length">
+            <a
+              shelfMore
+              routerLink="/games"
+              class="inline-flex items-center gap-[6px] text-label tracking-wide text-gold-ink uppercase"
+              [queryParams]="{ all: 'published' }">
+              {{ t('hub.seeAll') }}
+              <nc-mark name="arrow-right" />
+            </a>
+            <nc-shelf-disk
+              *ncShelfItem="let game of published(); open as open; flyoutId as flyoutId"
+              action="edit"
+              [game]="game"
+              [link]="['/edit', game.id]"
+              [open]="open"
+              [flyoutId]="flyoutId" />
+            <nc-game-flyout *ncShelfFlyout="let game of published()" [game]="game" />
+          </nc-shelf>
+        }
+        @if (collections.isError()) {
+          <nc-error-state
+            [title]="t('collections.listFailed')"
+            [retryLabel]="t('game.retry')"
+            (retry)="collections.refetch()" />
+        } @else {
+          <nc-shelf
+            itemMin="280"
+            fewest="1"
+            data-testid="shelf-collections"
+            [heading]="t('collections.title')"
+            [count]="collections.data()?.length ?? 0">
+            <a
+              shelfMore
+              routerLink="/games"
+              class="inline-flex items-center gap-[6px] text-label tracking-wide text-gold-ink uppercase"
+              [queryParams]="{ all: 'collections' }">
+              {{ t('hub.seeAll') }}
+              <nc-mark name="arrow-right" />
+            </a>
+            <ng-container *ncShelfItem="let collection of collectionItems()">
+              @if (collection) {
+                <nc-collection-box
+                  class="-mt-[36px]"
+                  [title]="collection.title"
+                  [curator]="collection.owner"
+                  [games]="collection.games"
+                  [total]="collection.gameCount"
+                  [visibility]="collection.visibility"
+                  [hidden]="!!collection.hiddenAt"
+                  [link]="['/collections', collection.id]"
+                  (picked)="router.navigate(['/play', $event.id])" />
+              } @else {
+                <div class="-mt-[36px]">
+                  <ng-container [ngTemplateOutlet]="newCollectionBox" />
+                </div>
+              }
+            </ng-container>
+          </nc-shelf>
+        }
+      }
+      @default {
+        <section class="grid grid-cols-[minmax(0,1fr)] gap-3">
+          <div class="flex flex-wrap items-center gap-[14px]">
+            <a ncButton variant="ghost" size="sm" routerLink="/games">
+              <nc-mark name="arrow-left" />
+              {{ t('games.title') }}
+            </a>
+            <h1 class="font-display text-[28px] leading-[1.2] text-ink">
+              {{ opened() === 'drafts' ? t('games.drafts') : t('games.published') }}
+            </h1>
+            <nc-chip>{{ (opened() === 'drafts' ? drafts() : published()).length }}</nc-chip>
+          </div>
+          <div
+            class="grid grid-cols-2 gap-x-2 gap-y-2.5 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
+            @for (game of opened() === 'drafts' ? drafts() : published(); track game.id) {
+              <nc-shelf-disk action="edit" named [game]="game" [link]="['/edit', game.id]" />
+            }
+          </div>
+        </section>
+      }
+    }
   }
 </div>

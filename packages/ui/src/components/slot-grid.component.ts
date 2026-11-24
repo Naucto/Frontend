@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  output,
+} from '@angular/core';
+
+import { closedBy } from './disabled-scope.directive';
+import { CELL, CELL_ON, joined } from './selection-styles';
 
 /** One numbered place in a bank, and whether anything is in it. */
 export interface SlotCell {
@@ -38,9 +48,12 @@ const TAIL = 4;
 /** Row gap, in pixels. */
 const GAP = 4;
 
+const SLOT = `${CELL} ${CELL_ON.primary} h-(--nc-h-xs) min-w-0 font-mono text-label`;
+
 /**
- * A bank of numbered slots. The number is the whole of what a cell says: it is what everything else
- * refers to the slot by, so a name beside it would be a second thing to read to know the same one.
+ * A bank of numbered slots, each row one run of joined cells. The number is the whole of what a
+ * cell says: it is what everything else refers to the slot by, so a name beside it would be a
+ * second thing to read to know the same one.
  */
 @Component({
   selector: 'nc-slot-grid',
@@ -58,6 +71,8 @@ export class SlotGridComponent {
    * everything under it every time a row was added. It keeps its height and scrolls instead.
    */
   readonly rows = input(5);
+  readonly disabled = input(false, { transform: booleanAttribute });
+  protected readonly closed = closedBy(() => this.disabled());
   readonly pick = output<number>();
 
   protected readonly gap = GAP;
@@ -68,20 +83,21 @@ export class SlotGridComponent {
 
   protected readonly height = computed(
     () =>
-      `calc(${String(this.rows())} * var(--nc-control-h-xs) + ${String((this.rows() - 1) * GAP + TAIL)}px)`,
+      `calc(${String(this.rows())} * var(--nc-h-xs) + ${String((this.rows() - 1) * GAP + TAIL)}px)`,
   );
 
   protected pad(value: number): string {
     return String(value).padStart(2, '0');
   }
 
-  protected cellClass(cell: SlotCell): string {
-    if (cell.state === 'current') {
-      return 'border-gold bg-gold text-on-accent';
-    }
-    if (cell.state === 'filled') {
-      return 'border-line-strong bg-raised text-ink-body';
-    }
-    return 'border-line bg-inset text-ink-4 hover:border-line-strong hover:text-ink';
+  protected cellClass(cell: SlotCell, index: number, last: boolean): string {
+    const column = index % this.columns();
+    const ground =
+      cell.state === 'empty'
+        ? 'bevel-fill-inset text-ink-4'
+        : cell.state === 'filled'
+          ? 'text-ink-body'
+          : '';
+    return `${SLOT} ${ground} ${joined(column === 0, column === this.columns() - 1 || last)}`;
   }
 }

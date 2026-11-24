@@ -1,0 +1,167 @@
+/* The arrows stand in the page's gutter when it is wide enough to hold them and the peek. */
+.row {
+  margin-inline: max(-92px, calc(4px - var(--nc-page-gutter, 0px)));
+}
+
+.arrow {
+  display: flex;
+  flex: none;
+  width: 32px;
+  height: 160px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--nc-ink-2);
+}
+.arrow:hover {
+  color: var(--nc-active-ink);
+}
+
+/*
+ * A phone has no room for arrows beside the rail: there the rail runs to the page's edges, and a
+ * swipe, the dots and the dithered ends page it.
+ */
+@media (width < 640px) {
+  .row {
+    margin-inline: calc(-1 * var(--nc-page-gutter, 0px));
+  }
+  .arrow {
+    display: none;
+  }
+}
+
+/*
+ * The window on the rail. It is cut on its sides only: its padding is the room a lifted item and
+ * an open flyout take above and below, given back by the margins, and it lets the pointer through
+ * so that room does not cover what the page puts there. Both ends dissolve over the peek, except
+ * where a flyout is open across one.
+ */
+.window {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+  /* Clipped, not hidden: a hidden box still scrolls to whatever is focused or searched inside. */
+  overflow: clip;
+  margin: -66px 0 -110px;
+  padding: 66px 54px 110px;
+  pointer-events: none;
+  /* Each end is a strip 42px wide that dissolves outward, tiled down the edge. */
+  mask-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='42' height='12' shape-rendering='crispEdges'%3E%3Cpath stroke='%23000' stroke-width='3' d='M12 1.5h3m3 0h3m3 0h18M15 4.5h3m3 0h3m3 0h3m3 0h9M18 7.5h3m3 0h3m3 0h12M21 10.5h3m3 0h3m3 0h3m3 0h3'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='42' height='12' shape-rendering='crispEdges'%3E%3Cpath stroke='%23000' stroke-width='3' d='M0 1.5h18m3 0h3m3 0h3M0 4.5h9m3 0h3m3 0h3m3 0h3M0 7.5h12m3 0h3m3 0h3M0 10.5h3m3 0h3m3 0h3m3 0h3'/%3E%3C/svg%3E"),
+    var(--nc-dither-full), var(--nc-dither-full);
+  mask-size:
+    42px 12px,
+    42px 12px,
+    calc(100% - 84px) 100%,
+    var(--opening-w) 100%;
+  mask-repeat: repeat-y, repeat-y, no-repeat, no-repeat;
+  mask-position:
+    left top,
+    right top,
+    center,
+    var(--opening-x) 0;
+}
+
+/* The page's colour laid over a neighbouring page, a dither frame at a time; pressing it pages. */
+.veil {
+  position: absolute;
+  top: 66px;
+  bottom: 110px;
+  left: 0;
+  z-index: 55;
+  width: 54px;
+  cursor: pointer;
+  background: var(--nc-page);
+  /* The ends' dissolve as nine 54px frames side by side, from nothing to its densest:
+     `mask-position` picks the frame. */
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='486' height='12' shape-rendering='crispEdges'%3E%3Cpath stroke='%23000' stroke-width='3' d='M57 1.5h3m9 0h3m9 0h3m9 0h3m15 0h3m3 0h3m3 0h3m9 0h3m9 0h3m15 0h3m3 0h3m3 0h3m3 0h3m3 0h3m9 0h3m15 0h3m3 0h3m3 0h3m3 0h3m3 0h3m3 0h3m3 0h3m12 0h6m3 0h3m3 0h3m3 0h3m3 0h3m3 0h3m3 0h3m9 0h21m3 0h3m3 0h3m3 0h3m3 0h3m9 0h21m3 0h3m3 0h3m3 0h3m3 0h3m9 0h33m3 0h3m3 0h3m3 0h3m3 0h3M162 4.5h3m9 0h3m39 0h3m3 0h3m3 0h3m39 0h3m3 0h3m3 0h3m3 0h3m3 0h3m27 0h3m3 0h3m3 0h3m3 0h3m3 0h3m27 0h9m3 0h3m3 0h3m3 0h3m9 0h3m15 0h9m3 0h3m3 0h3m3 0h3m3 0h3m3 0h3M63 7.5h3m45 0h3m3 0h3m9 0h3m9 0h3m21 0h3m3 0h3m3 0h3m3 0h3m9 0h3m21 0h3m3 0h3m3 0h3m3 0h3m3 0h3m3 0h3m21 0h3m3 0h3m3 0h3m3 0h3m3 0h3m3 0h3m9 0h3m6 0h12m3 0h3m3 0h3m3 0h3m3 0h3m9 0h3m6 0h12m3 0h3m3 0h3m3 0h3m3 0h3m3 0h3m3 0h3m6 0h24m3 0h3m3 0h3m3 0h3m3 0h3M216 10.5h3m3 0h3m45 0h3m3 0h3m3 0h3m3 0h3m33 0h3m3 0h3m3 0h3m3 0h3m33 0h3m3 0h3m3 0h3m3 0h3m3 0h3m3 0h3m21 0h3m3 0h3m3 0h3m3 0h3m3 0h3m3 0h3'/%3E%3C/svg%3E");
+  mask-size: 486px 12px;
+  mask-repeat: repeat-y;
+}
+.veil.after {
+  right: 0;
+  left: auto;
+  /* The far end is the near one seen in a mirror, frame for frame. */
+  scale: -1 1;
+}
+
+.track {
+  width: 100%;
+  contain: inline-size;
+  pointer-events: auto;
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+}
+.track.nc-panning {
+  cursor: grabbing;
+}
+
+/*
+ * Every item is placed by hand, page after page, so an empty place on a last page stays empty.
+ * Moved by `left`, not a transform: the items must stack against the veils, outside the rail.
+ */
+.rail {
+  position: relative;
+  display: grid;
+  width: max-content;
+  gap: 16px;
+  transition: left 600ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.rail.pulled {
+  transition: none;
+}
+
+.dim {
+  position: absolute;
+  /* As wide as any page, so it veils the whole shelf even when a few items leave the rail short;
+     the viewport clips it. */
+  inset: -12px -100vw -24px;
+  z-index: 30;
+  pointer-events: none;
+  background: var(--nc-page);
+  mask-size: 12px 12px;
+  opacity: 0;
+  transition: opacity 0s linear;
+}
+.dim.on {
+  opacity: 1;
+}
+
+/* An item that was open stays above its neighbours until it has settled back. */
+.item {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  transition: z-index 0s linear 450ms;
+}
+.item:hover,
+.item.open {
+  z-index: 60;
+  transition: z-index 0s;
+}
+/* Unless the keyboard moved on: the next one opens at once, and must not open underneath. */
+:host(.by-keys) .item {
+  transition: none;
+}
+
+.lift {
+  position: relative;
+  transition: transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.item.open > .lift {
+  transform: scale(1.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail,
+  .lift {
+    transition: none;
+  }
+}
+:host-context([data-reduce-motion]) .rail,
+:host-context([data-reduce-motion]) .lift {
+  transition: none;
+}

@@ -1,19 +1,34 @@
-<nc-icon name="search" [size]="12" [class]="chrome().icon" />
+@if (size() === 'md') {
+  <!-- The well sinks its content a pixel; the glyph is set back on the middle of the whole box. -->
+  <nc-icon name="search" class="-mt-[3px]" />
+} @else {
+  <nc-mark name="search" />
+}
 <input
   #input
   type="search"
+  autocomplete="off"
   [placeholder]="placeholder()"
   [value]="value()"
+  [disabled]="closed()"
   [attr.aria-label]="placeholder()"
+  [attr.role]="list() ? 'combobox' : null"
+  [attr.aria-autocomplete]="list() ? 'list' : null"
+  [attr.aria-controls]="list()"
+  [attr.aria-expanded]="list() ? expanded() : null"
   (input)="onInput($event)"
   (keydown.enter)="submitted.emit(value())"
-  class="min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-ink-4"
+  class="min-w-0 flex-1 text-ink outline-none placeholder:text-ink-4 disabled:cursor-not-allowed disabled:text-ink-4"
   [class]="chrome().input" />
-<!-- The badge never shrinks; a placeholder has no ellipsis, so a narrow box needs a placeholder
+<!-- The key never shrinks; a placeholder has no ellipsis, so a narrow box needs a placeholder
      written to fit beside it. -->
-@if (hint()) {
-  <kbd
-    class="shrink-0 rounded-xs border border-line px-[5px] py-[2px] font-mono text-[10px] leading-[normal] text-ink-4">
-    {{ hint() }}
-  </kbd>
+@if (size() === 'md' && keys().length) {
+  <span class="-mt-[3px] flex flex-none items-center gap-[3px]">
+    @for (key of keys(); track $index) {
+      @if (!$first) {
+        <nc-mark aria-hidden="true" name="plus" class="text-ink-4" />
+      }
+      <nc-keycap size="sm">{{ key }}</nc-keycap>
+    }
+  </span>
 }

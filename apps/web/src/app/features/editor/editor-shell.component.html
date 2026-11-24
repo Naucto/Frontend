@@ -1,8 +1,10 @@
-<div *transloco="let t" class="grid h-dvh grid-rows-[56px_auto_1fr] bg-page text-ink">
+<div
+  *transloco="let t"
+  class="grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[56px_auto_1fr] bg-page text-ink">
   <!-- The mark sits in the rail's own column, so the vertical seam runs unbroken from the logo
        down past every rail item. The hub's bar gives it the same cell, which is what makes that
        safe. -->
-  <header class="flex items-center gap-1.5 border-b border-line bg-panel pr-2 pl-0">
+  <header class="flex items-center gap-1.5 border-b-3 border-line bg-panel pr-2 pl-0">
     <a
       routerLink="/games"
       class="flex w-[81px] shrink-0 items-center justify-center"
@@ -25,20 +27,24 @@
             overlap />
         }
       </div>
-      <button ncButton variant="secondary" size="bar" (click)="share()">
-        {{ t('editor.share') }}
-      </button>
-      <button
-        ncButton
-        variant="primary"
-        size="bar"
-        (click)="publish()"
-        [disabled]="!session.isCollaborator() || !!publishBlockedBy()"
-        [attr.title]="publishBlockedBy() ? t(publishBlockedBy()!) : null">
-        {{ t('editor.publish') }}
-      </button>
+      <!-- The narrow screen offers a link to a laptop instead: nothing here to share or publish from. -->
+      @if (!ui.tooNarrow()) {
+        <button ncButton variant="secondary" size="bar" (click)="share()">
+          {{ t('editor.share') }}
+        </button>
+        <button
+          ncButton
+          variant="primary"
+          size="bar"
+          (click)="publish()"
+          [disabled]="!session.isCollaborator() || !!publishBlockedBy()"
+          [attr.title]="publishBlockedBy() ? t(publishBlockedBy()!) : null">
+          {{ t('editor.publish') }}
+        </button>
+      }
     }
     <nc-report-problem-button />
+    <nc-theme-switch />
     <nc-notifications-bell />
     <nc-account-menu />
   </header>
@@ -46,13 +52,13 @@
   <!-- Always a row of its own, empty most of the time, so the workspace keeps the third row. -->
   <div>
     <nc-suspension-band />
-    @if (bandKey(); as key) {
-      <nc-notice variant="band" tone="warn" data-testid="read-only-band">{{ t(key) }}</nc-notice>
+    @if (session.preview(); as kind) {
+      <nc-read-only-band [kind]="kind" [project]="session.project()" />
     }
-    @if (hidden() && !session.readOnly()) {
+    @if (hidden() && !session.preview()) {
       <nc-notice variant="band" tone="danger">
         {{ t('editor.hiddenBand') }}
-        <a routerLink="/settings/standing" class="underline underline-offset-2 hover:text-ink">
+        <a actions ncButton variant="ghost" size="sm" routerLink="/settings/standing">
           {{ t('moderation.suspended.why') }}
         </a>
       </nc-notice>
@@ -60,7 +66,7 @@
   </div>
 
   @if (ui.tooNarrow()) {
-    <nc-open-on-desktop [id]="String(id())" />
+    <nc-open-on-desktop [id]="id()" />
   }
   @if (!ui.tooNarrow() || workspaceBuilt()) {
     <div [class.contents]="!ui.tooNarrow()" [class.hidden]="ui.tooNarrow()">
@@ -72,7 +78,9 @@
               [value]="ui.activeTab()"
               (valueChange)="go($event)"
               [label]="t('editor.tools')" />
-            <section class="min-h-0 overflow-auto">
+            <!-- The one place a session that may not be written closes its controls: every tab
+                 is routed under it. -->
+            <section class="min-h-0 overflow-auto" [ncDisabledScope]="!mode.canWrite()">
               <router-outlet />
             </section>
             <nc-panel-region
@@ -85,15 +93,15 @@
               (switched)="ui.toggleReference()">
               <!-- Built only while it is open: the reference has nothing running in it, so unlike
                the console it costs nothing to rebuild and something to keep. -->
-              <div secondary class="flex min-h-0 flex-col border-l border-line">
+              <div secondary class="flex min-h-0 flex-col border-l-3 border-line">
                 @if (ui.referenceShown()) {
                   <nc-doc-pane class="min-h-0 flex-1 overflow-auto" />
                   <!-- Only where the reference has taken the console's place: the one arrangement
                      that pauses the game. -->
                   @if (ui.columnMode() === 'swap') {
                     <div
-                      class="flex shrink-0 items-center gap-1 border-t border-line bg-inset px-1.5 py-1">
-                      <nc-icon name="pause" [size]="12" class="text-gold-ink" />
+                      class="flex shrink-0 items-center gap-1 border-t-3 border-line bg-inset px-1.5 py-1">
+                      <nc-icon name="pause" class="text-gold-ink" />
                       <span class="label text-gold-ink">{{ t('editor.gamePaused') }}</span>
                     </div>
                   }
@@ -103,7 +111,7 @@
                 primary
                 class="min-h-0 border-line"
                 [shown]="consoleShown()"
-                [class.border-l]="consoleShown()" />
+                [class.border-l-3]="consoleShown()" />
             </nc-panel-region>
           </div>
         }

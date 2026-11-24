@@ -1,0 +1,58 @@
+<svg
+  viewBox="0 0 93 42"
+  width="279"
+  height="126"
+  [attr.shape-rendering]="rendering()"
+  [attr.data-ghost]="ghost() ? '' : null"
+  aria-hidden="true"
+  focusable="false">
+  @for (part of shoulders; track part.id) {
+    <g
+      [attr.data-part]="part.id"
+      [attr.data-lit]="held().includes(part.id) ? '' : null"
+      [attr.transform]="part.at">
+      <path class="edge" [attr.d]="part.frame" />
+      <rect
+        class="face"
+        x="1"
+        y="1"
+        [attr.width]="part.width - 2"
+        [attr.height]="part.height - 2" />
+      <path class="glyph" [attr.d]="part.glyph" [attr.transform]="part.glyphAt" />
+    </g>
+  }
+  <g transform="translate(0 6)">
+    <path class="skirt" [attr.d]="skirt" />
+    <rect class="shell" x="1" y="1" width="91" height="33" />
+    <path class="edge" [attr.d]="body" />
+  </g>
+  <rect class="hub" x="13" y="19" width="9" height="9" />
+  @for (part of buttons; track part.id) {
+    <g
+      [attr.data-part]="part.id"
+      [attr.data-lit]="held().includes(part.id) ? '' : null"
+      [attr.transform]="part.at">
+      <path class="edge" [attr.d]="part.frame" />
+      <rect
+        class="face"
+        x="1"
+        y="1"
+        [attr.width]="part.width - 2"
+        [attr.height]="part.height - 2" />
+      <path class="glyph" [attr.d]="part.glyph" [attr.transform]="part.glyphAt" />
+    </g>
+  }
+  @for (stick of sticks(); track stick.id) {
+    <g [attr.transform]="stick.at">
+      <path class="edge" [attr.d]="well" />
+      <rect class="face" x="1" y="1" width="9" height="9" />
+      <g
+        [attr.data-part]="stick.id"
+        [attr.data-lit]="stick.lit ? '' : null"
+        [attr.transform]="stick.knobAt">
+        <path class="edge" [attr.d]="knob" />
+        <rect class="cap" x="1" y="1" width="3" height="3" />
+      </g>
+    </g>
+  }
+</svg>

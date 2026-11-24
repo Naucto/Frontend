@@ -1,19 +1,47 @@
-import { booleanAttribute, ChangeDetectionStrategy, Component, input, model } from '@angular/core';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  model,
+  signal,
+} from '@angular/core';
 
-import { IconComponent } from './icon.component';
+import { inkFor } from '../palette';
+import { closedBy } from './disabled-scope.directive';
+import { MarkComponent } from './mark.component';
+import { mark } from './selection-styles';
+
+interface SwatchCell {
+  /** `null` is the cell that stands for no colour. */
+  slot: number | null;
+  colour: string | null;
+  ink: string | null;
+  frame: string;
+  /** A cell of the top row has no skirt to sink into, so it gives up a pixel of its own height. */
+  sinks: boolean;
+}
+
+const SIDES =
+  'relative bevel-edge-line-strong focus-visible:z-10 enabled:data-on:bevel-lit ' +
+  'disabled:cursor-not-allowed disabled:bevel-level disabled:bevel-edge-line';
 
 /**
  * A slot is what gets stored, not the colour in it, so repainting the palette repaints everything
  * wearing it.
  *
- * The selection is an outline outside the swatch: an inset border would eat the very colour being
- * chosen.
+ * The swatches are one joined block, framed only along its outside. The selection is a mark in the
+ * middle of the swatch, in whichever ink reads on it, and the pressed edge of a cell on the rim.
  */
 @Component({
   selector: 'nc-swatch-picker',
-  imports: [IconComponent],
+  imports: [MarkComponent],
   templateUrl: './swatch-picker.component.html',
-  host: { class: 'flex flex-wrap items-center gap-[5px]' },
+  host: {
+    '[class]': "fill() ? 'grid' : 'inline-grid justify-start'",
+    '[style.grid-template-columns]': 'columnTrack()',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SwatchPickerComponent {
@@ -21,6 +49,76 @@ export class SwatchPickerComponent {
   readonly slots = input.required<readonly number[]>();
   readonly value = model<number | null>(null);
   readonly allowNone = input(false, { transform: booleanAttribute });
+  readonly disabled = input(false, { transform: booleanAttribute });
+  protected readonly closed = closedBy(() => this.disabled());
   readonly slotLabel = input('Palette slot');
   readonly noneLabel = input('No colour');
+  /** Swatches to a row. */
+  readonly columns = input(8);
+  /** Stretch the cells across the width of the container, keeping their height. */
+  readonly fill = input(false, { transform: booleanAttribute });
+
+  /** What was selected before the last pick; `undefined` until something is picked. */
+  private readonly previous = signal<number | null | undefined>(undefined);
+
+  protected readonly columnTrack = computed(
+    () => `repeat(${String(this.columns())}, ${this.fill() ? 'minmax(0, 1fr)' : 'auto'})`,
+  );
+
+  protected readonly cells = computed<SwatchCell[]>(() => {
+    const slots: (number | null)[] = this.allowNone() ? [null, ...this.slots()] : [...this.slots()];
+    const columns = this.columns();
+    return slots.map((slot, i) => {
+      const top = i < columns;
+      const bottom = i + columns >= slots.length;
+      const left = i % columns === 0;
+      const right = i % columns === columns - 1 || i === slots.length - 1;
+      const colour = slot === null ? null : (this.colours()[slot] ?? null);
+      return {
+        slot,
+        colour,
+        ink: colour === null ? null : inkFor(colour),
+        frame: [
+          SIDES,
+          bottom ? 'raised-sm enabled:data-on:bevel-down' : 'flat-sm bevel-open-b',
+          top ? '' : 'bevel-open-t',
+          left ? '' : 'bevel-open-l',
+          right ? '' : 'bevel-open-r',
+          slot === null ? 'bevel-fill-inset' : '',
+        ].join(' '),
+        sinks: top && !bottom,
+      };
+    });
+  });
+
+  protected markClass(slot: number | null): string {
+    const picked = this.previous() !== undefined;
+    return slot === this.value() ? mark(true, picked) : mark(false, slot === this.previous());
+  }
+
+  protected move(event: KeyboardEvent, index: number): void {
+    const columns = this.columns();
+    const step: Record<string, number> = {
+      ArrowLeft: -1,
+      ArrowRight: 1,
+      ArrowUp: -columns,
+      ArrowDown: columns,
+    };
+    const delta = step[event.key];
+    const swatches = (event.currentTarget as HTMLElement).parentElement?.children;
+    const target = swatches?.[index + (delta ?? 0)];
+    if (delta === undefined || !(target instanceof HTMLButtonElement)) {
+      return;
+    }
+    event.preventDefault();
+    target.focus();
+    target.click();
+  }
+
+  protected pick(slot: number | null): void {
+    if (slot !== this.value()) {
+      this.previous.set(this.value());
+      this.value.set(slot);
+    }
+  }
 }
