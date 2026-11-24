@@ -1,0 +1,16 @@
+@for (peer of shown(); track peer.id) {
+  <span class="size-[9px]" [class]="fill(peer.colour)"></span>
+}
+@if (more()) {
+  <!-- A plus of three kit pixels, the size of a dot: a mark would stand twice as tall. -->
+  <svg
+    class="text-ink-3"
+    width="9"
+    height="9"
+    viewBox="0 0 3 3"
+    shape-rendering="crispEdges"
+    aria-hidden="true">
+    <path fill="currentColor" d="M1 0h1v1h1v1h-1v1h-1v-1h-1v-1h1z" />
+  </svg>
+  <span class="text-label leading-none text-ink-3">{{ more() }}</span>
+}

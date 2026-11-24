@@ -8,14 +8,16 @@
       <nc-icon name="play" class="text-hot-ink" />
     </button>
   }
-  <button
-    type="button"
-    [class]="middle"
-    [attr.aria-label]="rewindLabel()"
-    [disabled]="!canRewind()"
-    (click)="rewound.emit()">
-    <nc-icon name="prev" />
-  </button>
+  @if (rewind()) {
+    <button
+      type="button"
+      [class]="middle"
+      [attr.aria-label]="rewindLabel()"
+      [disabled]="!canRewind()"
+      (click)="rewound.emit()">
+      <nc-icon name="prev" />
+    </button>
+  }
   <button
     type="button"
     [class]="last"

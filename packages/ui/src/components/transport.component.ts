@@ -22,6 +22,7 @@ const KEY = `${CELL} inline-flex h-(--nc-h-md) w-[36px] flex-none items-center j
 export class TransportComponent {
   readonly playing = input(false, { transform: booleanAttribute });
   readonly canRewind = input(true, { transform: booleanAttribute });
+  readonly rewind = input(true, { transform: booleanAttribute });
   readonly canStop = input(true, { transform: booleanAttribute });
   readonly playLabel = input('Play');
   readonly pauseLabel = input('Pause');

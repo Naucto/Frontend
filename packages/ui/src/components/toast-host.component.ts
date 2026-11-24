@@ -1,6 +1,7 @@
 import { OverlayContainer } from '@angular/cdk/overlay';
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, inject } from '@angular/core';
 
+import { ButtonDirective } from './button.directive';
 import { NoticeComponent, type NoticeTone } from './notice.component';
 import { ToastService, type ToastTone } from './toast.service';
 
@@ -21,7 +22,7 @@ const TONE: Record<ToastTone, NoticeTone> = {
  */
 @Component({
   selector: 'nc-toast-host',
-  imports: [NoticeComponent],
+  imports: [ButtonDirective, NoticeComponent],
   templateUrl: './toast-host.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
