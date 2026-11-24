@@ -13,16 +13,40 @@ export const CLIP_SECONDS = 25;
 const CLIP_MAX_BYTES = 4 * 1024 * 1024;
 
 /**
- * What the encoder aims for: a clip of {@link CLIP_SECONDS} at this rate weighs under a third of
- * {@link CLIP_MAX_BYTES}, and 320×180 of flat colour stays sharp on far less. The margin is the
- * encoder's, which runs at twice its target on a screen redrawn at random every frame.
+ * Video encoders store colour once per 2×2 block of pixels: each game pixel must fill whole
+ * blocks, or its colour bleeds into its neighbours.
  */
-const CLIP_BITS_PER_SECOND = 400_000;
+const CLIP_SCALE = 2;
+
+/** At this rate a clip of {@link CLIP_SECONDS} stays under {@link CLIP_MAX_BYTES}. */
+const CLIP_BITS_PER_SECOND = 1_000_000;
 
 const CLIP_FRAMES_PER_SECOND = 30;
 
 /** In the order they are tried: the first one this browser records wins. */
 const CLIP_TYPES = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/mp4'];
+
+function scaledCopy(source: HTMLCanvasElement): { canvas: HTMLCanvasElement; stop: () => void } {
+  const canvas = document.createElement('canvas');
+  canvas.width = source.width * CLIP_SCALE;
+  canvas.height = source.height * CLIP_SCALE;
+  const context = canvas.getContext('2d');
+  let frame = 0;
+  const draw = (): void => {
+    if (context) {
+      context.imageSmoothingEnabled = false;
+      context.drawImage(source, 0, 0, canvas.width, canvas.height);
+    }
+    frame = requestAnimationFrame(draw);
+  };
+  draw();
+  return {
+    canvas,
+    stop: () => {
+      cancelAnimationFrame(frame);
+    },
+  };
+}
 
 /** Why there is no clip where one was asked for. */
 export type ClipIssue =
@@ -102,7 +126,8 @@ export class ClipRecorder {
       this.issue.set('unsupported');
       return;
     }
-    const stream = canvas.captureStream(CLIP_FRAMES_PER_SECOND);
+    const copy = scaledCopy(canvas);
+    const stream = copy.canvas.captureStream(CLIP_FRAMES_PER_SECOND);
     const recorder = new MediaRecorder(stream, {
       mimeType: type,
       videoBitsPerSecond: CLIP_BITS_PER_SECOND,
@@ -113,6 +138,7 @@ export class ClipRecorder {
       chunks.push(event.data);
     });
     recorder.addEventListener('stop', () => {
+      copy.stop();
       for (const track of stream.getTracks()) {
         track.stop();
       }
