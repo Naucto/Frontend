@@ -17,7 +17,11 @@
       <nc-share-code [code]="code()" (copied)="copy()" />
       <p class="mt-1 text-meta text-ink-3">{{ t('net.host.codeHint') }}</p>
     </nc-field>
-    <nc-setting-row class="mt-2" [title]="t('net.host.listed')" [hint]="t('net.host.listedHint')">
+    <nc-setting-row
+      bare
+      class="mt-2"
+      [title]="t('net.host.listed')"
+      [hint]="t('net.host.listedHint')">
       <nc-toggle
         [checked]="listed()"
         (checkedChange)="setListed($event)"
