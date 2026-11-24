@@ -28,12 +28,12 @@ export class MeterComponent {
   protected readonly over = computed(() => this.total() > this.max());
   protected readonly trackClass = computed(() =>
     [
-      'flat-sm bevel-fill-inset flex w-full gap-[3px]',
+      'flat-sm bevel-fill-inset flex w-full',
       this.size() === 'md' ? 'h-[16px]' : 'h-[12px]',
       this.over() ? 'bevel-edge-hot' : '',
     ].join(' '),
   );
-  /** Segments with nothing in them are left out, so the pixel between two bars is never doubled. */
+  /** Segments with nothing in them are left out; the others are one kit pixel wide at least. */
   protected readonly filled = computed(() =>
     this.segments().filter((segment) => segment.value > 0),
   );

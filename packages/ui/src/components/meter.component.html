@@ -6,6 +6,7 @@
   [class]="trackClass()">
   @for (segment of filled(); track segment.label) {
     <span
+      class="min-w-[3px]"
       [class]="segment.color"
       [style.width.%]="pct(segment.value)"
       [attr.title]="segment.label"></span>
