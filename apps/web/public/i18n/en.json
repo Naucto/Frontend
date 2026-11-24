@@ -1015,7 +1015,7 @@
       "playersHelp": "The game declared its player count with `net.host()`.\n\nSlots fill as peers connect.",
       "openSlot": "1 open slot",
       "openSlots": "{{n}} open slots",
-      "you": "you",
+      "playerCount": "{{n}} of {{max}}",
       "spawn": "Spawn a second client",
       "closeRig": "Close the second client",
       "rigWaiting": "Waiting for this client to call net.join().",

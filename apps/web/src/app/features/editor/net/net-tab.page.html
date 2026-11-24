@@ -236,14 +236,10 @@
 
   <ng-template #rosterRow let-entry>
     <div class="flex min-h-(--nc-h-md) items-center gap-1">
-      <nc-user-avatar [name]="entry.name" [userId]="entry.account" [size]="16" />
+      <nc-user-avatar [name]="entry.name" [userId]="entry.account" [size]="24" />
       <span class="truncate text-ui text-ink">{{ entry.name }}</span>
       @if (entry.host) {
         <nc-chip tone="gold">{{ t('editor.net.host') }}</nc-chip>
-      } @else if (entry.self) {
-        <span class="text-micro lowercase tracking-button text-ink-3">
-          {{ t('editor.net.you') }}
-        </span>
       }
       <span class="flex-1"></span>
       @if (entry.slot !== null) {
@@ -303,7 +299,13 @@
 
     <nc-section banded [title]="t('editor.net.players')">
       <span actions class="flex items-center gap-1">
-        <nc-stat icon="users" [value]="players().length + '/' + (info()?.maxPlayers || '—')" />
+        <nc-stat
+          icon="users"
+          [value]="
+            info()?.maxPlayers
+              ? t('editor.net.playerCount', { n: players().length, max: info()?.maxPlayers })
+              : players().length
+          " />
         <nc-help-dot [title]="t('editor.net.players')" [text]="t('editor.net.playersHelp')" />
       </span>
       <nc-presence-surface surface="net:players" />
