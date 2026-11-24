@@ -39,7 +39,7 @@
     "@naucto/ui": "*",
     "tailwindcss": "^4.3.3",
     "@tailwindcss/postcss": "^4.3.3",
-    "postcss": "^8.5.0"
+    "postcss": "^8.5.33"
   },
   "devDependencies": {
     "@angular/build": "^22.1.5",
