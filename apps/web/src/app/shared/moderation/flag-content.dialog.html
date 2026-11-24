@@ -3,7 +3,10 @@
   [title]="t('moderation.report.title.' + data.targetType)"
   [lead]="data.author ? undefined : data.label"
   [closeLabel]="t('feedback.close')">
-  <form class="flex flex-col gap-[14px]" (submit)="$event.preventDefault(); send()">
+  <form
+    class="flex flex-col gap-[14px]"
+    [class.mt-2]="data.author"
+    (submit)="$event.preventDefault(); send()">
     @if (data.author; as author) {
       <nc-comment-bubble [authorId]="author.id" [name]="author.name" [avatarSize]="24">
         <p
