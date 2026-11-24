@@ -12,18 +12,28 @@ import {
 } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
+  addTrack,
   defaultSong,
+  notesAtOnce,
   type Pattern,
   patternBars,
+  removeTrack,
+  renameTrack,
+  setSfxVoices,
   type Song,
   songEnd,
   songLoopEnd,
+  voicePlan,
+  VOICES,
 } from '@naucto/engine';
 import {
   ButtonDirective,
+  ChipComponent,
   EdgeHandleComponent,
   focus,
+  HelpDotComponent,
   IconComponent,
+  JoinedDirective,
   LooksOnlyDirective,
   MarkComponent,
   NumberFieldComponent,
@@ -53,7 +63,8 @@ import { TimelineGestures } from './timeline-gestures';
 const BAR_WIDTH = 56;
 const MIN_BARS = 16;
 const SPARE_BARS = 8;
-const HEAD_W = 96;
+const HEAD_W = 330;
+const ROW_H = 72;
 const SURFACE = 'sound:timeline';
 const PEER_OUTLINE: Record<PresenceColour, string> = {
   sky: 'border-presence-sky',
@@ -71,7 +82,10 @@ interface Mini {
   imports: [
     TranslocoDirective,
     ButtonDirective,
+    ChipComponent,
     EdgeHandleComponent,
+    HelpDotComponent,
+    JoinedDirective,
     IconComponent,
     NumberFieldComponent,
     ToggleButtonComponent,
@@ -101,6 +115,7 @@ export class TimelineEditorComponent {
   private readonly content = viewChild<ElementRef<HTMLElement>>('content');
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
   protected readonly HEAD_W = HEAD_W;
+  protected readonly ROW_H = ROW_H;
   protected readonly viewport = signal<PresenceViewport>({ x: 0, y: 0, w: 0, h: 0 });
   private pointer: { x: number; y: number } | null = null;
   protected readonly pad = pad2;
@@ -120,6 +135,7 @@ export class TimelineEditorComponent {
     loopStart: computed(() => this.loopStart()),
     loopEnd: computed(() => this.loopEnd()),
     lane: () => this.lane()?.nativeElement,
+    rowHeight: ROW_H,
     ruler: () => this.ruler()?.nativeElement,
     takeFocus: () => {
       this.takeFocus();
@@ -148,6 +164,7 @@ export class TimelineEditorComponent {
       pattern,
       over: gesture.over,
       left: (gesture.over ?? 0) * width + 2,
+      top: gesture.track * ROW_H + 6,
       width: patternBars(pattern) * width - 4,
       colour: this.tint(pattern),
       x: gesture.x - origin.left + 12,
@@ -166,6 +183,32 @@ export class TimelineEditorComponent {
   protected readonly song = computed<Song>(
     () => this.library.songs().get(String(this.store.songSlot())) ?? defaultSong(),
   );
+  protected readonly tracks = computed(() => this.song().tracks);
+  /** How many voices each pattern asks for; read for every block on every pointer move. */
+  private readonly needs = computed(() => {
+    const instruments = this.library.instruments();
+    return new Map(
+      [...this.library.patterns()].map(([id, pattern]) => [id, notesAtOnce(pattern, instruments)]),
+    );
+  });
+  /** Which voices each track sounds on, and how many its patterns ask for. */
+  protected readonly plan = computed(() =>
+    voicePlan(this.song(), this.library.patterns(), this.library.instruments()),
+  );
+  /** Tracks given fewer voices than their patterns play at once: a note of theirs is cut. */
+  protected readonly short = computed(() => {
+    const plan = this.plan();
+    return plan.needs.map((need, i) => (plan.tracks[i]?.length ?? 0) < need);
+  });
+  protected readonly VOICES = VOICES;
+  protected readonly canAddTrack = computed(() => addTrack(this.song()) !== this.song());
+  /** The music as this person hears it: without the tracks they silenced, or only those they singled out. */
+  private readonly audible = computed<Song>(() => {
+    const song = this.song();
+    return this.store.mutedTracks().length || this.store.soloTracks().length
+      ? { ...song, blocks: song.blocks.filter((block) => !this.silenced(block.track)) }
+      : song;
+  });
   protected readonly patterns = computed(() =>
     [...this.library.patterns().values()].sort((a, b) => a.slot - b.slot),
   );
@@ -278,6 +321,7 @@ export class TimelineEditorComponent {
       }
       let start = block.start;
       let repeat = block.repeat;
+      let track = block.track;
       let leaving = false;
       // Off the track a block hangs from the pointer, free of the snap, since it lands nowhere.
       let shift = { x: 0, y: 0 };
@@ -287,23 +331,28 @@ export class TimelineEditorComponent {
           shift = { x: gesture.x - gesture.startX, y: gesture.y - gesture.startY };
         } else {
           start = Math.max(0, start + gesture.delta);
+          track = Math.max(0, Math.min(this.tracks().length - 1, track + gesture.rows));
         }
       }
       if (gesture?.kind === 'grow' && gesture.id === block.id) {
         repeat = gesture.repeat;
       }
       const length = patternBars(pattern);
+      const cut =
+        (this.needs().get(pattern.id) ?? 0) > (this.plan().tracks[block.track]?.length ?? 0);
       return [
         {
           block,
           pattern,
           left: start * width + 2,
+          top: track * ROW_H + 6,
           width: length * repeat * width - 4,
           repWidth: length * width,
           reps: Array.from({ length: repeat }, (_, i) => i),
           colour: palette[patternTint(pattern, instruments)] ?? '',
           leaving,
           shift,
+          cut,
         },
       ];
     });
@@ -318,7 +367,7 @@ export class TimelineEditorComponent {
       });
     });
     effect(() => {
-      const song = this.song();
+      const song = this.audible();
       untracked(() => {
         this.deck.refreshSong(song);
       });
@@ -368,7 +417,54 @@ export class TimelineEditorComponent {
   }
 
   protected play(): void {
-    void this.deck.playSong(this.song(), this.song().loop, this.end());
+    void this.deck.playSong(this.audible(), this.song().loop, this.end());
+  }
+
+  // ---- tracks ---------------------------------------------------------------
+
+  /** Whether this person does not hear a track: silenced, or another one singled out. */
+  protected silenced(index: number): boolean {
+    const solo = this.store.soloTracks();
+    return solo.length ? !solo.includes(index) : this.store.mutedTracks().includes(index);
+  }
+
+  protected trackName(index: number): string {
+    const name = this.tracks()[index]?.trim() ?? '';
+    return name || this.deck.transloco.translate('editor.sound.trackN', { n: index + 1 });
+  }
+
+  protected addTrack(): void {
+    this.edits.write((song) => addTrack(song));
+  }
+
+  protected removeTrack(index: number): void {
+    const name = this.trackName(index);
+    this.deck.removeWithUndo(
+      () => {
+        this.edits.write((song) => removeTrack(song, index));
+      },
+      this.deck.transloco.translate('editor.sound.toast.trackRemoved', { name }),
+    );
+    this.store.clearTrackMarks();
+    this.store.selectBlocks([]);
+  }
+
+  protected async askTrackName(index: number): Promise<void> {
+    const result = await this.deck.askName({
+      title: this.deck.transloco.translate('editor.sound.renameTrack', {
+        name: this.trackName(index),
+      }),
+      name: this.tracks()[index] ?? '',
+      max: 24,
+      allowEmpty: true,
+    });
+    if (result) {
+      this.edits.write((song) => renameTrack(song, index, result.name));
+    }
+  }
+
+  protected setSfxVoices(count: number): void {
+    this.edits.write((song) => setSfxVoices(song, count));
   }
 
   // ---- songs ----------------------------------------------------------------

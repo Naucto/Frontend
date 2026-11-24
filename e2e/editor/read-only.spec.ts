@@ -251,6 +251,9 @@ test.describe('a staff member who does not collaborate on the game', () => {
     await row.dblclick();
     await expect(block).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'New pattern', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'New track' })).toBeDisabled();
+    await expect(page.getByRole('textbox', { name: 'Voices kept for the SFX' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Mute Track 1' })).toBeEnabled();
 
     await page.getByRole('tab', { name: /Instruments/ }).click();
     await expect(page.getByRole('slider', { name: 'VOL' })).toBeDisabled();

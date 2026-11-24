@@ -68,7 +68,7 @@ function toSong(
     if (!pattern) {
       return;
     }
-    blocks.push({ id: `b${String(i)}`, pattern: entry, start: cursor, repeat: 1 });
+    blocks.push({ id: `b${String(i)}`, pattern: entry, start: cursor, repeat: 1, track: 0 });
     tempos.add(pattern.bpm);
     cursor += patternBars(pattern);
   });
@@ -96,6 +96,8 @@ function toSong(
     name: old.name,
     bpm,
     blocks,
+    tracks: [''],
+    sfxVoices: 0,
     loop: old.loop,
     loopStart: starts[loopAt] ?? 0,
   };

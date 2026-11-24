@@ -24,10 +24,20 @@ export type Gesture =
       y: number;
       ids: Set<string>;
       delta: number;
+      /** Tracks moved down, negative up. */
+      rows: number;
       out: boolean;
     }
   | { kind: 'grow'; id: string; startX: number; from: number; repeat: number }
-  | { kind: 'place'; pattern: string; x: number; y: number; over: number | null }
+  | {
+      kind: 'place';
+      pattern: string;
+      x: number;
+      y: number;
+      /** The bar and the track it would land on, or null off the tracks. */
+      over: number | null;
+      track: number;
+    }
   | { kind: 'seek' }
   | { kind: 'loop'; edge: 'start' | 'end'; at: number };
 
@@ -39,7 +49,9 @@ export interface TimelineGestureHost {
   end: Signal<number>;
   loopStart: Signal<number>;
   loopEnd: Signal<number>;
+  /** The tracks' lanes as one box, a track every `rowHeight` pixels from its top. */
   lane(): HTMLElement | undefined;
+  rowHeight: number;
   ruler(): HTMLElement | undefined;
   takeFocus(): void;
 }
@@ -64,6 +76,13 @@ export class TimelineGestures {
 
   private get head(): SoundDeck['heads']['timeline'] {
     return this.deck.heads.timeline;
+  }
+
+  /** The track under a point of the screen, held to the tracks there are. */
+  private trackAt(clientY: number): number {
+    const top = this.host.lane()?.getBoundingClientRect().top ?? 0;
+    const row = Math.floor((clientY - top) / this.host.rowHeight);
+    return Math.max(0, Math.min(this.host.song().tracks.length - 1, row));
   }
 
   private barAt(clientX: number, element: HTMLElement | undefined): number {
@@ -103,6 +122,7 @@ export class TimelineGestures {
       y: event.clientY,
       ids: new Set(ids),
       delta: 0,
+      rows: 0,
       out: false,
     });
   }
@@ -172,6 +192,7 @@ export class TimelineGestures {
       x: event.clientX,
       y: event.clientY,
       over: null,
+      track: 0,
     });
   }
 
@@ -185,7 +206,8 @@ export class TimelineGestures {
         const out =
           !!rect &&
           (event.clientY < rect.top - LEAVE_LANE || event.clientY > rect.bottom + LEAVE_LANE);
-        this.gesture.set({ ...gesture, x: event.clientX, y: event.clientY, delta, out });
+        const rows = this.trackAt(event.clientY) - this.trackAt(gesture.startY);
+        this.gesture.set({ ...gesture, x: event.clientX, y: event.clientY, delta, rows, out });
         return;
       }
       case 'grow': {
@@ -205,7 +227,8 @@ export class TimelineGestures {
           rect && event.clientY >= rect.top && event.clientY <= rect.bottom
             ? this.edits.snapDown(this.barAt(event.clientX, lane))
             : null;
-        this.gesture.set({ ...gesture, x: event.clientX, y: event.clientY, over });
+        const track = this.trackAt(event.clientY);
+        this.gesture.set({ ...gesture, x: event.clientX, y: event.clientY, over, track });
         return;
       }
       case 'seek':
@@ -238,8 +261,10 @@ export class TimelineGestures {
         if (gesture.out) {
           this.edits.write((song) => removeBlocks(song, gesture.ids));
           this.store.selectBlocks([]);
-        } else if (gesture.delta !== 0) {
-          this.edits.write((song) => moveBlocks(song, gesture.ids, gesture.delta, patterns));
+        } else if (gesture.delta !== 0 || gesture.rows !== 0) {
+          this.edits.write((song) =>
+            moveBlocks(song, gesture.ids, gesture.delta, patterns, gesture.rows),
+          );
         }
         return;
       case 'grow':
@@ -249,7 +274,7 @@ export class TimelineGestures {
         return;
       case 'place':
         if (gesture.over !== null) {
-          this.edits.insert(gesture.pattern, gesture.over, false);
+          this.edits.insert(gesture.pattern, gesture.over, false, gesture.track);
         }
         return;
       case 'loop': {

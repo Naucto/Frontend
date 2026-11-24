@@ -58,10 +58,12 @@ describe('migrateV3ToV4', () => {
       name: 'theme',
       bpm: 120,
       blocks: [
-        { id: 'b0', pattern: 'a', start: 0, repeat: 1 },
-        { id: 'b2', pattern: 'b', start: 3, repeat: 1 },
-        { id: 'b4', pattern: 'a', start: 4, repeat: 1 },
+        { id: 'b0', pattern: 'a', start: 0, repeat: 1, track: 0 },
+        { id: 'b2', pattern: 'b', start: 3, repeat: 1, track: 0 },
+        { id: 'b4', pattern: 'a', start: 4, repeat: 1, track: 0 },
       ],
+      tracks: [''],
+      sfxVoices: 0,
       loop: true,
       loopStart: 3,
     });

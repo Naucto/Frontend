@@ -69,6 +69,9 @@ interface SoundState {
   layout: DockLayout;
   focus: SoundWindow;
   selectedBlocks: string[];
+  /** Tracks of the music on show that this person silenced or singled out, by index. */
+  mutedTracks: number[];
+  soloTracks: number[];
   barDivision: BarDivision;
   barZoom: number;
   folded: SoundSide[];
@@ -92,6 +95,8 @@ export const SoundStore = signalStore(
     layout: baseLayout(SOUND_WINDOWS, 'patterns'),
     focus: 'patterns',
     selectedBlocks: [],
+    mutedTracks: [],
+    soloTracks: [],
     barDivision: 1,
     barZoom: 1,
     folded: [],
@@ -101,7 +106,19 @@ export const SoundStore = signalStore(
       patchState(store, { instrumentId: id });
     },
     selectSong(slot: number): void {
-      patchState(store, { songSlot: slot, selectedBlocks: [] });
+      patchState(store, { songSlot: slot, selectedBlocks: [], mutedTracks: [], soloTracks: [] });
+    },
+    toggleTrack(mark: 'mutedTracks' | 'soloTracks', track: number): void {
+      const marked = store[mark]();
+      patchState(store, {
+        [mark]: marked.includes(track)
+          ? marked.filter((each) => each !== track)
+          : [...marked, track],
+      });
+    },
+    /** The indexes moved when a track was taken out: the marks start over. */
+    clearTrackMarks(): void {
+      patchState(store, { mutedTracks: [], soloTracks: [] });
     },
     selectSfx(slot: number): void {
       patchState(store, { sfxSlot: Math.max(0, Math.round(slot)) });

@@ -174,7 +174,9 @@ const tune = (
 ): Song => ({
   name: 's',
   bpm: 120,
-  blocks: blocks.map((block, i) => ({ id: `b${String(i)}`, repeat: 1, ...block })),
+  blocks: blocks.map((block, i) => ({ id: `b${String(i)}`, repeat: 1, track: 0, ...block })),
+  tracks: [''],
+  sfxVoices: 0,
   loop: false,
   loopStart: 0,
   ...extra,

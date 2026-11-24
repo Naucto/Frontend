@@ -198,7 +198,9 @@ export class SoundEngine implements SoundPort {
       song: {
         name: '',
         bpm: sheet.bpm,
-        blocks: [{ id: PREVIEW_ID, pattern: PREVIEW_ID, start: 0, repeat: 1 }],
+        blocks: [{ id: PREVIEW_ID, pattern: PREVIEW_ID, start: 0, repeat: 1, track: 0 }],
+        tracks: [''],
+        sfxVoices: 0,
         loop,
         loopStart: 0,
       },

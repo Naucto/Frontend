@@ -17,6 +17,7 @@ interface Copied {
   pattern: string;
   offset: number;
   repeat: number;
+  track: number;
 }
 
 /** What the keyboard needs from the Timeline beyond the blocks themselves. */
@@ -66,7 +67,13 @@ export class TimelineEdits {
     return Math.floor(bars * div + 1e-6) / div;
   }
 
-  insert(patternId: string, at: number, moveHead: boolean): void {
+  /** The track the keys write on: the one of the first block chosen, else the first. */
+  private readonly track = computed(() => {
+    const first = this.song().blocks.find((block) => this.selected().has(block.id));
+    return first?.track ?? 0;
+  });
+
+  insert(patternId: string, at: number, moveHead: boolean, track = this.track()): void {
     const pattern = this.library.patterns().get(patternId);
     if (!pattern) {
       return;
@@ -76,6 +83,7 @@ export class TimelineEdits {
       pattern: patternId,
       start: Math.max(0, at),
       repeat: 1,
+      track,
     };
     this.write((song) => placeBlocks(song, [block], this.library.patterns()));
     this.store.selectBlocks([block.id]);
@@ -117,6 +125,7 @@ export class TimelineEdits {
       pattern: block.pattern,
       offset: block.start - first,
       repeat: block.repeat,
+      track: block.track,
     }));
   }
 
@@ -131,6 +140,7 @@ export class TimelineEdits {
         pattern: item.pattern,
         start: at + item.offset,
         repeat: item.repeat,
+        track: Math.min(item.track, this.song().tracks.length - 1),
       }));
     if (!made.length) {
       return;

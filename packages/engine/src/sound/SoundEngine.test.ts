@@ -54,7 +54,10 @@ function setup(): { engine: SoundEngine; backend: FakeBackend; game: EditableGam
   const game = new EditableGame(new Y.Doc());
   game.setInstrument(defaultInstrument('i1', 'lead'));
   game.setPattern(defaultPattern('p1', 3));
-  game.setSong(0, { ...defaultSong(), blocks: [{ id: 'b0', pattern: 'p1', start: 0, repeat: 1 }] });
+  game.setSong(0, {
+    ...defaultSong(),
+    blocks: [{ id: 'b0', pattern: 'p1', start: 0, repeat: 1, track: 0 }],
+  });
   const backend = new FakeBackend();
   return { engine: new SoundEngine(backend, game), backend, game };
 }
@@ -111,7 +114,7 @@ describe('SoundEngine overrides', () => {
     const { engine, backend, game } = setup();
     game.setSong(20, {
       ...defaultSong(),
-      blocks: [{ id: 'b0', pattern: 'p1', start: 0, repeat: 1 }],
+      blocks: [{ id: 'b0', pattern: 'p1', start: 0, repeat: 1, track: 0 }],
     });
     engine.playMusic(20, undefined, 0);
     expect(backend.posted.at(-1)).toMatchObject({ type: 'play_song' });

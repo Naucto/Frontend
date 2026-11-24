@@ -379,3 +379,55 @@ test('timeline blocks move, duplicate, paste and leave the lane', async ({ page 
   await expect(blocks).toHaveCount(2);
   await expect(page.locator('[data-leaving]')).toHaveCount(0);
 });
+
+test('a music splits into tracks, each given the voices its patterns ask for', async ({ page }) => {
+  await page.goto(editorUrl('sound'));
+  await addInstrument(page);
+  const roll = await boxOf(page.getByRole('img', { name: 'Piano roll' }));
+  // Two notes on the same step: the pattern asks for two voices.
+  await page.mouse.click(roll.x + FIRST_NOTE_X, roll.y + roll.height / 2);
+  await page.mouse.click(roll.x + FIRST_NOTE_X, roll.y + roll.height / 2 - 40);
+  await tab(page, 'Timeline').click();
+
+  const row = page.getByRole('list', { name: 'Patterns' }).getByRole('listitem').first();
+  await row.click({ position: { x: 40, y: 10 } });
+  await page.locator('[data-lane]').click({ position: { x: 5, y: 10 } });
+  await page.keyboard.press('Enter');
+  const blocks = page.locator('[data-block]');
+  await expect(blocks).toHaveCount(1);
+  const tracks = page.locator('[data-track]');
+  await expect(tracks.first()).toContainText('2 voice(s)');
+
+  await page.getByRole('button', { name: 'New track' }).click();
+  await expect(tracks).toHaveCount(2);
+
+  // A block dragged down a row lands on the second track.
+  const before = await boxOf(blocks.first());
+  await page.mouse.move(before.x + 10, before.y + before.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(before.x + 10, before.y + before.height / 2 + 72, { steps: 8 });
+  await page.mouse.up();
+  const after = await boxOf(blocks.first());
+  expect(Math.round(after.y - before.y)).toBe(72);
+  await expect(tracks.nth(1)).toContainText('2 voice(s)');
+
+  // Keeping three voices for the sound effects leaves the second track one: it says so.
+  const sfx = page.getByRole('textbox', { name: 'Voices kept for the SFX' });
+  await sfx.fill('3');
+  await sfx.press('Enter');
+  await expect(tracks.nth(1)).toContainText('1 of 2 voices');
+
+  await page.getByRole('button', { name: 'Mute Track 2' }).click();
+  await expect(page.getByRole('button', { name: 'Mute Track 2' })).toHaveAttribute(
+    'data-pressed',
+    /.*/,
+  );
+
+  await tracks.nth(1).hover();
+  await page.getByRole('button', { name: 'Remove Track 2' }).click();
+  await expect(tracks).toHaveCount(1);
+  await expect(blocks).toHaveCount(0);
+  await page.getByRole('button', { name: 'Undo', exact: true }).last().click();
+  await expect(tracks).toHaveCount(2);
+  await expect(blocks).toHaveCount(1);
+});

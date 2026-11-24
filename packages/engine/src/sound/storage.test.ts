@@ -25,8 +25,8 @@ const song: Song = {
   name: 'boss',
   loopEnd: 6,
   blocks: [
-    { id: 'a1b2', pattern: 'p1', start: 0, repeat: 1 },
-    { id: 'c3d4', pattern: 'p1', start: 2, repeat: 3 },
+    { id: 'a1b2', pattern: 'p1', start: 0, repeat: 1, track: 0 },
+    { id: 'c3d4', pattern: 'p1', start: 2, repeat: 3, track: 0 },
   ],
 };
 
@@ -68,6 +68,7 @@ describe('sound storage', () => {
         pattern: 'p0000001',
         start: k * 2,
         repeat: 1,
+        track: 0,
       })),
     };
     const long: Pattern = {

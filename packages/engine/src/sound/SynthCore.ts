@@ -84,7 +84,7 @@ export class SynthCore {
 
   /**
    * Start a note; returns the voice index used, or -1 when every voice holds a higher priority.
-   * `channel` forces a voice.
+   * `channel` forces a voice; otherwise the note takes one of `pool`, every voice when empty.
    */
   noteOn(
     instrument: Instrument,
@@ -94,9 +94,12 @@ export class SynthCore {
     channel?: number,
     priority = 0,
     arp: readonly number[] = [],
+    pool: readonly number[] = [],
   ): number {
     const idx =
-      channel !== undefined ? Math.max(0, Math.min(VOICES - 1, channel)) : this.allocate(priority);
+      channel !== undefined
+        ? Math.max(0, Math.min(VOICES - 1, channel))
+        : this.allocate(priority, pool);
     if (idx === -1) {
       return idx;
     }
@@ -163,14 +166,15 @@ export class SynthCore {
     }
   }
 
-  private allocate(priority: number): number {
-    let free = this.voices.findIndex((voice) => !voice.active);
+  private allocate(priority: number, pool: readonly number[]): number {
+    const allowed = (i: number): boolean => pool.length === 0 || pool.includes(i);
+    let free = this.voices.findIndex((voice, i) => allowed(i) && !voice.active);
     if (free !== -1) {
       return free;
     }
     let best = Infinity;
     this.voices.forEach((voice, i) => {
-      if (voice.priority > priority) {
+      if (!allowed(i) || voice.priority > priority) {
         return;
       }
       const score = voice.priority * 1e9 - voice.age;
