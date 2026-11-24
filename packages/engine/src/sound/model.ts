@@ -74,12 +74,21 @@ export interface SongBlock {
   pattern: string;
   start: number;
   repeat: number;
+  /** Index of the track the block sits on in its song's `tracks`. */
+  track: number;
 }
 
 export interface Song {
   name: string;
   bpm: number;
   blocks: SongBlock[];
+  /**
+   * The names of its tracks, one at least; a music nobody split has one, unnamed. The voices of
+   * each are worked out from its patterns (`voicePlan`).
+   */
+  tracks: string[];
+  /** Voices kept for the sound effects while this music plays, which the music never takes. */
+  sfxVoices: number;
   loop: boolean;
   loopStart: number;
   loopEnd?: number;
@@ -160,6 +169,8 @@ export const defaultSong = (bpm = 124): Song => ({
   name: '',
   bpm,
   blocks: [],
+  tracks: [''],
+  sfxVoices: 0,
   loop: true,
   loopStart: 0,
 });

@@ -1,4 +1,4 @@
-import type { Note, Pattern, Sfx, Song, SongBlock } from './model';
+import { type Note, type Pattern, type Sfx, type Song, type SongBlock, VOICES } from './model';
 
 type StoredNote =
   | [step: number, pitch: number, length: number, instrument: string]
@@ -6,7 +6,8 @@ type StoredNote =
 
 type StoredBlock =
   | [id: string, pattern: string, start: number]
-  | [id: string, pattern: string, start: number, repeat: number];
+  | [id: string, pattern: string, start: number, repeat: number]
+  | [id: string, pattern: string, start: number, repeat: number, track: number];
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -49,14 +50,22 @@ const decodeNotes = (raw: unknown): Note[] =>
   Array.isArray(raw) ? raw.flatMap((each) => decodeNote(each) ?? []) : [];
 
 const encodeBlock = (block: SongBlock): StoredBlock =>
-  block.repeat === 1
-    ? [block.id, block.pattern, block.start]
-    : [block.id, block.pattern, block.start, block.repeat];
+  block.track !== 0
+    ? [block.id, block.pattern, block.start, block.repeat, block.track]
+    : block.repeat === 1
+      ? [block.id, block.pattern, block.start]
+      : [block.id, block.pattern, block.start, block.repeat];
 
 function decodeBlock(raw: unknown): SongBlock | null {
   if (Array.isArray(raw)) {
-    const [id, pattern, start, repeat] = raw as unknown[];
-    return { id: str(id), pattern: str(pattern), start: num(start, 0), repeat: num(repeat, 1) };
+    const [id, pattern, start, repeat, track] = raw as unknown[];
+    return {
+      id: str(id),
+      pattern: str(pattern),
+      start: num(start, 0),
+      repeat: num(repeat, 1),
+      track: num(track, 0),
+    };
   }
   if (isRecord(raw)) {
     return {
@@ -64,10 +73,14 @@ function decodeBlock(raw: unknown): SongBlock | null {
       pattern: str(raw.pattern),
       start: num(raw.start, 0),
       repeat: num(raw.repeat, 1),
+      track: num(raw.track, 0),
     };
   }
   return null;
 }
+
+const decodeTracks = (raw: unknown): string[] =>
+  Array.isArray(raw) && raw.length > 0 ? raw.slice(0, VOICES).map((name) => str(name)) : [''];
 
 const stepsPerBeat = (value: unknown): Pattern['stepsPerBeat'] =>
   value === 1 || value === 2 || value === 8 ? value : 4;
@@ -110,17 +123,32 @@ export function decodeSfx(raw: unknown): Sfx | null {
   };
 }
 
-export const encodeSong = (song: Song): string =>
-  JSON.stringify({ ...song, blocks: song.blocks.map(encodeBlock) });
+export function encodeSong(song: Song): string {
+  const { tracks, ...rest } = song;
+  const stored: Record<string, unknown> = { ...rest, blocks: song.blocks.map(encodeBlock) };
+  if (tracks.length > 1 || tracks[0]) {
+    stored.tracks = tracks;
+  }
+  if (song.sfxVoices === 0) {
+    delete stored.sfxVoices;
+  }
+  return JSON.stringify(stored);
+}
 
 export function decodeSong(raw: unknown): Song | null {
   if (!isRecord(raw) || !Array.isArray(raw.blocks)) {
     return null;
   }
+  const tracks = decodeTracks(raw.tracks);
   const song: Song = {
     name: str(raw.name),
     bpm: num(raw.bpm, 124),
-    blocks: raw.blocks.flatMap((each) => decodeBlock(each) ?? []),
+    blocks: raw.blocks.flatMap((each) => {
+      const block = decodeBlock(each);
+      return block ? [{ ...block, track: block.track < tracks.length ? block.track : 0 }] : [];
+    }),
+    tracks,
+    sfxVoices: Math.max(0, Math.min(VOICES - tracks.length, Math.round(num(raw.sfxVoices, 0)))),
     loop: raw.loop !== false,
     loopStart: num(raw.loopStart, 0),
   };

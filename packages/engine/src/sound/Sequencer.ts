@@ -8,7 +8,7 @@ import {
   SUBSTEPS,
 } from './model';
 import type { SynthCore } from './SynthCore';
-import { TICKS_PER_BEAT } from './timeline';
+import { TICKS_PER_BEAT, voicePlan } from './timeline';
 
 export interface SequencerPosition {
   beat: number;
@@ -17,7 +17,9 @@ export interface SequencerPosition {
 /**
  * Plays songs and SFX sample-accurately on top of a SynthCore. Music voices are
  * priority 0; SFX run on their own lane with priority 1 so they steal
- * music voices rather than the other way round.
+ * music voices rather than the other way round. While a song plays, each of its tracks sounds on
+ * the voices its plan gives it, and a sound effect on those kept for it; both may take a voice
+ * nobody needs.
  */
 export class Sequencer {
   private song: Song | null = null;
@@ -31,8 +33,11 @@ export class Sequencer {
   private fadeRate = 0;
   private fadeTarget = 1;
   private stopWhenFaded = false;
-  /** The voice each instrument last sounded on in the song lane, so a glide bends out of it. */
-  private songVoices = new Map<string, number>();
+  /** Per track, the voice each instrument last sounded on, so a glide bends out of it. */
+  private songVoices: Map<string, number>[] = [];
+  /** Per track, the voices its notes may take while the song plays; then those of the SFX. */
+  private trackVoices: number[][] = [];
+  private sfxVoices: number[] = [];
   private readonly sfx: {
     sheet: NoteSheet;
     /** Counted in sub-steps. */
@@ -52,12 +57,23 @@ export class Sequencer {
   setLibrary(instruments: Map<string, Instrument>, patterns: Map<string, Pattern>): void {
     this.instruments = instruments;
     this.patterns = patterns;
+    if (this.song) {
+      this.planVoices(this.song);
+    }
+  }
+
+  /** Worked out once per song or library, not per note: the worklet runs this every tick. */
+  private planVoices(song: Song): void {
+    const plan = voicePlan(song, this.patterns, this.instruments);
+    this.trackVoices = plan.tracks.map((own) => [...own, ...plan.free]);
+    this.sfxVoices = [...plan.sfx, ...plan.free];
   }
 
   /** `from` is where to begin, in beats from the song's start; the clock rounds it onto its ticks. */
   playSong(song: Song, loop: boolean, fadeIn: number, from = 0): void {
     this.song = { ...song, loop };
-    this.songVoices = new Map();
+    this.songVoices = song.tracks.map(() => new Map<string, number>());
+    this.planVoices(song);
     this.tick = Math.max(0, Math.round(from * TICKS_PER_BEAT));
     this.samplesToNextTick = 0;
     this.playing = song.blocks.length > 0;
@@ -167,6 +183,7 @@ export class Sequencer {
             1,
             lane.voices,
             lane.channel,
+            this.playing ? this.sfxVoices : [],
           );
           lane.samplesToNext = this.subStepSamples(lane.sheet, lane.subStep);
           lane.subStep++;
@@ -265,8 +282,19 @@ export class Sequencer {
         continue;
       }
       const notes = this.notesByTick(pattern).get((tick - start) % length);
-      if (notes) {
-        this.triggerNotes(notes, 60 / song.bpm / pattern.stepsPerBeat, 0, 1, 0, this.songVoices);
+      const pool = this.trackVoices[block.track];
+      const last = this.songVoices[block.track];
+      if (notes && pool && last) {
+        this.triggerNotes(
+          notes,
+          60 / song.bpm / pattern.stepsPerBeat,
+          0,
+          1,
+          0,
+          last,
+          undefined,
+          pool,
+        );
       }
     }
   }
@@ -299,6 +327,7 @@ export class Sequencer {
     priority: number,
     lastVoices: Map<string, number>,
     channel?: number,
+    pool: readonly number[] = [],
   ): void {
     const byInstrument = new Map<string, Note[]>();
     for (const note of struck) {
@@ -318,7 +347,12 @@ export class Sequencer {
       if (voice === undefined && ins.glide > 0 && (notes.length === 1 || ins.arp.rate > 0)) {
         const last = lastVoices.get(id);
         const held = last === undefined ? undefined : this.synth.voices[last];
-        if (held?.active && held.instrument === ins && held.priority === priority) {
+        if (
+          held?.active &&
+          held.instrument === ins &&
+          held.priority === priority &&
+          (pool.length === 0 || (last !== undefined && pool.includes(last)))
+        ) {
           voice = last;
         }
       }
@@ -337,6 +371,7 @@ export class Sequencer {
           voice,
           priority,
           chord.map((note) => note.pitch - root.pitch),
+          pool,
         );
         lastVoices.set(id, used);
         continue;
@@ -349,6 +384,8 @@ export class Sequencer {
           note.length * secondsPerStep,
           voice,
           priority,
+          [],
+          pool,
         );
         lastVoices.set(id, used);
       }

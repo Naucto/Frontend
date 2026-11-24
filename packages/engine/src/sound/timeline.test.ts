@@ -28,7 +28,10 @@ const song = (...blocks: [string, string, number, number?][]): Song => ({
     pattern,
     start,
     repeat: repeat ?? 1,
+    track: 0,
   })),
+  tracks: [''],
+  sfxVoices: 0,
   loop: true,
   loopStart: 0,
 });
@@ -55,7 +58,7 @@ describe('timeline', () => {
     const value = song(['a', 'one', 0], ['b', 'one', 1], ['c', 'one', 2]);
     const placed = placeBlocks(
       value,
-      [{ id: 'd', pattern: 'one', start: 0.5, repeat: 1 }],
+      [{ id: 'd', pattern: 'one', start: 0.5, repeat: 1, track: 0 }],
       patterns,
     );
     expect(layout(placed)).toEqual(['d@0.5x1', 'c@2x1']);

@@ -1,11 +1,13 @@
 import {
   BEATS_PER_BAR,
+  type Instrument,
   type Note,
   type NoteSheet,
   type Pattern,
   type Song,
   type SongBlock,
   SUBSTEPS,
+  VOICES,
 } from './model';
 import { PATTERN_BOUNDS } from './presets';
 
@@ -32,6 +34,7 @@ export const songLoopEnd = (song: Song, patterns: ReadonlyMap<string, Pattern>):
 };
 
 const overlaps = (a: SongBlock, b: SongBlock, patterns: ReadonlyMap<string, Pattern>): boolean =>
+  a.track === b.track &&
   a.start < b.start + blockBars(b, patterns) - EPSILON &&
   a.start + blockBars(a, patterns) > b.start + EPSILON;
 
@@ -51,24 +54,34 @@ export function placeBlocks(
   };
 }
 
+/**
+ * Moves blocks by `delta` bars and `rows` tracks, kept together: none goes before the start or off
+ * the last track, so the move stops where the first of them would.
+ */
 export function moveBlocks(
   song: Song,
   ids: ReadonlySet<string>,
   delta: number,
   patterns: ReadonlyMap<string, Pattern>,
+  rows = 0,
 ): Song {
   const moving = song.blocks.filter((block) => ids.has(block.id));
   if (moving.length === 0) {
     return song;
   }
   const shift = Math.max(delta, -Math.min(...moving.map((block) => block.start)));
-  if (shift === 0) {
+  const tracks = moving.map((block) => block.track);
+  const down = Math.min(
+    Math.max(rows, -Math.min(...tracks)),
+    song.tracks.length - 1 - Math.max(...tracks),
+  );
+  if (shift === 0 && down === 0) {
     return song;
   }
 
   return placeBlocks(
     song,
-    moving.map((block) => ({ ...block, start: block.start + shift })),
+    moving.map((block) => ({ ...block, start: block.start + shift, track: block.track + down })),
     patterns,
   );
 }
@@ -106,8 +119,9 @@ export function duplicateBlocks(
   const last = Math.max(...chosen.map((block) => block.start + blockBars(block, patterns)));
   const span = last - first;
   const created = chosen.map((block) => ({ ...block, id: newId(), start: block.start + span }));
+  const rows = new Set(chosen.map((block) => block.track));
   const shifted = song.blocks.map((block) =>
-    !ids.has(block.id) && block.start >= last - EPSILON
+    !ids.has(block.id) && rows.has(block.track) && block.start >= last - EPSILON
       ? { ...block, start: block.start + span }
       : block,
   );
@@ -119,15 +133,16 @@ export function stretchPattern(song: Song, patternId: string, addedBars: number)
   if (addedBars <= 0) {
     return song;
   }
-  let shift = 0;
+  const shifts = new Map<number, number>();
   const moved = new Map<string, number>();
   for (const block of [...song.blocks].sort((a, b) => a.start - b.start)) {
+    const shift = shifts.get(block.track) ?? 0;
     moved.set(block.id, block.start + shift);
     if (block.pattern === patternId) {
-      shift += addedBars * block.repeat;
+      shifts.set(block.track, shift + addedBars * block.repeat);
     }
   }
-  if (shift === 0) {
+  if (shifts.size === 0) {
     return song;
   }
 
@@ -136,6 +151,124 @@ export function stretchPattern(song: Song, patternId: string, addedBars: number)
     blocks: song.blocks.map((block) => ({ ...block, start: moved.get(block.id) ?? block.start })),
   };
 }
+
+/**
+ * The most notes a sheet sounds at once, counting a note from its step to its end. Notes struck
+ * together by an arpeggiating instrument walk one voice, so they count as one.
+ */
+export function notesAtOnce(
+  sheet: NoteSheet,
+  instruments: ReadonlyMap<string, Instrument>,
+): number {
+  const spans = new Map<string, { start: number; end: number }>();
+  sheet.notes.forEach((note, i) => {
+    if (note.step >= sheet.steps) {
+      return;
+    }
+    const end = Math.min(sheet.steps, note.step + note.length);
+    const arp = (instruments.get(note.instrument)?.arp.rate ?? 0) > 0;
+    const key = arp ? `${note.instrument}@${String(note.step)}` : String(i);
+    const held = spans.get(key);
+    spans.set(key, { start: note.step, end: Math.max(end, held?.end ?? end) });
+  });
+  const edges = [...spans.values()]
+    .flatMap((span) => [
+      { at: span.start, by: 1 },
+      { at: span.end, by: -1 },
+    ])
+    .sort((a, b) => a.at - b.at || a.by - b.by);
+  let sounding = 0;
+  let most = 0;
+  for (const edge of edges) {
+    sounding += edge.by;
+    most = Math.max(most, sounding);
+  }
+  return most;
+}
+
+/** Which voices each track sounds on, which ones the sound effects keep, and which nobody does. */
+interface VoicePlan {
+  /** Per track, the voices it was given. */
+  tracks: number[][];
+  /** Per track, the voices its patterns ask for: at least one. */
+  needs: number[];
+  sfx: number[];
+  /** Voices nobody needs, which the music and the sound effects may both take. */
+  free: number[];
+}
+
+/**
+ * Shares the five voices out: the sound effects' reserve first, then one voice to each track,
+ * then, track after track, what each still needs while voices remain. A track given less than
+ * it needs cuts a note when its patterns play more at once.
+ */
+export function voicePlan(
+  song: Song,
+  patterns: ReadonlyMap<string, Pattern>,
+  instruments: ReadonlyMap<string, Instrument>,
+): VoicePlan {
+  const needs = song.tracks.map((_, track) =>
+    Math.max(
+      1,
+      ...song.blocks.flatMap((block) => {
+        const pattern = block.track === track ? patterns.get(block.pattern) : undefined;
+        return pattern ? [notesAtOnce(pattern, instruments)] : [];
+      }),
+    ),
+  );
+  const reserve = Math.max(0, Math.min(VOICES - song.tracks.length, song.sfxVoices));
+  let left = VOICES - reserve;
+  const given = needs.map(() => 0);
+  given.forEach((_, i) => {
+    if (left > 0) {
+      given[i] = 1;
+      left -= 1;
+    }
+  });
+  needs.forEach((need, i) => {
+    const extra = Math.min(left, need - (given[i] ?? 0));
+    given[i] = (given[i] ?? 0) + extra;
+    left -= extra;
+  });
+  let next = 0;
+  const tracks = given.map((count) => Array.from({ length: count }, () => next++));
+  const free = Array.from({ length: left }, () => next++);
+  const sfx = Array.from({ length: reserve }, () => next++);
+  return { tracks, needs, sfx, free };
+}
+
+/** A new track at the bottom, while a voice is left for it beside the sound effects' reserve. */
+export function addTrack(song: Song): Song {
+  if (song.tracks.length + song.sfxVoices >= VOICES) {
+    return song;
+  }
+  return { ...song, tracks: [...song.tracks, ''] };
+}
+
+/** Takes a track out with its blocks. The last track stays: a music always has one. */
+export function removeTrack(song: Song, index: number): Song {
+  if (song.tracks.length < 2 || index < 0 || index >= song.tracks.length) {
+    return song;
+  }
+  return {
+    ...song,
+    tracks: song.tracks.filter((_, i) => i !== index),
+    blocks: song.blocks
+      .filter((block) => block.track !== index)
+      .map((block) => (block.track > index ? { ...block, track: block.track - 1 } : block)),
+  };
+}
+
+export const renameTrack = (song: Song, index: number, name: string): Song => ({
+  ...song,
+  tracks: song.tracks.map((track, i) => (i === index ? name : track)),
+});
+
+/** Keeps voices for the sound effects, leaving one at least to each track. */
+export const setSfxVoices = (song: Song, count: number): Song => ({
+  ...song,
+  sfxVoices: Math.max(0, Math.min(VOICES - song.tracks.length, Math.round(count))),
+});
 
 export const withoutPattern = (song: Song, patternId: string): Song => ({
   ...song,
