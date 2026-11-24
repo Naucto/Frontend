@@ -230,17 +230,18 @@ test.describe('a staff member who does not collaborate on the game', () => {
     await expect(row).toBeVisible();
     const before = await documentBytes(page);
 
-    const read = row.getByRole('button', { name: 'R', exact: true });
+    const read = row.getByRole('checkbox', { name: 'Clients can read this path' });
     await expect(read).toBeDisabled();
-    await expect(read).toHaveAttribute('aria-pressed', 'true');
+    await expect(read).toBeChecked();
     await read.click({ force: true });
-    await expect(read).toHaveAttribute('aria-pressed', 'true');
+    await expect(read).toBeChecked();
     for (const action of await row.locator('td').last().getByRole('button').all()) {
       await expect(action).toBeDisabled();
     }
+    await expect(page.getByRole('button', { name: 'Path', exact: true })).toBeDisabled();
     // Filtering and folding the tree change nothing but the view.
     await expect(page.getByRole('searchbox', { name: 'Filter' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Collapse all' }).click();
+    await page.getByRole('button', { name: 'players', exact: true }).click();
     await expect(row).toHaveCount(0);
 
     expect(await documentBytes(page)).toBe(before);

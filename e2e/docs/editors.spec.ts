@@ -328,19 +328,32 @@ for (const theme of THEMES) {
 
     test('net', async ({ page }) => {
       await page.goto(editorUrl('net'));
-      await page.getByRole('button', { name: 'Declare a path' }).click();
-      await page.getByPlaceholder('key').fill('score');
-      await page.keyboard.press('Enter');
-      await page.getByTitle('Add child node').first().click();
-      await page.getByPlaceholder('key').fill('winner');
-      await page.keyboard.press('Enter');
-      const winner = page.getByRole('row').filter({ hasText: 'winner' });
-      await winner.getByTitle('Clients can write this path').click();
+      const declare = async (parent: string | null, key: string): Promise<void> => {
+        if (parent === null) {
+          await page.getByRole('button', { name: 'Path', exact: true }).click();
+        } else {
+          await page
+            .locator(`tr:has(td[title="${parent}"])`)
+            .getByRole('button', { name: 'Add child node' })
+            .click();
+        }
+        await page.getByPlaceholder('key').fill(key);
+        await page.keyboard.press('Enter');
+      };
+      await declare(null, 'players');
+      await declare('players', 'score');
+      await declare(null, 'winner');
+      // players gets a rule of its own, read but not written, which score then inherits.
+      await page
+        .locator('tr:has(td[title="players"])')
+        .getByRole('checkbox', { name: 'Clients can write this path' })
+        .click();
       await page.waitForTimeout(500);
       await shoot(page, OUT, 'net', theme);
       await shoot(page, OUT, 'net-state', theme, page.locator('nc-net-tab-page section').first());
       await shoot(page, OUT, 'net-session', theme, page.locator('nc-panel-column').first());
-      await shoot(page, OUT, 'net-rig', theme, section(page, 'Test rig'));
+      await page.locator('nc-panel-column').getByRole('button', { name: 'Debug' }).click();
+      await shoot(page, OUT, 'net-rig', theme, page.locator('nc-panel-column nc-disclosure'));
     });
 
     test('game', async ({ page }) => {
