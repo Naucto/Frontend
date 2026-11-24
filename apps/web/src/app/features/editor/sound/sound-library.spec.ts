@@ -19,6 +19,7 @@ const block = (id: string, pattern: string, start: number): SongBlock => ({
   pattern,
   start,
   repeat: 1,
+  track: 0,
 });
 
 const tune = (...blocks: SongBlock[]): Song => ({ ...defaultSong(120), blocks });

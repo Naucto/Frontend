@@ -159,8 +159,12 @@ in `.claude/skills/naucto-frontend-change/SKILL.md`.
   before v3, which is what keeps the starter code, the tutorials and the docs examples running.
 - **Sound storage**: `sound.patterns`, `sound.songs` and `sound.effects` hold one JSON string per
   entry, written and read only through `packages/engine/src/sound/storage.ts`. Notes are
-  `[step, pitch, length, instrument, volume?]` and blocks `[id, pattern, start, repeat?]`, a
-  volume or a repeat of 1 left out, because the project budget counts these bytes. The reader
+  `[step, pitch, length, instrument, volume?]` and blocks `[id, pattern, start, repeat?, track?]`,
+  a volume, a repeat of 1 or the first track left out, because the project budget counts these
+  bytes. A music stores its track names in `tracks` and the voices it keeps for the sound effects
+  in `sfxVoices`; one unnamed track and none kept store nothing, which is how every music before
+  tracks reads. The voices of each track are worked out from its patterns (`voicePlan`), never
+  stored. The reader
   still takes the object form older documents hold. Musics as blocks and sound effects of their own
   came with schema v4 (`migrations/v3_to_v4`).
 - **Theming**: every colour comes from a token in `packages/ui/src/tokens.css`; never write raw hex in

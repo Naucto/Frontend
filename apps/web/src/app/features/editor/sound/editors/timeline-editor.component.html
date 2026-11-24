@@ -201,12 +201,118 @@
       (pointerleave)="onTrackLeave()">
       <div #content class="relative flex" [style.width.px]="HEAD_W + bars() * barWidth()">
         <nc-presence-layer [marks]="peerMarks()" [viewport]="viewport()" />
-        <div class="sticky left-0 z-20 w-[96px] shrink-0 border-r-3 border-line bg-panel">
-          <div class="label flex h-[30px] items-center border-b-3 border-line px-1 text-ink-3">
-            {{ t('editor.sound.bars') }}
+        <div
+          class="sticky left-0 z-20 shrink-0 border-r-3 border-line bg-panel"
+          [style.width.px]="HEAD_W">
+          <div class="flex h-[30px] items-center border-b-3 border-line pr-[6px] pl-[36px]">
+            <span class="label text-ink-3">{{ t('editor.sound.tracks') }}</span>
           </div>
-          <div class="label flex h-[72px] items-center px-1 text-ink-3">
-            {{ t('editor.sound.sequence') }}
+          @for (row of tracks(); track $index) {
+            @let index = $index;
+            <div
+              class="group flex items-center gap-1 border-b-3 border-line pr-[6px] pl-[36px]"
+              [style.height.px]="ROW_H"
+              [attr.data-track]="index">
+              <div class="grid min-w-0 flex-1 gap-0.5">
+                <span
+                  class="truncate text-body text-ink"
+                  [ncTooltip]="trackName(index)"
+                  (dblclick)="deck.mode.canWrite() && askTrackName(index)">
+                  {{ trackName(index) }}
+                </span>
+                <span class="flex items-center gap-0.5">
+                  <span ncJoined ncLooksOnly>
+                    <button
+                      ncButton
+                      variant="ghost"
+                      size="sm"
+                      [pressed]="store.mutedTracks().includes(index)"
+                      [attr.aria-label]="t('editor.sound.muteTrack', { name: trackName(index) })"
+                      [ncTooltip]="t('editor.sound.mute')"
+                      (click)="store.toggleTrack('mutedTracks', index)">
+                      M
+                    </button>
+                    <button
+                      ncButton
+                      variant="ghost"
+                      size="sm"
+                      [pressed]="store.soloTracks().includes(index)"
+                      [attr.aria-label]="t('editor.sound.soloTrack', { name: trackName(index) })"
+                      [ncTooltip]="t('editor.sound.solo')"
+                      (click)="store.toggleTrack('soloTracks', index)">
+                      S
+                    </button>
+                  </span>
+                  <span class="hidden group-focus-within:flex group-hover:flex">
+                    <button
+                      ncButton
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
+                      [attr.aria-label]="t('editor.sound.renameTrack', { name: trackName(index) })"
+                      [ncTooltip]="t('editor.sound.rename')"
+                      (click)="askTrackName(index)">
+                      <nc-mark name="edit" />
+                    </button>
+                    <button
+                      ncButton
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
+                      [disabled]="tracks().length < 2"
+                      [attr.aria-label]="t('editor.sound.removeTrack', { name: trackName(index) })"
+                      [ncTooltip]="t('editor.sound.removeTrack', { name: trackName(index) })"
+                      (click)="removeTrack(index)">
+                      <nc-mark name="trash" />
+                    </button>
+                  </span>
+                </span>
+              </div>
+              @let given = plan().tracks[index]?.length ?? 0;
+              @let need = plan().needs[index] ?? 1;
+              <nc-chip
+                class="shrink-0"
+                [tone]="short()[index] ? 'hot' : 'neutral'"
+                [ncTooltip]="
+                  short()[index]
+                    ? t('editor.sound.voicesShortHelp', { n: given, need })
+                    : t('editor.sound.voicesHelp')
+                ">
+                {{
+                  short()[index]
+                    ? t('editor.sound.voicesShort', { n: given, need })
+                    : t('editor.sound.voices', { n: given })
+                }}
+              </nc-chip>
+            </div>
+          }
+          <div class="flex h-[48px] items-center gap-1 border-b-3 border-line pr-[6px] pl-[36px]">
+            <span class="text-body text-hot-ink">{{ t('editor.sound.sfx') }}</span>
+            <nc-help-dot [title]="t('editor.sound.sfx')" [text]="t('editor.sound.sfxVoicesHelp')" />
+            <span class="flex-1"></span>
+            <nc-number-field
+              class="shrink-0"
+              size="sm"
+              [ariaLabel]="t('editor.sound.sfxVoices')"
+              [value]="song().sfxVoices"
+              [min]="0"
+              [max]="VOICES - tracks().length"
+              (requested)="setSfxVoices($event)" />
+          </div>
+          <div class="flex h-[48px] items-center pr-1 pl-[30px]">
+            <button
+              ncButton
+              variant="ghost"
+              size="sm"
+              [disabled]="!canAddTrack()"
+              [attr.aria-label]="t('editor.sound.addTrack')"
+              [ncTooltip]="
+                canAddTrack() ? t('editor.sound.addTrack') : t('editor.sound.noVoiceLeft')
+              "
+              (click)="addTrack()">
+              <nc-mark name="plus" />
+              {{ t('editor.sound.track') }}
+            </button>
           </div>
         </div>
         <div class="relative shrink-0" [style.width.px]="bars() * barWidth()">
@@ -248,17 +354,31 @@
           <div
             #lane
             data-lane
-            class="relative h-[72px] touch-none"
-            [style.background-image]="'linear-gradient(to right, var(--color-line-strong) 3px, transparent 3px), linear-gradient(to right, var(--color-line-faint) 3px, transparent 3px)'"
-            [style.background-size]="barWidth() * 4 + 'px 100%, ' + barWidth() + 'px 100%'"
+            class="relative touch-none"
+            [style.height.px]="tracks().length * ROW_H"
             (pointerdown)="gestures.onLaneDown($event)">
+            @for (row of tracks(); track $index) {
+              <div
+                class="absolute inset-x-0 border-b-3 border-line"
+                [class.opacity-40]="silenced($index)"
+                [style.top.px]="$index * ROW_H"
+                [style.height.px]="ROW_H"
+                [style.background-image]="'linear-gradient(to right, var(--color-line-strong) 3px, transparent 3px), linear-gradient(to right, var(--color-line-faint) 3px, transparent 3px)'"
+                [style.background-size]="
+                  barWidth() * 4 + 'px 100%, ' + barWidth() + 'px 100%'
+                "></div>
+            }
             @for (item of blocks(); track item.block.id) {
               <div
-                class="absolute top-[6px] bottom-[6px] overflow-hidden border-3 font-mono text-micro select-none"
+                class="absolute h-[60px] overflow-hidden border-3 font-mono text-micro select-none"
+                [class.opacity-40]="silenced(item.block.track) && !item.leaving"
+                [style.top.px]="item.top"
                 [class]="
                   item.leaving
                     ? 'border-hot bg-hot-wash text-hot-ink'
-                    : 'border-line-strong text-on-accent'
+                    : item.cut
+                      ? 'border-hot text-on-accent'
+                      : 'border-line-strong text-on-accent'
                 "
                 [class.cursor-grab]="deck.mode.canWrite()"
                 [class.outline-3]="selected().has(item.block.id)"
@@ -315,7 +435,8 @@
             @if (placing(); as ghost) {
               @if (ghost.over !== null) {
                 <div
-                  class="pointer-events-none absolute top-[6px] bottom-[6px] overflow-hidden border-3 border-gold font-mono text-micro text-on-accent opacity-75"
+                  class="pointer-events-none absolute h-[60px] overflow-hidden border-3 border-gold font-mono text-micro text-on-accent opacity-75"
+                  [style.top.px]="ghost.top"
                   [style.left.px]="ghost.left"
                   [style.width.px]="ghost.width"
                   [style.background]="ghost.colour">
@@ -333,6 +454,9 @@
               }
             }
           </div>
+          <div
+            class="h-[48px] border-b-3 border-line [background:repeating-linear-gradient(135deg,var(--color-line-faint)_0_3px,transparent_3px_12px)]"></div>
+          <div class="h-[48px]"></div>
           <div
             class="pointer-events-none absolute top-0 bottom-0 w-[3px] bg-ink-3"
             [style.left.px]="end() * barWidth()"></div>
