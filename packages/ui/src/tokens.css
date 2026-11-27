@@ -1077,6 +1077,36 @@
  * Dither in and out: a surface appears and leaves through the ordered dither instead of through
  * opacity. Each step is held, so the keyframes want a `step-end` timing.
  */
+/* Corners cut a kit pixel deep on a box that is not a bevel: a change chip, a marked cell. */
+@utility pixel-cut {
+  clip-path: polygon(
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px),
+    0 3px,
+    3px 3px
+  );
+}
+
+/*
+ * What is gone, hatched over what it was: 45 degree stripes stepped in kit pixels, never an
+ * anti-aliased gradient, in the hot of the border around it and half seen through, so the old
+ * content stays readable. Laid on an overlay of its own, since the mask cuts whatever it is on.
+ */
+@utility pixel-hatch {
+  background-color: color-mix(in srgb, var(--nc-hot) 50%, transparent);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath d='M0 9h3v3H0zM3 6h3v3H3zM6 3h3v3H6zM9 0h3v3H9z'/%3E%3C/svg%3E");
+  mask-size: 12px 12px;
+  pointer-events: none;
+}
+
 @utility dither-in {
   mask-size: 12px 12px;
   animation: nc-dither-in 200ms step-end both;

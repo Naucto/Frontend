@@ -7,8 +7,17 @@
       (click)="value.set(it.value)"
       [class]="it.value === value() ? onClass : offClass">
       <nc-icon [name]="it.icon" [size]="24" />
+      @if (it.count) {
+        <span
+          class="pixel-cut absolute top-[6px] right-[6px] flex h-[15px] min-w-[18px] items-center justify-center bg-sky px-[3px] font-mono text-micro text-on-accent">
+          {{ it.count }}
+        </span>
+      }
       @if (it.peers?.length) {
-        <nc-presence-dots class="absolute top-[6px] right-[6px]" [peers]="it.peers" />
+        <nc-presence-dots
+          class="absolute top-[6px]"
+          [class]="it.count ? 'left-[6px]' : 'right-[6px]'"
+          [peers]="it.peers" />
       }
       <span class="font-ui text-label tracking-strip uppercase">{{ it.label }}</span>
     </button>

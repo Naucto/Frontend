@@ -9,6 +9,8 @@ export interface RailItem<T extends string> {
   label: string;
   icon: IconName;
   peers?: readonly PresenceDot[];
+  /** Things waiting in that tab, such as the changes left to review; nothing is drawn for 0. */
+  count?: number;
 }
 
 /**

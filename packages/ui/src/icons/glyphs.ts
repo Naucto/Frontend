@@ -251,6 +251,7 @@ export const MARK_GLYPHS = {
   stop: '5f8f8f8f8f8',
   swap: '52070007020',
   sync: '56898808870',
+  tilde: '50040a81000',
   trash: '570f8505070',
   undo: '540f0480830',
   upload: '52070a820f8',
