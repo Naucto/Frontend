@@ -106,9 +106,18 @@ export function midiToSong(parsed: ParsedMidi, options: MidiSongOptions): MidiSo
       ...(options.bpm === undefined ? {} : { bpm: options.bpm }),
       firstSlot: slot,
     });
+    const file = parsed.tracks.find((held) => held.index === source);
+    const name = (file?.name ?? '').slice(0, 12);
     const kept = conversion.patterns.filter((pattern) => pattern.notes.length > 0);
     const keptIds = new Set(kept.map((pattern) => pattern.id));
-    patterns.push(...kept.map((pattern, i) => ({ ...pattern, slot: slot + i })));
+    // Named for the track they play, which the list and a block show, not for the import's ids.
+    patterns.push(
+      ...kept.map((pattern, i) => ({
+        ...pattern,
+        slot: slot + i,
+        name: `${name} ${String(i + 1)}`,
+      })),
+    );
     slot += kept.length;
     instruments.push(...conversion.instruments);
     bpm ||= conversion.patterns[0]?.bpm ?? 120;
@@ -132,7 +141,6 @@ export function midiToSong(parsed: ParsedMidi, options: MidiSongOptions): MidiSo
       };
       blocks.push(last);
     });
-    const file = parsed.tracks.find((held) => held.index === source);
     reports.push({
       ...conversion.report,
       source,

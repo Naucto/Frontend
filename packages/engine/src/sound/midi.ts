@@ -137,7 +137,6 @@ const TIDY_GAIN = 0.85;
 const TIDY_SHIFT = 0.2;
 /** Volumes that differ by less than this count as the same note when comparing sections. */
 const VOLUME_TOLERANCE = 0.15;
-const RELEASE_SECONDS = 0.02;
 /** More tempo changes than this, all within this ratio of each other, are a wavering pulse. */
 const WAVERING_CHANGES = 8;
 const WAVERING_SPREAD = 1.5;
@@ -547,7 +546,6 @@ export function convertMidi(parsed: ParsedMidi, options: MidiImportOptions): Mid
   }
 
   const stepsPerSecond = (bpm / 60) * 4;
-  const release = RELEASE_SECONDS * stepsPerSecond;
   const instruments: MidiInstrument[] = [];
   let percussionNotes = 0;
   interface Candidate {
@@ -657,7 +655,7 @@ export function convertMidi(parsed: ParsedMidi, options: MidiImportOptions): Mid
         }
         for (const note of keep) {
           accepted.push(note);
-          ends.push(note.step + note.length + release);
+          ends.push(note.step + note.length);
         }
         peak = Math.max(peak, ends.length);
       }
@@ -704,7 +702,7 @@ export function convertMidi(parsed: ParsedMidi, options: MidiImportOptions): Mid
         if (known) {
           result = known;
           for (const note of known.kept) {
-            ends.push(base + note.step + note.length + release);
+            ends.push(base + note.step + note.length);
           }
           peak = Math.max(peak, ends.length);
         } else {
@@ -778,7 +776,7 @@ export function convertMidi(parsed: ParsedMidi, options: MidiImportOptions): Mid
   }
   if (chosen.some((track) => track.program !== null && !options.instruments?.[track.index])) {
     warnings.push(
-      'General MIDI programs were replaced by chip voices; choose instruments before importing.',
+      'General MIDI programs were replaced by chip voices; change them under Instruments once imported.',
     );
   }
 

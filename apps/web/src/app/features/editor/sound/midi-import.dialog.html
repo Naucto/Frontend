@@ -1,0 +1,102 @@
+<nc-dialog-shell
+  *transloco="let t"
+  [title]="t('editor.sound.midi.title')"
+  [lead]="t('editor.sound.midi.lead', { n: maxTracks })"
+  scrollable>
+  <div class="flex w-[520px] max-w-full flex-col gap-2">
+    <div class="flex items-center gap-1.5">
+      <label ncButton variant="secondary" size="md">
+        <nc-mark name="upload" />
+        {{ t(parsed() ? 'editor.sound.midi.another' : 'editor.sound.midi.choose') }}
+        <input
+          #file
+          type="file"
+          accept=".mid,.midi,audio/midi,audio/x-midi"
+          class="sr-only"
+          (change)="read(file)" />
+      </label>
+      @if (fileName()) {
+        <span class="min-w-0 truncate font-mono text-small text-ink-2">{{ fileName() }}</span>
+      }
+    </div>
+
+    @if (readError(); as name) {
+      <nc-notice tone="danger">{{ t('editor.sound.midi.unreadable', { name }) }}</nc-notice>
+    }
+
+    @if (parsed()) {
+      <section [attr.aria-label]="t('editor.sound.midi.tracks')">
+        <div class="mb-1 flex items-center justify-between">
+          <span class="label text-ink-3">{{ t('editor.sound.midi.tracks') }}</span>
+          <span class="font-mono text-micro text-ink-3">
+            {{ t('count', { n: chosen().size, max: maxTracks }) }}
+          </span>
+        </div>
+        <ul class="flex max-h-[220px] flex-col gap-0.5 overflow-y-auto">
+          @for (track of tracks(); track track.index) {
+            <li class="flex items-center gap-1 px-0.5 py-[3px]">
+              <nc-checkbox
+                [checked]="chosen().has(track.index)"
+                [disabled]="!chosen().has(track.index) && chosen().size >= maxTracks"
+                [label]="track.name"
+                (checkedChange)="toggle(track.index, $event)" />
+              <span class="min-w-0 flex-1 truncate text-body text-ink">{{ track.name }}</span>
+              @if (track.percussion) {
+                <nc-chip>{{ t('editor.sound.midi.drums') }}</nc-chip>
+              }
+              <span class="shrink-0 font-mono text-micro text-ink-3">
+                {{ t('editor.sound.midi.notes', { n: track.notes.length }) }}
+              </span>
+            </li>
+          }
+        </ul>
+      </section>
+
+      <nc-number-field
+        class="h-(--nc-h-md) w-[180px]"
+        fill
+        [label]="t('editor.sound.bpm')"
+        [ariaLabel]="t('editor.sound.musicBpm')"
+        [value]="bpm()"
+        [min]="BPM_MIN"
+        [max]="BPM_MAX"
+        (requested)="setBpm($event)" />
+
+      @if (result(); as outcome) {
+        @if (music()) {
+          <div class="flex flex-wrap gap-2">
+            <nc-stat
+              icon="music"
+              [value]="totals().patterns"
+              [label]="t('editor.sound.midi.patterns')" />
+            <nc-stat icon="check" [value]="totals().kept" [label]="t('editor.sound.midi.kept')" />
+            @if (totals().dropped) {
+              <nc-stat
+                icon="close"
+                tone="hot"
+                [value]="totals().dropped"
+                [label]="t('editor.sound.midi.dropped')" />
+            }
+          </div>
+          @for (warning of totals().warnings; track warning) {
+            <nc-notice>{{ warning }}</nc-notice>
+          }
+        } @else if ('error' in outcome) {
+          <nc-notice tone="danger">{{ outcome.error }}</nc-notice>
+        }
+      }
+    }
+  </div>
+  <ng-container footer>
+    <button ncButton variant="ghost" (click)="ref.close()">
+      {{ t('editor.sound.midi.cancel') }}
+    </button>
+    <button
+      ncButton
+      variant="primary"
+      [disabled]="!music()"
+      (click)="ref.close(music() ?? undefined)">
+      {{ t('editor.sound.midi.import') }}
+    </button>
+  </ng-container>
+</nc-dialog-shell>

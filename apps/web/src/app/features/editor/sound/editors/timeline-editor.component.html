@@ -96,6 +96,16 @@
         (duplicated)="duplicateSong($event)"
         (removed)="removeSong($event)"
         (renamed)="renameSong($event)" />
+      <button
+        ncButton
+        variant="ghost"
+        size="sm"
+        iconOnly
+        [attr.aria-label]="t('editor.sound.midi.open')"
+        [ncTooltip]="t('editor.sound.midi.open')"
+        (click)="importMidi()">
+        <nc-mark name="upload" />
+      </button>
       <span class="flex-1"></span>
       <nc-transport
         [playing]="playing()"

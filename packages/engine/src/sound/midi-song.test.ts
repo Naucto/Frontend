@@ -44,6 +44,7 @@ describe('a MIDI file as a music', () => {
       prefix: 'imp',
     });
     expect(song.tracks).toEqual(['lead', 'bass']);
+    expect(patterns.map((pattern) => pattern.name)).toEqual(['lead 1', 'bass 1']);
     expect(instruments).toHaveLength(2);
     expect(new Set(song.blocks.map((block) => block.track))).toEqual(new Set([0, 1]));
     expect(patterns.map((pattern) => pattern.slot)).toEqual(patterns.map((_, i) => 3 + i));
@@ -86,6 +87,8 @@ describe('a MIDI file as a music', () => {
       new Map(imported.instruments.map((instrument) => [instrument.id, instrument])),
     );
     expect(plan.tracks.map((voices) => voices.length)).toEqual([1, 2]);
+    // A melody played legato needs one voice, which takes each note as the last one ends.
+    expect(imported.reports.map((report) => report.droppedNotes)).toEqual([0, 0]);
     expect(plan.tracks.flat().length).toBeLessThanOrEqual(VOICES - 1);
   });
 
