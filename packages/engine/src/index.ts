@@ -9,6 +9,10 @@ export type {
   SoundPort,
   SysPort,
 } from './api/ports';
+export * from './diff/changes';
+export * from './diff/decisions';
+export * from './diff/lines';
+export { mergeAccepted } from './diff/merge';
 export * from './game/defaults';
 export { EditableGame, type ResizePreview } from './game/EditableGame';
 export {
