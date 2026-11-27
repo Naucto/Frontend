@@ -11,6 +11,7 @@ import { ProjectRouteReuseStrategy } from '../../app.config';
 import { PresenceStore } from '../../core/presence/presence.store';
 import { installMemoryStorage } from '../../testing/memory-storage';
 import { testProviders } from '../../testing/providers';
+import { DiffStore } from './diff/diff.store';
 import EditorShellComponent from './editor-shell.component';
 import { EditorModeService } from './state/editor-mode.service';
 import { EditorRuntimeService } from './state/editor-runtime.service';
@@ -80,6 +81,13 @@ describe('EditorShellComponent', () => {
           },
         },
         { provide: PresenceStore, useValue: { announce } },
+        {
+          provide: DiffStore,
+          useValue: {
+            on: signal(false),
+            counts: signal({ code: 0, art: 0, map: 0, sound: 0, net: 0 }),
+          },
+        },
         { provide: DialogService, useValue: { open: vi.fn() } },
         { provide: ToastService, useValue: { show: vi.fn() } },
       ],

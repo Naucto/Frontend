@@ -1,0 +1,104 @@
+<ng-container *transloco="let t">
+  <div
+    class="flex h-(--nc-h-lg) shrink-0 items-center gap-1.5 border-b-3 border-line bg-raised px-2">
+    <nc-change-chip word [kind]="kind()" [label]="t('editor.diff.kind.' + kind())" />
+    <span class="min-w-0 flex-1 truncate font-mono text-small text-ink-2">
+      @if (whole(); as file) {
+        {{
+          t(file.kind === 'NEW' ? 'editor.diff.newFile' : 'editor.diff.deletedFile', {
+            n: summary().lines,
+          })
+        }}
+      } @else {
+        {{ t('editor.diff.fileChanges', { n: items().length }) }}
+        @if (review() && summary().pending) {
+          <span class="text-ink-4">{{ t('editor.diff.fileChangesHint') }}</span>
+        }
+      }
+      @if (renamed(); as change) {
+        @if (change.type === 'code-name') {
+          <span class="text-ink-4">{{ t('editor.diff.renamed', { name: change.before }) }}</span>
+        }
+      }
+    </span>
+    @if (review() && items().length) {
+      <nc-hunk-actions
+        [decision]="fileDecision()"
+        [acceptKey]="
+          kind() === 'NEW'
+            ? 'editor.diff.createFile'
+            : kind() === 'DELETED'
+              ? 'editor.diff.deleteFile'
+              : 'editor.diff.acceptFile'
+        "
+        [rejectKey]="
+          kind() === 'NEW'
+            ? 'editor.diff.discard'
+            : kind() === 'DELETED'
+              ? 'editor.diff.keep'
+              : 'editor.diff.rejectFile'
+        "
+        (decided)="decideFile($event)" />
+    }
+  </div>
+  <div class="flex min-h-0 flex-1">
+    <div class="min-w-0 flex-1 overflow-auto bg-inset py-0.5 font-mono text-small leading-[22px]">
+      @for (line of lines(); track $index) {
+        <div
+          class="relative flex min-w-max"
+          [class]="rowClass(line)"
+          [attr.tabindex]="review() && line.first && line.decision === 'pending' ? 0 : -1"
+          (click)="line.decision === 'pending' && decide(line.item, 'ok')"
+          (keydown.enter)="line.decision === 'pending' && decide(line.item, 'ok')">
+          <span class="w-[4px] shrink-0" [class]="barOf(line)"></span>
+          <span class="w-[5ch] shrink-0 pr-[1ch] text-right text-ink-4 select-none">
+            {{ line.old ?? '' }}
+          </span>
+          <span class="w-[5ch] shrink-0 pr-[1ch] text-right text-ink-4 select-none">
+            {{ line.now ?? '' }}
+          </span>
+          <span
+            class="w-[3ch] shrink-0 text-center select-none"
+            [class.text-jade-ink]="line.kind === 'added'"
+            [class.text-hot-ink]="line.kind === 'removed'"
+            [class.text-orange-ink]="line.kind === 'changed'">
+            {{ glyph[line.kind] }}
+          </span>
+          <span
+            class="pr-2 whitespace-pre text-ink-body"
+            [class.line-through]="line.kind === 'removed'">
+            @for (part of line.parts; track $index) {
+              <span
+                [class.bg-hot-wash]="part.kind === 'removed'"
+                [class.text-hot-ink]="part.kind === 'removed'"
+                [class.line-through]="part.kind === 'removed'"
+                [class.bg-wash-orange]="part.kind === 'added'"
+                [class.text-ink]="part.kind === 'added'">
+                {{ part.text }}
+              </span>
+            }
+          </span>
+          @if (review() && line.first && line.item && !whole()) {
+            <span
+              class="sticky right-0 z-1 ml-auto flex h-[22px] items-center overflow-visible px-0.5">
+              <nc-hunk-actions
+                iconOnly
+                [decision]="line.decision"
+                (decided)="decide(line.item, $event)" />
+            </span>
+          }
+        </div>
+      }
+    </div>
+    <div class="relative w-[12px] shrink-0 border-l-3 border-line bg-panel" aria-hidden="true">
+      @for (tick of ticks(); track tick.key) {
+        <span
+          class="absolute inset-x-[3px] h-[4px]"
+          [style.top.%]="tick.top"
+          [class]="
+            tick.decision === 'ok' ? 'bg-jade' : tick.decision === 'no' ? 'bg-hot' : 'bg-orange'
+          "></span>
+      }
+    </div>
+  </div>
+</ng-container>

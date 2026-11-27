@@ -45,6 +45,9 @@ import { NotificationsBellComponent } from '../shell/notifications-bell.componen
 import { ThemeSwitchComponent } from '../shell/theme-switch.component';
 import { ArtStore } from './art/art.store';
 import { ConsoleColumnComponent } from './console/console-column.component';
+import { DiffStore } from './diff/diff.store';
+import { DiffBarComponent } from './diff/diff-bar.component';
+import { DiffReviewComponent } from './diff/diff-review.component';
 import { DocPaneComponent } from './docs/doc-pane.component';
 import { DocRequestService } from './docs/doc-request.service';
 import { PUBLISH_CEILING, PublishDialogComponent } from './game/publish.dialog';
@@ -105,6 +108,8 @@ const RAIL: Omit<RailItem<EditorTab>, 'label'>[] = [
     NotificationsBellComponent,
     ConsoleColumnComponent,
     OpenOnDesktopComponent,
+    DiffBarComponent,
+    DiffReviewComponent,
     DocPaneComponent,
     VersionsPopoverComponent,
     LogoComponent,
@@ -124,6 +129,7 @@ const RAIL: Omit<RailItem<EditorTab>, 'label'>[] = [
     EditorRuntimeService,
     ArtStore,
     ClipboardStore,
+    DiffStore,
     MapStore,
     SoundStore,
   ],
@@ -151,6 +157,7 @@ export default class EditorShellComponent implements OnInit {
   private readonly saves = inject(SessionSaveService);
   private readonly sessionPresence = inject(SessionPresenceService);
   protected readonly ui = inject(EditorUiStore);
+  protected readonly diff = inject(DiffStore);
   private readonly router = inject(Router);
   private readonly dialogs = inject(DialogService);
   private readonly toasts = inject(ToastService);
@@ -163,6 +170,7 @@ export default class EditorShellComponent implements OnInit {
       peers: this.sessionPresence
         .peersIn(item.value)
         .map((peer) => ({ id: peer.clientId, name: peer.name, colour: peer.colour })),
+      count: item.value === 'game' ? 0 : this.diff.counts()[item.value],
     })),
   );
   /**

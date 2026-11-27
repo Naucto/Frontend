@@ -1,0 +1,57 @@
+<ng-container *transloco="let t">
+  @switch (decision()) {
+    @case ('pending') {
+      <span ncJoined>
+        <button
+          ncButton
+          ncLooksOnly
+          variant="jade"
+          size="sm"
+          [iconOnly]="iconOnly()"
+          [attr.aria-label]="t(acceptKey())"
+          [attr.title]="iconOnly() ? t(acceptKey()) : null"
+          (click)="decided.emit('ok'); $event.stopPropagation()">
+          <nc-mark name="check" />
+          @if (!iconOnly()) {
+            {{ t(acceptKey()) }}
+          }
+        </button>
+        <button
+          ncButton
+          ncLooksOnly
+          variant="danger"
+          size="sm"
+          [iconOnly]="iconOnly()"
+          [attr.aria-label]="t(rejectKey())"
+          [attr.title]="iconOnly() ? t(rejectKey()) : null"
+          (click)="decided.emit('no'); $event.stopPropagation()">
+          <nc-mark name="close" />
+          @if (!iconOnly()) {
+            {{ t(rejectKey()) }}
+          }
+        </button>
+      </span>
+    }
+    @default {
+      <span
+        class="flex items-center gap-0.5 font-mono text-micro tracking-wide uppercase"
+        [class]="decision() === 'ok' ? 'text-jade-ink' : 'text-hot-ink'">
+        <nc-mark [name]="decision() === 'ok' ? 'check' : 'close'" />
+        @if (!iconOnly()) {
+          {{ t(decision() === 'ok' ? 'editor.diff.accepted' : 'editor.diff.rejected') }}
+        }
+      </span>
+      <button
+        ncButton
+        ncLooksOnly
+        variant="ghost"
+        size="sm"
+        iconOnly
+        [attr.aria-label]="t('editor.diff.undo')"
+        [attr.title]="t('editor.diff.undo')"
+        (click)="decided.emit('pending'); $event.stopPropagation()">
+        <nc-mark name="undo" />
+      </button>
+    }
+  }
+</ng-container>

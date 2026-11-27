@@ -1,0 +1,109 @@
+import * as Y from 'yjs';
+
+import { EditableGame } from '../../packages/engine/src/game/EditableGame';
+import { FIRST_MAP_ID } from '../../packages/engine/src/game/keys';
+import { editorUrl, mockEditor, projectRoute } from '../editor-mocks';
+import { expect, test } from '../fixtures';
+
+test.use({ viewport: { width: 1920, height: 1030 } });
+
+const MAIN_NOW = [
+  'function _init()',
+  '  x = 64',
+  '  y = 90',
+  '  speed = 2',
+  'end',
+  '',
+  'function _update()',
+  '  if input.down("left") then x = x - speed end',
+  '  if input.down("right") then x = x + speed end',
+  'end',
+].join('\n');
+
+const MAIN_THEN = [
+  'function _init()',
+  '  x = 64',
+  '  y = 80',
+  'end',
+  '',
+  'function _update()',
+  '  if input.down("left") then x = x - 1 end',
+  '  if input.down("right") then x = x + 1 end',
+  'end',
+  '-- jump next',
+].join('\n');
+
+/** A saved game whose `main` reads `main`, with an extra file and a tile on the first map. */
+function savedGame(
+  main: string,
+  extra: { id: string; name: string; text: string },
+  tile: number,
+): Buffer {
+  const doc = new Y.Doc();
+  const game = new EditableGame(doc);
+  game.seedDefaults();
+  const file = game.files.find((held) => held.id === 'main');
+  game.transact(() => {
+    file?.text.delete(0, file.text.length);
+    file?.text.insert(0, main);
+  });
+  game.addFile(extra.name, extra.text, extra.id);
+  game.maps.find((map) => map.id === FIRST_MAP_ID)?.setTile(3, 3, tile);
+  return Buffer.from(Y.encodeStateAsUpdate(doc));
+}
+
+const NOW = savedGame(MAIN_NOW, { id: 'player', name: 'player', text: 'player = {}' }, 2);
+const THEN = savedGame(MAIN_THEN, { id: 'enemy', name: 'enemy', text: 'enemy = {}\nhp = 3' }, 0);
+
+test.beforeEach(async ({ page }) => {
+  await mockEditor(page, {
+    content: NOW,
+    checkpoints: [{ name: 'first level', date: '2026-11-20T10:00:00.000Z' }],
+  });
+  await page.route(projectRoute('checkpoints/*'), (route) =>
+    route.fulfill({ status: 200, body: THEN, contentType: 'application/octet-stream' }),
+  );
+});
+
+test('compares the project with a saved version, read only', async ({ page }) => {
+  await page.goto(editorUrl('code'));
+  await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+  await page.getByRole('switch', { name: 'Diff' }).click();
+
+  await expect(page.getByRole('status').filter({ hasText: '6 diffs' })).toBeVisible();
+  // Five in CODE, the tile in MAP.
+  await expect(page.getByRole('button', { name: '5 Code' })).toBeVisible();
+  await expect(page.getByText('Read only')).toBeVisible();
+  // The tab of a file the version did not have, and one of a file it had and the project lost.
+  await expect(page.getByRole('tab', { name: 'player' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'enemy' })).toBeVisible();
+  await expect(page.getByText('speed = 2').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Accept file' })).toHaveCount(0);
+  await page.screenshot({ path: 'test-results/diff-compare.png' });
+});
+
+test('takes back part of a saved version, change by change', async ({ page }) => {
+  await page.goto(editorUrl('code'));
+  await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+  await page.getByRole('switch', { name: 'Diff' }).click();
+  await page.getByRole('button', { name: 'Compare from' }).click();
+  await page.getByRole('button', { name: /Current project/ }).click();
+  await page.getByRole('button', { name: 'Compare to' }).click();
+  await page.getByRole('button', { name: /first level/ }).click();
+
+  await expect(page.getByText(/0 of \d+ reviewed/)).toBeVisible();
+  // Take back the version's first change to main (`y = 80`, no `speed`) and refuse the rest.
+  await page.getByRole('button', { name: 'Accept', exact: true }).first().click();
+  await expect(page.getByText('1 of 6 reviewed')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible();
+  await page.screenshot({ path: 'test-results/diff-review.png' });
+  await page.getByRole('button', { name: 'Reject all' }).click();
+  await page.getByRole('button', { name: 'Apply', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Apply' }).click();
+
+  await expect(page.getByRole('switch', { name: 'Diff' })).toHaveAttribute('aria-checked', 'false');
+  await expect(page.getByText('y = 80').first()).toBeVisible();
+  await expect(page.getByText('speed = 2')).toHaveCount(0);
+  await expect(page.getByText('x - speed').first()).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'enemy' })).toHaveCount(0);
+});
