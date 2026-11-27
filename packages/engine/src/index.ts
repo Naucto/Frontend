@@ -90,6 +90,14 @@ export { SharedTableSession, type TableScalar } from './net/SharedTableSession';
 export { Engine, type EngineOptions, type EngineState } from './runtime/Engine';
 export type { EngineError, EnginePhase } from './runtime/EngineError';
 export { type EngineFault, type FaultListener, isHostBug } from './runtime/EngineFault';
+export {
+  chipInstrument,
+  type MidiInstrument,
+  type MidiTrack,
+  type ParsedMidi,
+  readMidi,
+} from './sound/midi';
+export { type MidiSong, midiToSong, type MidiTrackReport } from './sound/midi-song';
 export * from './sound/model';
 export {
   type Bound,
