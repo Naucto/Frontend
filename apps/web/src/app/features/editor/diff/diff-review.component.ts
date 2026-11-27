@@ -43,8 +43,17 @@ export class DiffReviewComponent {
       message: this.transloco.translate('editor.diff.applyMessage', { n: kept }),
       confirmLabel: this.transloco.translate('editor.diff.apply'),
     });
-    if (confirmed && this.diff.apply()) {
-      this.toasts.show(this.transloco.translate('editor.diff.applied', { n: kept }), 'success');
+    if (!confirmed) {
+      return;
+    }
+    try {
+      if (await this.diff.apply()) {
+        this.toasts.show(this.transloco.translate('editor.diff.applied', { n: kept }), 'success');
+      }
+    } catch {
+      // The project holds the kept changes already; only the assistant's copy did not move on, and
+      // it offers them again until the next review.
+      this.toasts.show(this.transloco.translate('editor.diff.reviewNotSent'), 'error');
     }
   }
 }

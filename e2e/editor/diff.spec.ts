@@ -1,8 +1,9 @@
+import type { Page } from '@playwright/test';
 import * as Y from 'yjs';
 
 import { EditableGame } from '../../packages/engine/src/game/EditableGame';
 import { FIRST_MAP_ID } from '../../packages/engine/src/game/keys';
-import { editorUrl, mockEditor, projectRoute } from '../editor-mocks';
+import { editorUrl, mockEditor, PROJECT_ID, projectRoute } from '../editor-mocks';
 import { expect, test } from '../fixtures';
 
 test.use({ viewport: { width: 1920, height: 1030 } });
@@ -65,10 +66,38 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
+/** Answers the assistant's working save with THEN as its draft, and keeps what a review sends. */
+async function mockAssistant(page: Page): Promise<{ reviews: unknown[] }> {
+  const reviews: unknown[] = [];
+  await page.route(`**/ai/projects/${PROJECT_ID}/workspace`, (route) =>
+    route.fulfill({
+      json: {
+        revision: 4,
+        draft: THEN.toString('base64'),
+        base: NOW.toString('base64'),
+        updatedAt: '2026-11-27T10:00:00.000Z',
+      },
+    }),
+  );
+  await page.route(`**/ai/projects/${PROJECT_ID}/workspace/review`, (route) => {
+    reviews.push(route.request().postDataJSON());
+    return route.fulfill({
+      status: 201,
+      json: { revision: 5, draft: null, base: null, updatedAt: null },
+    });
+  });
+  return { reviews };
+}
+
 test('compares the project with a saved version, read only', async ({ page }) => {
+  await mockAssistant(page);
   await page.goto(editorUrl('code'));
   await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
   await page.getByRole('switch', { name: 'Diff' }).click();
+  await page.getByRole('button', { name: 'Compare from' }).click();
+  await page.getByRole('button', { name: /first level/ }).click();
+  await page.getByRole('button', { name: 'Compare to' }).click();
+  await page.getByRole('button', { name: /Current project/ }).click();
 
   await expect(page.getByRole('status').filter({ hasText: '6 diffs' })).toBeVisible();
   // Five in CODE, the tile in MAP.
@@ -83,11 +112,10 @@ test('compares the project with a saved version, read only', async ({ page }) =>
 });
 
 test('takes back part of a saved version, change by change', async ({ page }) => {
+  await mockAssistant(page);
   await page.goto(editorUrl('code'));
   await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
   await page.getByRole('switch', { name: 'Diff' }).click();
-  await page.getByRole('button', { name: 'Compare from' }).click();
-  await page.getByRole('button', { name: /Current project/ }).click();
   await page.getByRole('button', { name: 'Compare to' }).click();
   await page.getByRole('button', { name: /first level/ }).click();
 
@@ -106,4 +134,25 @@ test('takes back part of a saved version, change by change', async ({ page }) =>
   await expect(page.getByText('speed = 2')).toHaveCount(0);
   await expect(page.getByText('x - speed').first()).toBeVisible();
   await expect(page.getByRole('tab', { name: 'enemy' })).toHaveCount(0);
+});
+
+test('reviews what the assistant made, and tells it what is left', async ({ page }) => {
+  const { reviews } = await mockAssistant(page);
+  await page.goto(editorUrl('code'));
+  await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+  await page.getByRole('switch', { name: 'Diff' }).click();
+
+  await expect(page.getByRole('button', { name: 'Compare to' })).toContainText('AI changes');
+  await expect(page.getByText('0 of 6 reviewed')).toBeVisible();
+  await page.getByRole('button', { name: 'Accept', exact: true }).first().click();
+  await expect(page.getByText('1 of 6 reviewed')).toBeVisible();
+  await page.getByRole('button', { name: 'Accept all' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Apply' }).click();
+
+  await expect.poll(() => reviews.length).toBe(1);
+  expect(reviews[0]).toMatchObject({
+    revision: 4,
+    categories: expect.arrayContaining(['CODE', 'MAPS']),
+  });
+  await expect(page.getByText('y = 80').first()).toBeVisible();
 });

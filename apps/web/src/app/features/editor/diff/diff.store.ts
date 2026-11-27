@@ -1,6 +1,11 @@
 import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
+  aiProjectControllerReview,
+  aiProjectControllerWorkspaceOf,
+  type AiWorkspaceReviewDto,
+} from '@naucto/api-client';
+import {
   type ChangeItem,
   computeChanges,
   decide,
@@ -13,8 +18,11 @@ import {
   fileDiffs,
   keepLive,
   mergeAccepted,
+  migrateGame,
 } from '@naucto/engine';
+import * as Y from 'yjs';
 
+import { unwrap } from '../../../core/api/api-errors';
 import {
   injectProjectCheckpoints,
   injectProjectVersions,
@@ -35,6 +43,39 @@ export type SnapshotRef = string;
  * versions differ and decides nothing.
  */
 export type DiffMode = 'review' | 'compare';
+
+/** The assistant's pending changes, written through the MCP: a side as a version is one. */
+export const AI_REF = 'ai';
+
+const toBase64 = (bytes: Uint8Array): string => {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
+};
+
+type AiCategory = AiWorkspaceReviewDto['categories'][number];
+
+const CATEGORY: Record<Exclude<DiffEditor, 'sound'>, AiCategory> = {
+  code: 'CODE',
+  art: 'SPRITES',
+  map: 'MAPS',
+  net: 'MULTIPLAYER',
+};
+
+/** What the kept changes touched, for the game's AI badge. */
+function categoriesOf(kept: readonly ChangeItem[]): AiCategory[] {
+  const out = new Set<AiCategory>();
+  for (const item of kept) {
+    if (item.type === 'sound') {
+      out.add(item.part === 'sfx' ? 'SFX' : 'MUSIC');
+    } else if (item.editor !== 'sound') {
+      out.add(CATEGORY[item.editor]);
+    }
+  }
+  return [...out];
+}
 
 /** How long the live document is left to settle before the changes are worked out again. */
 const RECOMPUTE_MS = 300;
@@ -68,6 +109,10 @@ export class DiffStore {
   private readonly loaded = signal<ReadonlyMap<string, EditableGame>>(new Map());
   readonly loading = signal(false);
   readonly loadFailed = signal(false);
+  /** The assistant has written nothing to review yet. */
+  readonly aiEmpty = signal(false);
+  /** The revision of the assistant's save that was read, which a review names. */
+  private aiRevision = 0;
   /** Moves when the open document changes, which no signal reports by itself. */
   private readonly tick = signal(0);
 
@@ -156,16 +201,13 @@ export class DiffStore {
   }
 
   /**
-   * Turns diff mode on, against the newest saved version unless two sides were already chosen.
+   * Turns diff mode on, on what the assistant made unless two sides were already chosen.
    * Turning it off drops every decision not applied.
    */
   setOn(on: boolean): void {
     if (on && this.from() === this.to()) {
-      const newest = this.history()[0];
-      if (newest) {
-        this.from.set(newest.key);
-        this.to.set('current');
-      }
+      this.from.set('current');
+      this.to.set(AI_REF);
     }
     if (!on) {
       this.taken.set(new Map());
@@ -185,13 +227,17 @@ export class DiffStore {
       return;
     }
     const row = this.history().find((held) => held.key === ref);
-    if (!row) {
+    if (ref !== AI_REF && !row) {
       return;
     }
     this.loading.set(true);
     this.loadFailed.set(false);
     try {
-      const doc = await loadVersionDoc(this.session.id, row);
+      const doc = row ? await loadVersionDoc(this.session.id, row) : await this.loadAiDraft();
+      if (!doc) {
+        this.aiEmpty.set(true);
+        return;
+      }
       // Looked at only: nothing in a saved version is ever written from here.
       const game = new EditableGame(doc, () => false);
       this.loaded.update((held) => new Map(held).set(ref, game));
@@ -200,6 +246,25 @@ export class DiffStore {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  /** The assistant's draft, or null where it has not written one. */
+  private async loadAiDraft(): Promise<Y.Doc | null> {
+    const workspace = unwrap(
+      await aiProjectControllerWorkspaceOf({ path: { id: this.session.id } }),
+    );
+    this.aiRevision = workspace.revision;
+    this.aiEmpty.set(false);
+    if (!workspace.draft) {
+      return null;
+    }
+    const doc = new Y.Doc();
+    Y.applyUpdate(
+      doc,
+      Uint8Array.from(atob(workspace.draft), (char) => char.charCodeAt(0)),
+    );
+    migrateGame(doc);
+    return doc;
   }
 
   decisionOf(key: string): Decision {
@@ -249,21 +314,56 @@ export class DiffStore {
    * makes, merged against the document as it stands now and put back through the game's gate like
    * a restore, so it reaches every peer and the autosave.
    */
-  apply(): boolean {
+  async apply(): Promise<boolean> {
     const after = this.after();
     if (this.mode() !== 'review' || !after) {
       return false;
     }
-    const accepted = new Set(
-      [...this.decisions()].filter(([, decision]) => decision === 'ok').map(([key]) => key),
+    const items = this.items();
+    const kept = items.filter((item) => this.decisions().get(item.key) === 'ok');
+    const state = mergeAccepted(
+      this.session.doc,
+      after,
+      items,
+      new Set(kept.map((item) => item.key)),
     );
-    const state = mergeAccepted(this.session.doc, after, this.items(), accepted);
+    // What the assistant still offers: the same document with every change not yet decided.
+    const waiting = items.filter((item) => !this.decisions().has(item.key));
+    const draft =
+      this.to() === AI_REF
+        ? mergeAccepted(
+            this.session.doc,
+            after,
+            items,
+            new Set([...kept, ...waiting].map((item) => item.key)),
+          )
+        : null;
     this.editorMode.choose('normal');
     if (!this.editorMode.canWrite()) {
       return false;
     }
     this.session.game.restoreFrom(state);
     this.setOn(false);
+    if (draft) {
+      // Read again next time: the review moved the assistant's base and draft on.
+      this.loaded.update((held) => {
+        const next = new Map(held);
+        next.get(AI_REF)?.destroy();
+        next.delete(AI_REF);
+        return next;
+      });
+      unwrap(
+        await aiProjectControllerReview({
+          path: { id: this.session.id },
+          body: {
+            revision: this.aiRevision,
+            base: toBase64(state),
+            draft: toBase64(draft),
+            categories: categoriesOf(kept),
+          },
+        }),
+      );
+    }
     return true;
   }
 }

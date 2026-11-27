@@ -4,6 +4,8 @@
       {{ t('editor.diff.loading') }}
     } @else if (diff.loadFailed()) {
       <span class="text-hot-ink">{{ t('editor.diff.loadFailed') }}</span>
+    } @else if (diff.to() === 'ai' && diff.aiEmpty()) {
+      {{ t('editor.diff.aiNothing') }}
     } @else if (diff.mode() === 'review') {
       {{ t('editor.diff.reviewed', { n: diff.reviewed(), max: diff.total() }) }}
     } @else {

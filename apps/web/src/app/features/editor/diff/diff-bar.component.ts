@@ -10,7 +10,7 @@ import {
 } from '@naucto/ui';
 
 import type { HistoryRow } from '../game/versions-popover.component';
-import { DiffStore, type SnapshotRef } from './diff.store';
+import { AI_REF, DiffStore, type SnapshotRef } from './diff.store';
 
 interface PickerRow {
   ref: SnapshotRef;
@@ -61,14 +61,21 @@ export class DiffBarComponent {
   }));
   protected readonly fromRows = computed(() => [this.currentRow(), ...this.versionRows()]);
   /**
-   * The design offers the assistant's pending changes here. Until the backend serves its working
-   * save to the editor, a saved version stands in that place: taken from it change by change, it
-   * is a restore of only what one wants back.
+   * What the assistant made, the project, or a saved version: taken from a version change by
+   * change, a review is a rollback of only the parts one wants back.
    */
-  protected readonly toRows = computed(() => [this.currentRow(), ...this.versionRows()]);
+  protected readonly toRows = computed<PickerRow[]>(() => [
+    {
+      ref: AI_REF,
+      title: this.transloco.translate('editor.diff.ai'),
+      hint: 'editor.diff.aiHint',
+    },
+    this.currentRow(),
+    ...this.versionRows(),
+  ]);
 
   protected titleOf(ref: SnapshotRef): string {
-    return this.fromRows().find((row) => row.ref === ref)?.title ?? ref;
+    return this.toRows().find((row) => row.ref === ref)?.title ?? ref;
   }
 
   protected pick(side: 'from' | 'to', ref: SnapshotRef): void {
