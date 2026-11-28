@@ -118,6 +118,12 @@ export const routes: Routes = [
         title: 'Sign in — Naucto',
       },
       {
+        path: 'assistant/connect',
+        loadComponent: () => import('./features/assistant/connect.page'),
+        canActivate: [authGuard],
+        title: 'Connect an assistant — Naucto',
+      },
+      {
         path: 'settings',
         loadComponent: () => import('./features/settings/settings.page'),
         canActivate: [authGuard],

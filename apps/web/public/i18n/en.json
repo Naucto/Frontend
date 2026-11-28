@@ -1,4 +1,20 @@
 {
+  "assistant": {
+    "connect": {
+      "title": "Connect an assistant",
+      "lead": "Type the code your assistant shows.",
+      "code": "Code",
+      "unknown": "No such code, or it expired: ask the assistant for a new one.",
+      "next": "Continue",
+      "asks": "{{name}} asks to work on your games.",
+      "reach": "It will reach every game you own, through its own copy of each. Nothing it makes enters a game until you keep it.",
+      "approve": "Connect",
+      "refuse": "Refuse",
+      "done": "Connected: you can go back to your assistant.",
+      "manage": "Manage assistants",
+      "refused": "Refused: the assistant is told."
+    }
+  },
   "count": "{{n}} of {{max}}",
   "nav": {
     "main": "Main navigation",
@@ -66,6 +82,20 @@
     }
   },
   "settings": {
+    "assistant": "Assistants",
+    "ai": {
+      "connected": "Connected assistants",
+      "hint": "An assistant reaches every game you own, and only through its own copy of each: you keep what it makes in the editor's diff mode.",
+      "lastUsed": "Last used {{when}}",
+      "since": "Connected {{when}}",
+      "revoke": "Disconnect",
+      "revokeTitle": "Disconnect {{name}}?",
+      "revokeMessage": "It loses access to your games at once. Its copies of them stay until it connects again.",
+      "revokeFailed": "Not disconnected: try again",
+      "none": "No assistant connected",
+      "howTo": "Connect one from the assistant itself: it shows a code to type here.",
+      "enterCode": "Enter a code"
+    },
     "title": "Settings",
     "account": "Account",
     "editor": "Editor",

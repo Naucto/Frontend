@@ -7955,30 +7955,146 @@
         "tags": ["admin"]
       }
     },
-    "/ai/keys": {
+    "/ai/oauth/device": {
       "post": {
-        "operationId": "AiKeysController_create",
+        "operationId": "AiOAuthController_device",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AiKeyCreateDto"
+                "$ref": "#/components/schemas/AiDeviceRequestDto"
               }
             }
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AiKeyCreatedDto"
+                  "$ref": "#/components/schemas/AiDeviceAuthorizationDto"
                 }
               }
             }
+          }
+        },
+        "summary": "Ask for a code to show the owner, and the address to type it at",
+        "tags": ["ai-oauth"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/ai/oauth/token": {
+      "post": {
+        "operationId": "AiOAuthController_token",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiTokenRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiTokenDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not yet, too fast, refused, expired or revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiTokenErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Swap an approved device code, or a refresh token, for tokens",
+        "tags": ["ai-oauth"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/ai/device/{code}": {
+      "get": {
+        "operationId": "AiGrantsController_describe",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "ACDE-FGHJ",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiDeviceDescriptionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "404": {
+            "description": "No such code, expired or already answered"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "What asks to connect with this code",
+        "tags": ["ai"]
+      }
+    },
+    "/ai/device/{code}/approve": {
+      "post": {
+        "operationId": "AiGrantsController_approve",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "ACDE-FGHJ",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
           },
           "401": {
             "description": "Authentication required"
@@ -7989,11 +8105,44 @@
             "JWT-auth": []
           }
         ],
-        "summary": "Make an assistant key, which reaches every project the account owns",
+        "summary": "Connect the assistant to the caller’s account",
         "tags": ["ai"]
-      },
+      }
+    },
+    "/ai/device/{code}/deny": {
+      "post": {
+        "operationId": "AiGrantsController_deny",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "ACDE-FGHJ",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "Authentication required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Refuse the connection",
+        "tags": ["ai"]
+      }
+    },
+    "/ai/grants": {
       "get": {
-        "operationId": "AiKeysController_list",
+        "operationId": "AiGrantsController_grants",
         "parameters": [],
         "responses": {
           "200": {
@@ -8003,7 +8152,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/AiKeySummaryDto"
+                    "$ref": "#/components/schemas/AiGrantDto"
                   }
                 }
               }
@@ -8018,16 +8167,16 @@
             "JWT-auth": []
           }
         ],
-        "summary": "The account’s live assistant keys",
+        "summary": "The assistants connected to the account",
         "tags": ["ai"]
       }
     },
-    "/ai/keys/{keyId}": {
+    "/ai/grants/{grantId}": {
       "delete": {
-        "operationId": "AiKeysController_revoke",
+        "operationId": "AiGrantsController_revoke",
         "parameters": [
           {
-            "name": "keyId",
+            "name": "grantId",
             "required": true,
             "in": "path",
             "schema": {
@@ -8042,9 +8191,6 @@
           },
           "401": {
             "description": "Authentication required"
-          },
-          "404": {
-            "description": "No live key of the caller’s by that id"
           }
         },
         "security": [
@@ -8052,7 +8198,7 @@
             "JWT-auth": []
           }
         ],
-        "summary": "Revoke a key everywhere",
+        "summary": "Disconnect an assistant everywhere",
         "tags": ["ai"]
       }
     },
@@ -17648,38 +17794,126 @@
         },
         "required": ["items", "total", "page", "limit"]
       },
-      "AiKeyCreateDto": {
+      "AiDeviceRequestDto": {
         "type": "object",
         "properties": {
-          "name": {
+          "clientName": {
             "type": "string",
-            "example": "Claude on my laptop",
-            "minLength": 1,
-            "maxLength": 60
+            "example": "Claude Code on my laptop",
+            "maxLength": 80
+          }
+        }
+      },
+      "AiDeviceAuthorizationDto": {
+        "type": "object",
+        "properties": {
+          "device_code": {
+            "type": "string"
           },
-          "expiresInDays": {
+          "user_code": {
+            "type": "string",
+            "example": "ACDE-FGHJ"
+          },
+          "verification_uri": {
+            "type": "string"
+          },
+          "verification_uri_complete": {
+            "type": "string"
+          },
+          "expires_in": {
+            "type": "number"
+          },
+          "interval": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "device_code",
+          "user_code",
+          "verification_uri",
+          "verification_uri_complete",
+          "expires_in",
+          "interval"
+        ]
+      },
+      "AiTokenRequestDto": {
+        "type": "object",
+        "properties": {
+          "grant_type": {
+            "type": "string",
+            "enum": ["urn:ietf:params:oauth:grant-type:device_code", "refresh_token"]
+          },
+          "device_code": {
+            "type": "string"
+          },
+          "refresh_token": {
+            "type": "string"
+          }
+        },
+        "required": ["grant_type"]
+      },
+      "AiTokenDto": {
+        "type": "object",
+        "properties": {
+          "access_token": {
+            "type": "string"
+          },
+          "refresh_token": {
+            "type": "string"
+          },
+          "token_type": {
+            "type": "string",
+            "enum": ["Bearer"]
+          },
+          "expires_in": {
             "type": "number",
-            "description": "Days until the key expires; absent never expires",
-            "minimum": 1,
-            "maximum": 3650
+            "description": "Seconds the access token lasts"
           }
         },
-        "required": ["name"]
+        "required": ["access_token", "refresh_token", "token_type", "expires_in"]
       },
-      "AiKeyCreatedDto": {
+      "AiTokenErrorDto": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "authorization_pending",
+              "slow_down",
+              "access_denied",
+              "expired_token",
+              "invalid_grant",
+              "invalid_request"
+            ]
+          },
+          "error_description": {
+            "type": "string"
+          }
+        },
+        "required": ["error", "error_description"]
+      },
+      "AiDeviceDescriptionDto": {
+        "type": "object",
+        "properties": {
+          "clientName": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["clientName", "expiresAt"]
+      },
+      "AiGrantDto": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid"
           },
-          "name": {
+          "clientName": {
             "type": "string"
-          },
-          "expiresAt": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
           },
           "createdAt": {
             "format": "date-time",
@@ -17689,40 +17923,9 @@
             "format": "date-time",
             "type": "string",
             "nullable": true
-          },
-          "token": {
-            "type": "string",
-            "description": "The key itself, shown this once and never again"
           }
         },
-        "required": ["id", "name", "expiresAt", "createdAt", "lastUsedAt", "token"]
-      },
-      "AiKeySummaryDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "name": {
-            "type": "string"
-          },
-          "expiresAt": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "lastUsedAt": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": ["id", "name", "expiresAt", "createdAt", "lastUsedAt"]
+        "required": ["id", "clientName", "createdAt", "lastUsedAt"]
       },
       "AiWorkspaceDto": {
         "type": "object",

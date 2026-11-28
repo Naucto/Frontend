@@ -1,0 +1,24 @@
+<div *transloco="let t" class="grid gap-3">
+  <nc-settings-group [title]="t('settings.ai.connected')" [hint]="t('settings.ai.hint')">
+    @for (grant of grants.data() ?? []; track grant.id) {
+      <nc-setting-row
+        icon="zap"
+        [title]="grant.clientName"
+        [hint]="
+          grant.lastUsedAt
+            ? t('settings.ai.lastUsed', { when: (grant.lastUsedAt | date: 'medium') })
+            : t('settings.ai.since', { when: (grant.createdAt | date: 'medium') })
+        ">
+        <button ncButton variant="danger" size="sm" (click)="revoke(grant)">
+          {{ t('settings.ai.revoke') }}
+        </button>
+      </nc-setting-row>
+    } @empty {
+      <nc-setting-row icon="zap" [title]="t('settings.ai.none')" [hint]="t('settings.ai.howTo')">
+        <a ncButton variant="secondary" size="sm" routerLink="/assistant/connect">
+          {{ t('settings.ai.enterCode') }}
+        </a>
+      </nc-setting-row>
+    }
+  </nc-settings-group>
+</div>
