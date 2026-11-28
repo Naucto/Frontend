@@ -3,9 +3,23 @@ export * from './diff/changes';
 export * from './diff/decisions';
 export * from './diff/lines';
 export { displayState, mergeAccepted } from './diff/merge';
-export { aiContext, decodeState, encodeState } from './game/ai-context';
-export { EditableGame, RESTORE_KINDS } from './game/EditableGame';
-export { Game } from './game/Game';
+export {
+  type MergeConflict,
+  type MergeSide,
+  mergeTexts,
+  mergeThreeWay,
+  SpritesRenumberedError,
+  type ThreeWayMerge,
+} from './diff/three-way';
+export * from './game/cells';
+export * from './game/defaults';
+export { EditableGame, type ResizePreview } from './game/EditableGame';
+export { type CodeFile, Game, type SoundLibraryPart } from './game/Game';
+export { GameMap } from './game/GameMap';
 export * from './game/geometry';
 export * from './game/keys';
-export { isFromFutureSchema, migrateGame } from './migrations';
+export { Sheet } from './game/Sheet';
+export { type OpenState, openState } from './game/state';
+export * from './input/actions';
+export { INPUT_PRESET_IDS, INPUT_PRESETS, type InputPresetId } from './input/presets';
+export * from './net/rules';

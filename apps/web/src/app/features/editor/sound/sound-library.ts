@@ -6,6 +6,7 @@ import {
   type Instrument,
   type InstrumentPreset,
   type MidiSong,
+  nextPatternSlot,
   type Note,
   type Pattern,
   patternBars,
@@ -372,8 +373,7 @@ export class SoundLibrary {
 
   /** The first pattern number past every one taken, so an import's patterns stay together. */
   patternSlotAfterAll(): number {
-    const slots = [...this.patterns().values()].map((pattern) => pattern.slot);
-    return slots.length ? Math.max(...slots) + 1 : 0;
+    return nextPatternSlot(this.patterns().values());
   }
 
   removeSong(slot: number): void {

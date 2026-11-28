@@ -195,3 +195,59 @@ describe('display', () => {
     expect(shown.files.find((file) => file.id === 'player')).toBeUndefined();
   });
 });
+
+describe('controls, names and rules', () => {
+  it('reviews a control whole, whatever of it changed', () => {
+    const current = base();
+    for (const action of current.game.actions) {
+      current.game.removeAction(action.id);
+    }
+    const id = current.game.addAction({ name: 'jump' }) ?? '';
+    const old = current.game.addAction({ name: 'old' }) ?? '';
+    const proposed = fork(current.doc);
+    proposed.game.plugInput(id, { kind: 'key', player: 0, key: 'k' });
+    proposed.game.removeAction(old);
+    // Taking the name of the one that goes.
+    proposed.game.addAction({ name: 'old', label: 'Newer' });
+    const items = computeChanges(current.game, proposed.game);
+    expect(items.map((item) => [item.editor, item.kind]).sort()).toEqual([
+      ['game', 'DELETED'],
+      ['game', 'EDIT'],
+      ['game', 'NEW'],
+    ]);
+    const doc = new Y.Doc();
+    Y.applyUpdate(doc, mergeAccepted(current.doc, proposed.game, items, new Set(keys(items))));
+    const merged = new EditableGame(doc).actions;
+    expect(merged.map((action) => [action.name, action.label, action.inputs.length])).toEqual([
+      ['jump', 'jump', 1],
+      ['old', 'Newer', 0],
+    ]);
+  });
+
+  it('takes a new name of a sheet and of a map', () => {
+    const current = base();
+    const proposed = fork(current.doc);
+    proposed.game.describeSheet(FIRST_SHEET_ID, 'heroes', null);
+    proposed.game.describeMap(FIRST_MAP_ID, 'cave', null);
+    const items = computeChanges(current.game, proposed.game);
+    expect(items.map((item) => item.type).sort()).toEqual(['map-name', 'sheet-name']);
+    const doc = new Y.Doc();
+    Y.applyUpdate(doc, mergeAccepted(current.doc, proposed.game, items, new Set(keys(items))));
+    const merged = new EditableGame(doc);
+    expect([merged.sheets[0]?.name, merged.maps[0]?.name]).toEqual(['heroes', 'cave']);
+  });
+
+  it('removes a net path alone, keeping one under it whose removal was refused', () => {
+    const current = base();
+    current.game.setNetPermission('players', 1);
+    current.game.setNetPermission('players.score', 3);
+    const proposed = fork(current.doc);
+    proposed.game.removeNetPermissions('players');
+    const items = computeChanges(current.game, proposed.game);
+    const doc = new Y.Doc();
+    Y.applyUpdate(doc, mergeAccepted(current.doc, proposed.game, items, new Set(['net:players'])));
+    const merged = new EditableGame(doc);
+    expect(merged.netPermissions.has('players')).toBe(false);
+    expect(merged.netPermissions.get('players.score')).toEqual({ flags: 3 });
+  });
+});

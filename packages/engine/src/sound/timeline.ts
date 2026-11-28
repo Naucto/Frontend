@@ -1,5 +1,6 @@
 import {
   BEATS_PER_BAR,
+  defaultSong,
   type Instrument,
   type Note,
   type NoteSheet,
@@ -14,6 +15,10 @@ import { PATTERN_BOUNDS } from './presets';
 const EPSILON = 1e-6;
 
 export const TICKS_PER_BEAT = SUBSTEPS * 8;
+
+/** The first pattern number past every one taken. */
+export const nextPatternSlot = (patterns: Iterable<Pick<Pattern, 'slot'>>): number =>
+  Math.max(-1, ...Array.from(patterns, (pattern) => pattern.slot)) + 1;
 
 export const patternBars = (sheet: NoteSheet): number =>
   sheet.steps / sheet.stepsPerBeat / BEATS_PER_BAR;
@@ -32,6 +37,33 @@ export const songLoopEnd = (song: Song, patterns: ReadonlyMap<string, Pattern>):
 
   return song.loopEnd === undefined ? end : Math.min(song.loopEnd, end);
 };
+
+/**
+ * A music that plays patterns one after the other on a single track, a pattern played twice in a
+ * row being one block repeated. A pattern the library lacks is left out.
+ */
+export function songInSequence(
+  order: readonly string[],
+  patterns: ReadonlyMap<string, Pattern>,
+  song: Partial<Song> = {},
+): Song {
+  const blocks: SongBlock[] = [];
+  let start = 0;
+  order.forEach((id, i) => {
+    const pattern = patterns.get(id);
+    if (!pattern) {
+      return;
+    }
+    const last = blocks.at(-1);
+    if (last?.pattern === id) {
+      last.repeat += 1;
+    } else {
+      blocks.push({ id: `b${String(i)}`, pattern: id, start, repeat: 1, track: 0 });
+    }
+    start += patternBars(pattern);
+  });
+  return { ...defaultSong(patterns.get(order[0] ?? '')?.bpm), ...song, blocks, tracks: [''] };
+}
 
 const overlaps = (a: SongBlock, b: SongBlock, patterns: ReadonlyMap<string, Pattern>): boolean =>
   a.track === b.track &&

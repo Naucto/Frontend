@@ -170,7 +170,7 @@ export default class EditorShellComponent implements OnInit {
       peers: this.sessionPresence
         .peersIn(item.value)
         .map((peer) => ({ id: peer.clientId, name: peer.name, colour: peer.colour })),
-      count: item.value === 'game' ? 0 : this.diff.counts()[item.value],
+      count: this.diff.counts()[item.value],
     })),
   );
   /**

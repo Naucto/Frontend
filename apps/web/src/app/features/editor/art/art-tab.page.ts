@@ -14,6 +14,7 @@ import {
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { FIRST_SHEET_ID, MAX_SHEET_SIZE, type ResizePreview, SIZE_STEP } from '@naucto/engine';
 import { BUBBLEGUM_16, PICO8_PALETTE, SPRITE_SIZE } from '@naucto/engine';
+import { type Transform } from '@naucto/engine';
 import {
   BitFlagsComponent,
   ButtonDirective,
@@ -38,7 +39,7 @@ import {
 
 import { collectionsSignal } from '../../../shared/pixel/collections.signal';
 import { geometrySignal } from '../../../shared/pixel/geometry.signal';
-import { type Pt, type Transform } from '../../../shared/pixel/pixel-tools';
+import { type Pt } from '../../../shared/pixel/pixel-tools';
 import { SheetPainter } from '../../../shared/pixel/sheet-painter';
 import { TransformBarComponent } from '../../../shared/pixel/transform-bar.component';
 import { injectCollectionActions } from '../collection-actions';

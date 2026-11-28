@@ -14,6 +14,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { type Transform } from '@naucto/engine';
 import { DEFAULT_GEOMETRY, type EditableGame, FIRST_SHEET_ID, SPRITE_SIZE } from '@naucto/engine';
 import {
   DragPanDirective,
@@ -41,7 +42,6 @@ import {
   type Pt,
   rectPoints,
   spanning,
-  type Transform,
   withinBounds,
 } from '../../../shared/pixel/pixel-tools';
 import { type SheetPainter } from '../../../shared/pixel/sheet-painter';

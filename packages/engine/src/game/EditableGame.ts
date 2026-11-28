@@ -7,10 +7,12 @@ import {
   type ActionInput,
   type ActionNameIssue,
   actionNameIssue,
+  type GameAction,
   inputId,
   MAX_ACTIONS,
 } from '../input/actions';
 import { INPUT_PRESETS, type InputPresetId } from '../input/presets';
+import { accessAt, flagsOf, readNetRules } from '../net/rules';
 import type { Instrument, Pattern, Sfx, Song } from '../sound/model';
 import { encodePattern, encodeSfx, encodeSong } from '../sound/storage';
 import {
@@ -27,6 +29,7 @@ import {
   LOCAL_ORIGIN,
   type NetPermissionRules,
   type NetRule,
+  type SoundLibraryPart,
 } from './Game';
 import { clampMapSize, clampSheetSize } from './geometry';
 import {
@@ -550,6 +553,26 @@ export class EditableGame extends Game {
   }
 
   /**
+   * Writes an action whole under its own id, in place of the one there: how a change reviewed on
+   * its own is put in. False, and nothing written, where the game has no room for another, its
+   * name is refused or the game may not be written.
+   */
+  putAction(action: GameAction): boolean {
+    const held = this.actionsMap.has(action.id);
+    if (
+      (!held && this.actions.length >= MAX_ACTIONS) ||
+      this.actionNameIssue(action.name, action.id) !== null
+    ) {
+      return false;
+    }
+    return this.transact(() => {
+      // A label read as the name is one nobody wrote.
+      const label = action.label === action.name ? '' : action.label;
+      this.writeAction(action.id, { ...action, label }, action.order);
+    });
+  }
+
+  /**
    * Changes what an action says of itself, field by field; false, and nothing written, for an
    * action the game does not have, a name {@link actionNameIssue} refuses or a game that may not
    * be written. Code that reads the action by its old name is not rewritten.
@@ -709,6 +732,17 @@ export class EditableGame extends Game {
     };
   }
 
+  /** Makes a file read `source`, rewriting only the span that differs. False without that file. */
+  setFileText(id: string, source: string): boolean {
+    const text = this.codeFiles.get(id)?.get(ENTRY_KEYS.text);
+    if (!(text instanceof Y.Text)) {
+      return false;
+    }
+    return this.transact(() => {
+      replaceText(text, source);
+    });
+  }
+
   renameFile(id: string, name: string): void {
     this.transact(() => {
       this.codeFiles.get(id)?.set(ENTRY_KEYS.name, name);
@@ -777,6 +811,13 @@ export class EditableGame extends Game {
     });
   }
 
+  /** Drops one entry of the sound library; what still names it is left naming nothing. */
+  removeSound(part: SoundLibraryPart, id: string): void {
+    this.transact(() => {
+      this[part].delete(id);
+    });
+  }
+
   // ---- net permissions ------------------------------------------------------
 
   /** Every entry on a path and under it, rules and declarations alike. */
@@ -809,6 +850,24 @@ export class EditableGame extends Game {
     this.transact(() => {
       this.netRules.set(path, { flags });
     });
+  }
+
+  /**
+   * Gives a path a rule of its own from the access that applies to it now, changing only the rights
+   * named: closing one never opens the other, inherited or not.
+   */
+  setNetAccess(path: string, access: { read?: boolean; write?: boolean }): void {
+    const now = accessAt(readNetRules(this.netPermissions).flags, path);
+    this.setNetPermission(path, flagsOf({ ...now, ...access }));
+  }
+
+  /** Drops the entry of one path, whatever is declared under it staying. */
+  dropNetRule(path: string): void {
+    if (this.netRules.has(path)) {
+      this.transact(() => {
+        this.netRules.delete(path);
+      });
+    }
   }
 
   /**

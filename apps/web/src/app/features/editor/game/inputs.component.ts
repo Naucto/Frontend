@@ -23,6 +23,7 @@ import {
 } from '@naucto/engine';
 import {
   ButtonDirective,
+  ChangeChipComponent,
   ChipComponent,
   closedBy,
   DialogService,
@@ -40,6 +41,8 @@ import { BindingCaptureService } from '../../../shared/input/binding-capture.ser
 import { InputCapComponent } from '../../../shared/input/input-cap.component';
 import { legendOf } from '../../../shared/input/input-legend';
 import { ySignal } from '../../../shared/yjs/y-signal';
+import { DiffStore } from '../diff/diff.store';
+import { DiffChangesComponent } from '../diff/diff-changes.component';
 import { WorkSessionService } from '../work-session/work-session.service';
 import type { ActionDialogData, ActionDialogResult } from './action.dialog';
 
@@ -72,7 +75,9 @@ const OPEN_ROW = 'bg-raised! shadow-[inset_3px_0_0_var(--color-primary)]';
   imports: [
     TranslocoDirective,
     ButtonDirective,
+    ChangeChipComponent,
     ChipComponent,
+    DiffChangesComponent,
     HelpDotComponent,
     IconComponent,
     InputCapComponent,
@@ -105,9 +110,27 @@ export class InputsComponent {
   private readonly changes = inject(ChangeDetectorRef);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
-  protected readonly actions = ySignal(
+  protected readonly diff = inject(DiffStore);
+  private readonly held = ySignal(
     () => this.session.game.actions,
     (cb) => this.session.game.onActionsChange(cb),
+  );
+  /** The project's actions, or what they would be with the changes not refused. */
+  protected readonly actions = computed(() => {
+    const held = this.held();
+    this.diff.decisions();
+    const shown = this.diff.shown();
+    return shown === this.session.game ? held : shown.actions;
+  });
+  protected readonly changeList = computed(() => this.diff.itemsOf('game'));
+  /** How each action differs while diff mode is on. */
+  protected readonly kinds = computed(
+    () =>
+      new Map(
+        this.changeList().flatMap((item) =>
+          item.type === 'action' ? [[item.id, item.kind] as const] : [],
+        ),
+      ),
   );
   protected readonly pane = signal<Pane>('actions');
   protected readonly openId = signal<string | null>(null);

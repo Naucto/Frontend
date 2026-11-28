@@ -10,7 +10,7 @@ import {
   type DiffRow,
   wordDiff,
 } from '@naucto/engine';
-import { ChangeChipComponent, LooksOnlyDirective, MarkComponent } from '@naucto/ui';
+import { ChangeChipComponent } from '@naucto/ui';
 import { StyleModule } from 'style-mod';
 
 import { naucto_highlight } from '../code/theme';
@@ -53,13 +53,7 @@ const GONE = 'text-hot-ink line-through';
  */
 @Component({
   selector: 'nc-code-diff',
-  imports: [
-    TranslocoDirective,
-    ChangeChipComponent,
-    HunkActionsComponent,
-    LooksOnlyDirective,
-    MarkComponent,
-  ],
+  imports: [TranslocoDirective, ChangeChipComponent, HunkActionsComponent],
   templateUrl: './code-diff.component.html',
   host: { class: 'flex h-full min-h-0 flex-col' },
   changeDetection: ChangeDetectionStrategy.OnPush,

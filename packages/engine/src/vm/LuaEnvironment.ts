@@ -656,6 +656,24 @@ class LuaEnvironment {
     return this.pcall(msgh, 0, stackTop);
   }
 
+  /** Compiles `code` without running any of it; throws a {@link LuaError} where it does not parse. */
+  public compile(code: string, chunkName: string): void {
+    const luaState = this.luaState;
+    const stackTop = fengari.lua.lua_gettop(luaState);
+    const loaded =
+      fengari.lauxlib.luaL_loadbuffer(
+        luaState,
+        fengari.to_luastring(code),
+        null,
+        fengari.to_luastring(`=${chunkName}`),
+      ) === fengari.lua.LUA_OK;
+    const message = loaded ? '' : this.getErrorMessage();
+    fengari.lua.lua_settop(luaState, stackTop);
+    if (!loaded) {
+      throw new LuaError(message, undefined, [chunkName]);
+    }
+  }
+
   /**
    * Calls the function sitting just above `stackTop`, with the traceback handler slid under it,
    * and leaves the stack at `stackTop` whether it returned or threw.

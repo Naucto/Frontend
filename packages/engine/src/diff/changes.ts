@@ -1,16 +1,18 @@
 import type { EditableGame } from '../game/EditableGame';
-import type { NetRule } from '../game/Game';
+import type { NetRule, SoundLibraryPart } from '../game/Game';
 import { SPRITE_SIZE } from '../game/keys';
+import { type GameAction, inputId } from '../input/actions';
+import { soundEntries, soundNeeds } from '../sound/uses';
 import { type DiffRow, lineDiff, type LineHunk, lineHunks } from './lines';
 
 /** The editor a change is reviewed in. */
-export type DiffEditor = 'code' | 'art' | 'map' | 'sound' | 'net';
+export type DiffEditor = 'game' | 'code' | 'art' | 'map' | 'sound' | 'net';
 
 /** What a change does to the thing it targets. */
 export type DiffKind = 'NEW' | 'EDIT' | 'DELETED';
 
 /** The rail's order, which is also the order prev / next walks the changes in. */
-export const DIFF_EDITORS: readonly DiffEditor[] = ['code', 'art', 'map', 'sound', 'net'];
+export const DIFF_EDITORS: readonly DiffEditor[] = ['game', 'code', 'art', 'map', 'sound', 'net'];
 
 /** A rectangle on a grid of cells, inclusive of `x` and `y` and exclusive of `x + w`, `y + h`. */
 export interface CellBounds {
@@ -26,7 +28,7 @@ export interface Size {
 }
 
 /** The sound library parts that are reviewed one entry at a time. */
-export type SoundPart = 'instruments' | 'patterns' | 'songs' | 'sfx' | 'samples';
+export type SoundPart = SoundLibraryPart;
 
 interface ChangeBase {
   /** Stable for as long as the two snapshots are the same, e.g. `code:main#h3`. */
@@ -70,6 +72,21 @@ export interface GridEntryChange extends ChangeBase {
   type: 'sheet' | 'map';
   id: string;
   name: string;
+}
+
+export interface GridNameChange extends ChangeBase {
+  type: 'sheet-name' | 'map-name';
+  id: string;
+  before: string;
+  after: string;
+}
+
+/** One of the game's controls, whole: its name, what it says of itself and what is plugged in. */
+export interface ActionChange extends ChangeBase {
+  type: 'action';
+  id: string;
+  before: GameAction | null;
+  after: GameAction | null;
 }
 
 export interface GridSizeChange extends ChangeBase {
@@ -138,13 +155,15 @@ export type ChangeItem =
   | CodeNameChange
   | CodeHunkChange
   | GridEntryChange
+  | GridNameChange
   | GridSizeChange
   | SheetCellChange
   | SheetFlagsChange
   | PaletteChange
   | MapAreaChange
   | NetChange
-  | SoundChange;
+  | SoundChange
+  | ActionChange;
 
 const kindOf = (had: boolean, has: boolean): DiffKind => {
   if (!had) {
@@ -320,6 +339,18 @@ function mapChanges(before: EditableGame, after: EditableGame): ChangeItem[] {
       });
       continue;
     }
+    if (was.name !== is.name) {
+      out.push({
+        key: `${container}#name`,
+        editor: 'map',
+        kind: 'EDIT',
+        container,
+        type: 'map-name',
+        id,
+        before: was.name,
+        after: is.name,
+      });
+    }
     let size: GridSizeChange | null = null;
     if (was.width !== is.width || was.height !== is.height) {
       size = {
@@ -407,6 +438,18 @@ function sheetChanges(before: EditableGame, after: EditableGame): ChangeItem[] {
         name: (is ?? was)?.name ?? id,
       });
       continue;
+    }
+    if (was.name !== is.name) {
+      out.push({
+        key: `${container}#name`,
+        editor: 'art',
+        kind: 'EDIT',
+        container,
+        type: 'sheet-name',
+        id,
+        before: was.name,
+        after: is.name,
+      });
     }
     let size: GridSizeChange | null = null;
     if (was.width !== is.width || was.height !== is.height) {
@@ -551,30 +594,13 @@ const nameOf = (entry: unknown, fallback: string): string => {
   return typeof name === 'string' && name ? name : fallback;
 };
 
-/** The instruments a pattern or a sound effect plays. */
-const instrumentsOf = (entry: unknown): string[] => {
-  const notes = (entry as { notes?: { instrument?: unknown }[] } | null)?.notes ?? [];
-  return [...new Set(notes.map((note) => note.instrument).filter((id) => typeof id === 'string'))];
-};
-
-/** The patterns a song lays out. */
-const patternsOf = (entry: unknown): string[] => {
-  const blocks = (entry as { blocks?: { pattern?: unknown }[] } | null)?.blocks ?? [];
-  return [...new Set(blocks.map((block) => block.pattern).filter((id) => typeof id === 'string'))];
-};
-
 function soundChanges(before: EditableGame, after: EditableGame): ChangeItem[] {
-  const sides: Record<SoundPart, (game: EditableGame) => Map<string, unknown>> = {
-    instruments: (game) => game.getInstruments(),
-    patterns: (game) => game.getPatterns(),
-    songs: (game) => game.getSongs(),
-    sfx: (game) => game.getSfx(),
-    samples: (game) => game.getSamples(),
-  };
+  const olds = soundEntries(before);
+  const news = soundEntries(after);
   const out: SoundChange[] = [];
-  for (const part of Object.keys(sides) as SoundPart[]) {
-    const old = sides[part](before);
-    const now = sides[part](after);
+  for (const part of Object.keys(news) as SoundPart[]) {
+    const old = olds[part];
+    const now = news[part];
     for (const id of new Set([...now.keys(), ...old.keys()])) {
       const was = old.get(id) ?? null;
       const is = now.get(id) ?? null;
@@ -613,30 +639,54 @@ function soundChanges(before: EditableGame, after: EditableGame): ChangeItem[] {
     dep.deps.onReject.push(user.key);
   };
   for (const change of out) {
-    if (change.after === null) {
-      continue;
-    }
-    if (change.part === 'patterns' || change.part === 'sfx') {
-      for (const id of instrumentsOf(change.after)) {
-        tie(change, `instruments:${id}`);
-      }
-    } else if (change.part === 'songs') {
-      for (const id of patternsOf(change.after)) {
-        tie(change, `patterns:${id}`);
-      }
-    } else if (change.part === 'instruments') {
-      const sample = (change.after as { sampleId?: unknown }).sampleId;
-      if (typeof sample === 'string') {
-        tie(change, `samples:${sample}`);
-      }
+    for (const needed of soundNeeds(change.part, change.after)) {
+      tie(change, needed);
     }
   }
   return out;
 }
 
+// ---- controls -----------------------------------------------------------------
+
+const actionText = (action: GameAction | null): string =>
+  action === null
+    ? ''
+    : JSON.stringify([
+        action.name,
+        action.label,
+        action.description,
+        action.order,
+        action.inputs.map(inputId),
+      ]);
+
+function actionChanges(before: EditableGame, after: EditableGame): ChangeItem[] {
+  const old = new Map(before.actions.map((action) => [action.id, action]));
+  const now = new Map(after.actions.map((action) => [action.id, action]));
+  return [...new Set([...now.keys(), ...old.keys()])].flatMap((id): ActionChange[] => {
+    const was = old.get(id) ?? null;
+    const is = now.get(id) ?? null;
+    if (actionText(was) === actionText(is)) {
+      return [];
+    }
+    return [
+      {
+        key: `game:action:${id}`,
+        editor: 'game',
+        kind: kindOf(!!was, !!is),
+        container: `game:action:${id}`,
+        type: 'action',
+        id,
+        before: was,
+        after: is,
+      },
+    ];
+  });
+}
+
 /** Everything that differs between two snapshots, in rail order. */
 export function computeChanges(before: EditableGame, after: EditableGame): ChangeItem[] {
   return [
+    ...actionChanges(before, after),
     ...codeChanges(before, after, fileDiffs(before, after)),
     ...sheetChanges(before, after),
     ...mapChanges(before, after),

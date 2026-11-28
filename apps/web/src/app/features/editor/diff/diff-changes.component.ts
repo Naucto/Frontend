@@ -62,6 +62,23 @@ export class DiffChangesComponent {
             title: say(item.type === 'map-size' ? 'mapSize' : 'sheetSize'),
             detail: `${String(item.before.width)} × ${String(item.before.height)} → ${String(item.after.width)} × ${String(item.after.height)}`,
           };
+        case 'map-name':
+        case 'sheet-name':
+          return {
+            ...base,
+            tag: '#',
+            title: say(item.type === 'map-name' ? 'mapName' : 'sheetName'),
+            detail: `${item.before} → ${item.after}`,
+          };
+        case 'action': {
+          const action = item.after ?? item.before;
+          return {
+            ...base,
+            tag: 'I',
+            title: action?.label ?? item.id,
+            detail: say(`kind${item.kind}`),
+          };
+        }
         case 'map':
         case 'sheet':
           return {

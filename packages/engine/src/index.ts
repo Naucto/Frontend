@@ -13,6 +13,7 @@ export * from './diff/changes';
 export * from './diff/decisions';
 export * from './diff/lines';
 export { displayState, mergeAccepted } from './diff/merge';
+export * from './game/cells';
 export * from './game/defaults';
 export { EditableGame, type ResizePreview } from './game/EditableGame';
 export {
@@ -79,6 +80,7 @@ export {
 } from './migrations';
 export { ALLOW_ALL, type NetPermissions } from './net/NetPermissions';
 export type { NetHostOptions, NetInvite, NetUi } from './net/NetUi';
+export * from './net/rules';
 export type {
   PlayerNumber,
   RelayUsage,

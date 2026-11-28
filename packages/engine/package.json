@@ -17,6 +17,11 @@
       "types": "./dist/types/sound.d.ts",
       "import": "./dist/sound.js",
       "require": "./dist/sound.cjs"
+    },
+    "./runtime": {
+      "types": "./dist/types/runtime.d.ts",
+      "import": "./dist/runtime.js",
+      "require": "./dist/runtime.cjs"
     }
   },
   "scripts": {

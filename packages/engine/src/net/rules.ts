@@ -1,8 +1,19 @@
-import { type Game, type NetPermissionRules, type NetPermissions } from '@naucto/engine';
+import type { Game, NetPermissionRules } from '../game/Game';
+import type { NetPermissions } from './NetPermissions';
 
 /** Bits stored in `net.permissions` entries (`{ flags }`), keyed by `net.state` path. */
 export const PERM_CLIENT_READ = 1 << 0;
 export const PERM_CLIENT_WRITE = 1 << 1;
+
+/** One key of a `net.state` path. */
+export const NET_SEGMENT = /^[a-z0-9_]+$/i;
+/** A whole dotted path, as a declaration may give it. */
+export const NET_PATH = /^[a-z0-9_]+(\.[a-z0-9_]+)*$/i;
+/**
+ * The branch a lock or a queue keeps its backing under. A rule there would mean nothing: the host
+ * resolves a write inside it against the object's own path.
+ */
+export const NET_OBJECT_MARK = '__netobj__';
 
 /** The game's net rules read apart: the flags of each path that has a rule, and every path named. */
 export interface NetRules {
@@ -63,3 +74,19 @@ export function netPermissionsOf(game: Game): NetPermissions {
     },
   };
 }
+
+/** Whether clients may read and write a path, with no rule anywhere meaning open. */
+export function accessAt(
+  flags: ReadonlyMap<string, number>,
+  path: string,
+): { read: boolean; write: boolean } {
+  const found = resolveFlags(flags, path);
+  return {
+    read: found === null || (found & PERM_CLIENT_READ) !== 0,
+    write: found === null || (found & PERM_CLIENT_WRITE) !== 0,
+  };
+}
+
+/** The flags that state an access. */
+export const flagsOf = (access: { read: boolean; write: boolean }): number =>
+  (access.read ? PERM_CLIENT_READ : 0) | (access.write ? PERM_CLIENT_WRITE : 0);

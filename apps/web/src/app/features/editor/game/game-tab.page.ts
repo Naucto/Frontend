@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { KEYS } from '@naucto/engine';
@@ -12,6 +19,7 @@ import {
 } from '@naucto/ui';
 
 import { ySignal, yTextField } from '../../../shared/yjs/y-signal';
+import { DiffStore } from '../diff/diff.store';
 import { parseTags } from '../state/project-tags';
 import { WorkSessionService } from '../work-session/work-session.service';
 import { ClipRecorder } from './clip-recorder.service';
@@ -49,6 +57,8 @@ type GameView = 'details' | 'disk' | 'inputs';
 export default class GameTabPage {
   private readonly session = inject(WorkSessionService);
   private readonly transloco = inject(TranslocoService);
+
+  private readonly diff = inject(DiffStore);
 
   protected readonly view = signal<GameView>('details');
   /**
@@ -88,6 +98,15 @@ export default class GameTabPage {
       badge: this.actionCount(),
     },
   ]);
+
+  constructor() {
+    // Every change this tab holds is one of the actions.
+    effect(() => {
+      if (this.diff.on() && this.diff.currentKey()?.startsWith('game:')) {
+        this.view.set('inputs');
+      }
+    });
+  }
 
   protected setTags(tags: string[]): void {
     this.tagsRaw.set(JSON.stringify(tags));

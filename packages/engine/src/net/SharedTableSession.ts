@@ -1,6 +1,7 @@
 import type { Destroyable } from '../types';
 import type { NetPermissions } from './NetPermissions';
 import { ALLOW_ALL } from './NetPermissions';
+import { NET_OBJECT_MARK } from './rules';
 import type { PlayerNumber, SessionTransport } from './SessionTransport';
 
 export type TableScalar = number | string | boolean;
@@ -41,8 +42,7 @@ type StatePayload =
 // child branch `P.__netobj__.*`. Because that branch sits inside P's own dotted
 // namespace, the ordinary store machinery replicates, snapshots, and deletes it
 // for free; the proxy simply hides the reserved segment from user-facing reads.
-const OBJECT_MARK = '__netobj__';
-const RESERVED_INFIX = '.' + OBJECT_MARK;
+const RESERVED_INFIX = '.' + NET_OBJECT_MARK;
 const TYPE_SUFFIX = RESERVED_INFIX + '.type';
 const OWNER_SUFFIX = RESERVED_INFIX + '.owner';
 const QUEUE_SUFFIX = RESERVED_INFIX + '.q';
@@ -265,7 +265,7 @@ export class SharedTableSession implements Destroyable {
       const child = dot === -1 ? rest : rest.slice(0, dot);
 
       // Never surface an object's internal branch as a user-visible key.
-      if (child === OBJECT_MARK) {
+      if (child === NET_OBJECT_MARK) {
         continue;
       }
 

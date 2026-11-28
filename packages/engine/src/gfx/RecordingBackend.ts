@@ -9,8 +9,8 @@ export interface GfxCall {
 export class RecordingBackend implements GfxBackend {
   readonly calls: GfxCall[] = [];
   frames = 0;
-  private readonly palette: string[] = Array.from({ length: 16 }, () => '#000000');
-  private rec(op: string, ...args: unknown[]): void {
+  protected readonly palette: string[] = Array.from({ length: 16 }, () => '#000000');
+  protected rec(op: string, ...args: unknown[]): void {
     this.calls.push({ op, args });
   }
   begin(): void {

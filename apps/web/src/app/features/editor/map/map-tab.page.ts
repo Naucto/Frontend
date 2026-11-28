@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { FIRST_MAP_ID, MAX_MAP_SIZE, SPRITE_SIZE } from '@naucto/engine';
+import { type Transform } from '@naucto/engine';
 import {
   ButtonDirective,
   type ChangeKind,
@@ -31,7 +32,7 @@ import {
 
 import { collectionsSignal } from '../../../shared/pixel/collections.signal';
 import { geometrySignal } from '../../../shared/pixel/geometry.signal';
-import { type Pt, type Transform } from '../../../shared/pixel/pixel-tools';
+import { type Pt } from '../../../shared/pixel/pixel-tools';
 import { SheetAtlas } from '../../../shared/pixel/sheet-atlas';
 import { SheetPainter } from '../../../shared/pixel/sheet-painter';
 import { TransformBarComponent } from '../../../shared/pixel/transform-bar.component';

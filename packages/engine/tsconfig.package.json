@@ -7,6 +7,6 @@
     "rootDir": "./src",
     "types": []
   },
-  "include": ["src/headless.ts", "src/sound.ts"],
+  "include": ["src/headless.ts", "src/sound.ts", "src/runtime.ts"],
   "exclude": ["src/**/*.test.ts", "src/**/*.bench.ts"]
 }

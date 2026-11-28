@@ -1,15 +1,16 @@
-import { EditableGame } from '@naucto/engine';
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 
+import { EditableGame } from '../game/EditableGame';
 import {
+  accessAt,
   netPermissionsOf,
   PERM_CLIENT_READ,
   PERM_CLIENT_WRITE,
   readNetRules,
   resolveFlags,
   ruleOrigin,
-} from './net-permissions';
+} from './rules';
 
 const READ_WRITE = PERM_CLIENT_READ | PERM_CLIENT_WRITE;
 
@@ -67,5 +68,19 @@ describe('the net rules of a game', () => {
     expect(perms.canClientWrite('players.name')).toBe(true);
     expect(perms.canClientWrite('players.score')).toBe(false);
     expect(perms.canClientWrite('world')).toBe(true);
+  });
+});
+
+describe('an access changed right by right', () => {
+  it('keeps the right not named as it applies, inherited included', () => {
+    const game = new EditableGame(new Y.Doc());
+    game.setNetPermission('players', PERM_CLIENT_READ);
+    game.setNetAccess('players.score', { read: false });
+    expect(game.netPermissions.get('players.score')).toEqual({ flags: 0 });
+    game.setNetAccess('room', { write: false });
+    expect(accessAt(readNetRules(game.netPermissions).flags, 'room')).toEqual({
+      read: true,
+      write: false,
+    });
   });
 });

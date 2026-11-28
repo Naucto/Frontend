@@ -13,6 +13,7 @@ import {
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { multiplayerControllerInvite } from '@naucto/api-client';
 import { type NetChange, type PlayerNumber, type SharedTableSession } from '@naucto/engine';
+import { NET_PATH, NET_SEGMENT, readNetRules } from '@naucto/engine';
 import {
   ButtonDirective,
   ChangeChipComponent,
@@ -37,11 +38,6 @@ import {
 import { unwrap } from '../../../core/api/api-errors';
 import { AuthStore } from '../../../core/auth/auth.store';
 import type { NetUiBridgeService, SessionInvite } from '../../../core/net/net-bridge.service';
-import {
-  PERM_CLIENT_READ,
-  PERM_CLIENT_WRITE,
-  readNetRules,
-} from '../../../core/net/net-permissions';
 import { GameScreenComponent } from '../../../shared/game-screen/game-screen.component';
 import { RuntimeHostService } from '../../../shared/game-screen/runtime-host.service';
 import { UserAvatarComponent } from '../../../shared/user-avatar.component';
@@ -64,11 +60,6 @@ import { buildRows, type Row } from './net-tree';
 function relayedBytes(usage: readonly { bytesSent: number; bytesReceived: number }[]): number {
   return usage.reduce((sum, entry) => sum + entry.bytesSent + entry.bytesReceived, 0);
 }
-
-/** One key of a path. */
-const SEGMENT = /^[a-z0-9_]+$/i;
-/** A whole dotted path, which a declaration may give in one go. */
-const PATH = /^[a-z0-9_]+(\.[a-z0-9_]+)*$/i;
 
 /** Someone the session panel lists: a player at the table, or a collaborator who is not. */
 interface RosterEntry {
@@ -427,12 +418,7 @@ export default class NetTabPage {
 
   /** A click on R or W gives the path a rule of its own, from the flags it showed. */
   protected setRule(row: Row, which: 'read' | 'write', on: boolean): void {
-    const read = which === 'read' ? on : row.read;
-    const write = which === 'write' ? on : row.write;
-    this.work.game.setNetPermission(
-      row.path,
-      (read ? PERM_CLIENT_READ : 0) | (write ? PERM_CLIENT_WRITE : 0),
-    );
+    this.work.game.setNetAccess(row.path, { [which]: on });
   }
 
   /** How many children a container has. Transloco has no plural rule, so the key carries both. */
@@ -473,7 +459,7 @@ export default class NetTabPage {
   protected commitAdd(row: Row): void {
     const key = this.draft().trim();
     this.cancelEdit();
-    if (!PATH.test(key)) {
+    if (!NET_PATH.test(key)) {
       return;
     }
     this.work.game.declareNetPath(row.path ? `${row.path}.${key}` : key);
@@ -483,7 +469,7 @@ export default class NetTabPage {
     const key = this.draft().trim();
     const parent = row.path.slice(0, Math.max(0, row.path.lastIndexOf('.')));
     this.cancelEdit();
-    if (!SEGMENT.test(key) || key === row.key) {
+    if (!NET_SEGMENT.test(key) || key === row.key) {
       return;
     }
     this.work.game.moveNetPermissions(row.path, parent ? `${parent}.${key}` : key);

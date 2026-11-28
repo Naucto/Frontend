@@ -554,6 +554,8 @@
         "area": "Area at {{x}}, {{y}}",
         "tiles": "{{n}} tiles in {{w}} × {{h}}",
         "mapSize": "Map size",
+        "mapName": "Map name",
+        "sheetName": "Sheet name",
         "sheetSize": "Sheet size",
         "sprite": "Sprite {{n}}",
         "flags": "Flags of {{n}}",

@@ -1,4 +1,13 @@
-import { type Note, type Pattern, type Sfx, type Song, type SongBlock, VOICES } from './model';
+import {
+  defaultInstrument,
+  type Instrument,
+  type Note,
+  type Pattern,
+  type Sfx,
+  type Song,
+  type SongBlock,
+  VOICES,
+} from './model';
 
 type StoredNote =
   | [step: number, pitch: number, length: number, instrument: string]
@@ -84,6 +93,29 @@ const decodeTracks = (raw: unknown): string[] =>
 
 const stepsPerBeat = (value: unknown): Pattern['stepsPerBeat'] =>
   value === 1 || value === 2 || value === 8 ? value : 4;
+
+/**
+ * An instrument from what somebody wrote of one, each setting left out taking the default a new
+ * instrument has. Null without an id.
+ */
+export function decodeInstrument(raw: unknown): Instrument | null {
+  if (!isRecord(raw) || !str(raw.id)) {
+    return null;
+  }
+  const base = defaultInstrument(str(raw.id), str(raw.name, str(raw.id)));
+  const part = <T extends object>(key: string, fallback: T): T =>
+    isRecord(raw[key]) ? { ...fallback, ...(raw[key] as Partial<T>) } : fallback;
+  return {
+    ...base,
+    ...(raw as Partial<Instrument>),
+    id: base.id,
+    name: base.name,
+    env: part('env', base.env),
+    vibrato: part('vibrato', base.vibrato),
+    arp: part('arp', base.arp),
+    filter: part('filter', base.filter),
+  };
+}
 
 export const encodePattern = (pattern: Pattern): string =>
   JSON.stringify({ ...pattern, notes: pattern.notes.map(encodeNote) });

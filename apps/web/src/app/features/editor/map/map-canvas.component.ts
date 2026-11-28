@@ -13,6 +13,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { type Transform } from '@naucto/engine';
 import {
   type EditableGame,
   FIRST_MAP_ID,
@@ -45,7 +46,6 @@ import {
   linePoints,
   type Pt,
   spanning,
-  type Transform,
   withinBounds,
 } from '../../../shared/pixel/pixel-tools';
 import { type SheetAtlas } from '../../../shared/pixel/sheet-atlas';

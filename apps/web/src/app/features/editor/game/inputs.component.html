@@ -1,4 +1,7 @@
 <ng-container *transloco="let t">
+  @if (diff.on()) {
+    <nc-diff-changes class="mb-1.5 block" [items]="changeList()" />
+  }
   <div class="mb-1.5 flex flex-wrap items-center gap-x-1 gap-y-0.5">
     <nc-label class="text-ink">{{ t('editor.game.inputs.actions') }}</nc-label>
     <nc-chip>{{ t('editor.game.count', { n: actions().length, max: MAX_ACTIONS }) }}</nc-chip>
@@ -116,6 +119,9 @@
                 </button>
               </th>
               <td colspan="2">
+                @if (kinds().get(action.id); as kind) {
+                  <nc-change-chip [kind]="kind" />
+                }
                 @if (!on) {
                   <nc-chip>
                     {{

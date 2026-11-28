@@ -56,6 +56,7 @@ function savedGame(
     game.sheets[0]?.setPixel(9, 1, 4);
     game.setNetPermission('players.score', 3);
     game.setInstrument({ ...defaultInstrument('bell'), name: 'bell' });
+    game.addAction({ name: 'dash', label: 'Dash' });
   }
   return Buffer.from(Y.encodeStateAsUpdate(doc));
 }
@@ -106,7 +107,7 @@ test('compares the project with a saved version, read only', async ({ page }) =>
   await page.getByRole('button', { name: 'Compare to' }).click();
   await page.getByRole('button', { name: /Current project/ }).click();
 
-  await expect(page.getByRole('status').filter({ hasText: '9 diffs' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: '10 diffs' })).toBeVisible();
   // Five in CODE, the tile in MAP.
   await expect(page.getByRole('button', { name: '5 Code' })).toBeVisible();
   await expect(page.getByText('Read only')).toBeVisible();
@@ -129,7 +130,7 @@ test('takes back part of a saved version, change by change', async ({ page }) =>
   await expect(page.getByText(/0 of \d+ reviewed/)).toBeVisible();
   // Take back the version's first change to main (`y = 80`, no `speed`) and refuse the rest.
   await page.getByRole('button', { name: 'Accept', exact: true }).first().click();
-  await expect(page.getByText('1 of 9 reviewed')).toBeVisible();
+  await expect(page.getByText('1 of 10 reviewed')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible();
   await page.screenshot({ path: 'test-results/diff-review.png' });
   await page.getByRole('button', { name: 'Reject all' }).click();
@@ -150,9 +151,9 @@ test('reviews what the assistant made, and tells it what is left', async ({ page
   await page.getByRole('switch', { name: 'Diff' }).click();
 
   await expect(page.getByRole('button', { name: 'Compare to' })).toContainText('AI changes');
-  await expect(page.getByText('0 of 9 reviewed')).toBeVisible();
+  await expect(page.getByText('0 of 10 reviewed')).toBeVisible();
   await page.getByRole('button', { name: 'Accept', exact: true }).first().click();
-  await expect(page.getByText('1 of 9 reviewed')).toBeVisible();
+  await expect(page.getByText('1 of 10 reviewed')).toBeVisible();
   await page.getByRole('button', { name: 'Accept all' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Apply' }).click();
 
@@ -222,4 +223,20 @@ test('SOUND marks the instrument that changed and takes it back', async ({ page 
   await page.screenshot({ path: 'test-results/diff-sound.png' });
   await changes.getByRole('button', { name: 'Accept', exact: true }).click();
   await expect(page.getByRole('button', { name: '1 Sound' })).toHaveCount(0);
+});
+
+test('GAME lists the controls that changed and takes one back', async ({ page }) => {
+  await mockAssistant(page);
+  await page.goto(editorUrl('game'));
+  await page.getByRole('switch', { name: 'Diff' }).click();
+  await page.getByRole('button', { name: 'Compare to' }).click();
+  await page.getByRole('button', { name: /first level/ }).click();
+  await page.getByRole('tab', { name: /Inputs/ }).click();
+
+  const changes = page.getByRole('list', { name: 'Changes' });
+  await expect(changes.getByText('Dash')).toBeVisible();
+  await expect(page.getByRole('button', { name: '1 Game' })).toBeVisible();
+  await page.screenshot({ path: 'test-results/diff-game.png' });
+  await changes.getByRole('button', { name: 'Accept', exact: true }).click();
+  await expect(page.getByRole('button', { name: '1 Game' })).toHaveCount(0);
 });

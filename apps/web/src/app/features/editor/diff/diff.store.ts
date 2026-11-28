@@ -61,6 +61,8 @@ const toBase64 = (bytes: Uint8Array): string => {
 type AiCategory = AiWorkspaceReviewDto['categories'][number];
 
 const CATEGORY: Record<Exclude<DiffEditor, 'sound'>, AiCategory> = {
+  // The actions are what the code reads the player by; there is no category of their own.
+  game: 'CODE',
   code: 'CODE',
   art: 'SPRITES',
   map: 'MAPS',
@@ -176,7 +178,14 @@ export class DiffStore {
 
   /** What each rail tab shows: changes still to decide, or every change when only comparing. */
   readonly counts = computed<Record<DiffEditor, number>>(() => {
-    const counts: Record<DiffEditor, number> = { code: 0, art: 0, map: 0, sound: 0, net: 0 };
+    const counts: Record<DiffEditor, number> = {
+      game: 0,
+      code: 0,
+      art: 0,
+      map: 0,
+      sound: 0,
+      net: 0,
+    };
     const shown = this.mode() === 'review' ? this.pending() : this.items();
     for (const item of shown) {
       counts[item.editor] += 1;
