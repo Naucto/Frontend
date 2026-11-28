@@ -240,9 +240,10 @@ test('a clip is recorded from the running game, played back, and deleted', async
   await expect(preview).toHaveAttribute('src', '/clips/7.webm');
   await expect(preview).toHaveJSProperty('muted', true);
   await expect(preview).toHaveJSProperty('loop', true);
+  // Recorded at twice the screen, nearest neighbour, so the pixel art stays crisp.
   await expect
     .poll(() => preview.evaluate((video: HTMLVideoElement) => video.videoWidth))
-    .toBe(320);
+    .toBe(640);
   await expect(block.getByText(/^\d+(\.\d+)? KB$/)).toBeVisible();
   await expect(sidebar(page).getByRole('status')).toHaveCount(0);
 
