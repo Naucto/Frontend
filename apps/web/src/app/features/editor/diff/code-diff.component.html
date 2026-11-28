@@ -42,7 +42,7 @@
     }
   </div>
   <div class="flex min-h-0 flex-1">
-    <div class="min-w-0 flex-1 overflow-auto bg-inset py-0.5 font-mono text-small leading-[22px]">
+    <div class="min-w-0 flex-1 overflow-auto bg-inset py-0.5 font-mono text-[13px] leading-[22px]">
       @for (line of lines(); track $index) {
         <div
           class="relative flex min-w-max"
@@ -51,31 +51,16 @@
           (click)="line.decision === 'pending' && decide(line.item, 'ok')"
           (keydown.enter)="line.decision === 'pending' && decide(line.item, 'ok')">
           <span class="w-[4px] shrink-0" [class]="barOf(line)"></span>
-          <span class="w-[5ch] shrink-0 pr-[1ch] text-right text-ink-4 select-none">
-            {{ line.old ?? '' }}
-          </span>
-          <span class="w-[5ch] shrink-0 pr-[1ch] text-right text-ink-4 select-none">
-            {{ line.now ?? '' }}
-          </span>
+          <span
+            class="w-[6ch] shrink-0 pr-[1ch] text-right text-ink-4 select-none"
+            [textContent]="line.number ?? ''"></span>
           <span
             class="w-[3ch] shrink-0 text-center select-none"
-            [class.text-jade-ink]="line.kind === 'added'"
-            [class.text-hot-ink]="line.kind === 'removed'"
-            [class.text-orange-ink]="line.kind === 'changed'">
-            {{ glyph[line.kind] }}
-          </span>
-          <span
-            class="pr-2 whitespace-pre text-ink-body"
-            [class.line-through]="line.kind === 'removed'">
-            @for (part of line.parts; track $index) {
-              <span
-                [class.bg-hot-wash]="part.kind === 'removed'"
-                [class.text-hot-ink]="part.kind === 'removed'"
-                [class.line-through]="part.kind === 'removed'"
-                [class.bg-wash-orange]="part.kind === 'added'"
-                [class.text-ink]="part.kind === 'added'">
-                {{ part.text }}
-              </span>
+            [class]="glyphInk[line.kind]"
+            [textContent]="glyph[line.kind]"></span>
+          <span class="pr-2 whitespace-pre text-ink">
+            @for (segment of line.segments; track $index) {
+              <span [class]="segment.cls" [textContent]="segment.text"></span>
             }
           </span>
           @if (review() && line.first && line.item && !whole()) {

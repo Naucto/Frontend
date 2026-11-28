@@ -6,8 +6,6 @@ import {
   input,
 } from '@angular/core';
 
-import { MarkComponent } from './mark.component';
-
 /** What a change does to the thing it marks. */
 export type ChangeKind = 'NEW' | 'EDIT' | 'DELETED';
 
@@ -17,7 +15,11 @@ const TONE: Record<ChangeKind, string> = {
   DELETED: 'bg-hot text-on-hot',
 };
 
-const MARK = { NEW: 'plus', EDIT: 'tilde', DELETED: 'minus' } as const;
+/**
+ * The kind's sign in the LCD face, as the design sets it: the face draws its own `+`, `~` and `−`
+ * on its pixel grid, which is what makes the chip read as one of the editor's characters.
+ */
+const SIGN = { NEW: '+', EDIT: '~', DELETED: '\u2212' } as const;
 
 /**
  * A change, marked where it is: a square holding `+`, `~` or `−` in the kind's colour, or the
@@ -29,14 +31,7 @@ const MARK = { NEW: 'plus', EDIT: 'tilde', DELETED: 'minus' } as const;
  */
 @Component({
   selector: 'nc-change-chip',
-  imports: [MarkComponent],
-  template: `
-    @if (word()) {
-      {{ label() || kind() }}
-    } @else {
-      <nc-mark [name]="mark()" />
-    }
-  `,
+  template: '<span [textContent]="word() ? label() || kind() : sign()"></span>',
   host: {
     '[class]': 'classes()',
     '[attr.role]': '"img"',
@@ -50,15 +45,15 @@ export class ChangeChipComponent {
   readonly word = input(false, { transform: booleanAttribute });
   /** Read aloud and, with `word`, written in place of the kind: the catalogue's word for it. */
   readonly label = input('');
-  /** The square of a tight strip: 18 rather than 24, its glyph unchanged. */
+  /** The square of a tight strip: 16 rather than 22. */
   readonly small = input(false, { transform: booleanAttribute });
-  protected readonly mark = computed(() => MARK[this.kind()]);
+  protected readonly sign = computed(() => SIGN[this.kind()]);
   protected readonly classes = computed(() => {
     const shape = this.word()
-      ? 'h-[24px] px-[6px] font-mono text-micro tracking-wide uppercase'
+      ? 'h-[24px] px-[6px] text-[10px] tracking-[0.08em] uppercase'
       : this.small()
-        ? 'size-[18px]'
-        : 'size-[24px]';
-    return `pixel-cut inline-flex shrink-0 items-center justify-center whitespace-nowrap ${shape} ${TONE[this.kind()]}`;
+        ? 'size-[16px] text-[11px]'
+        : 'size-[22px] text-label';
+    return `pixel-cut inline-flex shrink-0 items-center justify-center whitespace-nowrap font-mono leading-none ${shape} ${TONE[this.kind()]}`;
   });
 }

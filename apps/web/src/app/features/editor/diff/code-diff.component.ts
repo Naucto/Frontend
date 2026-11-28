@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
@@ -8,28 +9,37 @@ import {
   type DiffKind,
   type DiffRow,
   wordDiff,
-  type WordPart,
 } from '@naucto/engine';
 import { ChangeChipComponent, LooksOnlyDirective, MarkComponent } from '@naucto/ui';
+import { StyleModule } from 'style-mod';
 
+import { naucto_highlight } from '../code/theme';
+import { highlightLines, type Segment, segmentsOf } from './code-highlight';
 import { DiffStore } from './diff.store';
 import { HunkActionsComponent } from './hunk-actions.component';
 
 /** One drawn line of the unified view. */
 interface Line {
-  /** Line numbers on the old and the new side; one of them is absent on an added or removed line. */
-  old?: number;
-  now?: number;
+  /** Its number in the file the change makes; a removed line has none. */
+  number?: number | undefined;
   kind: DiffRow['kind'];
-  /** The words of a changed line, the old and the new interleaved. */
-  parts: WordPart[];
+  /** Its text in runs drawn alike: the editor's colours, and the words a change touched. */
+  segments: Segment[];
   /** The change the line belongs to, and whether it is the change's first line. */
   item: ChangeItem | null;
   first: boolean;
   decision: Decision;
 }
 
-const GLYPH: Record<DiffRow['kind'], string> = { same: '', added: '+', removed: '−', changed: '~' };
+const GLYPH: Record<DiffRow['kind'], string> = {
+  same: '',
+  added: '+',
+  removed: '\u2212',
+  changed: '~',
+};
+
+/** How a removed line or word is drawn: struck, in hot, over whatever wash it stands on. */
+const GONE = 'text-hot-ink line-through';
 
 /**
  * The CODE tab's file while diff mode is on: a unified diff, as a code host draws one, with what
@@ -58,6 +68,20 @@ export class CodeDiffComponent {
   readonly fileId = input.required<string>();
   protected readonly diff = inject(DiffStore);
   protected readonly glyph = GLYPH;
+  protected readonly glyphInk: Record<DiffRow['kind'], string> = {
+    same: '',
+    added: 'text-jade-ink',
+    removed: 'text-hot-ink',
+    changed: 'text-orange-ink',
+  };
+
+  constructor() {
+    // The editor mounts its highlight classes with a view; this one has none.
+    const module = naucto_highlight.module;
+    if (module) {
+      StyleModule.mount(inject(DOCUMENT), module);
+    }
+  }
 
   protected readonly review = computed(() => this.diff.mode() === 'review');
   protected readonly items = computed(() =>
@@ -81,17 +105,28 @@ export class CodeDiffComponent {
     if (whole) {
       const decision = decisions.get(whole.key) ?? 'pending';
       const text = whole.kind === 'NEW' ? whole.after : whole.before;
+      const colours = highlightLines(text);
       return text.split('\n').map((line, i) => ({
-        old: whole.kind === 'NEW' ? undefined : i + 1,
-        now: whole.kind === 'NEW' ? i + 1 : undefined,
+        number: i + 1,
         kind: whole.kind === 'NEW' ? 'added' : 'removed',
-        parts: [{ text: line, kind: 'same' }],
+        segments:
+          whole.kind === 'NEW'
+            ? segmentsOf(line, colours[i] ?? [], 0, '')
+            : segmentsOf(line, [], 0, GONE),
         item: whole,
         first: i === 0,
         decision,
       }));
     }
     const rows = this.diff.files().get(this.fileId())?.rows ?? [];
+    const textOf = (side: 'left' | 'right'): string =>
+      rows.flatMap((row) => (row[side] ? [row[side].text] : [])).join('\n');
+    const oldColours = highlightLines(textOf('left'));
+    const newColours = highlightLines(textOf('right'));
+    const colourOf = (row: DiffRow, side: 'left' | 'right'): string[] => {
+      const number = row[side]?.number ?? 0;
+      return (side === 'left' ? oldColours : newColours)[number - 1] ?? [];
+    };
     const owner = new Map<number, CodeHunkChange>();
     for (const hunk of this.hunks()) {
       for (let i = hunk.hunk.start; i < hunk.hunk.end; i += 1) {
@@ -105,13 +140,13 @@ export class CodeDiffComponent {
       const first = item?.hunk.start === i;
       if (item && decision !== 'pending') {
         // Decided: the side it chose, as plain lines under the bar of its decision.
-        const side = decision === 'ok' ? row.right : row.left;
-        if (side || first) {
+        const side = decision === 'ok' ? 'right' : 'left';
+        const held = row[side];
+        if (held || first) {
           out.push({
-            old: row.left?.number,
-            now: row.right?.number,
+            number: held?.number,
             kind: 'same',
-            parts: [{ text: side?.text ?? '', kind: 'same' }],
+            segments: held ? segmentsOf(held.text, colourOf(row, side), 0, '') : [],
             item,
             first,
             decision,
@@ -120,13 +155,9 @@ export class CodeDiffComponent {
         return;
       }
       out.push({
-        old: row.left?.number,
-        now: row.right?.number,
+        number: row.right?.number,
         kind: row.kind,
-        parts:
-          row.kind === 'changed'
-            ? wordDiff(row.left?.text ?? '', row.right?.text ?? '')
-            : [{ text: (row.right ?? row.left)?.text ?? '', kind: 'same' }],
+        segments: this.segmentsOfRow(row, colourOf(row, 'right')),
         item,
         first,
         decision,
@@ -134,6 +165,33 @@ export class CodeDiffComponent {
     });
     return out;
   });
+
+  /**
+   * A row as the editor would colour it. A changed one shows its words: those kept and those
+   * added in the new line's colours, the added ones on an orange wash, the removed ones struck in
+   * hot between them.
+   */
+  private segmentsOfRow(row: DiffRow, colours: readonly string[]): Segment[] {
+    if (row.kind === 'removed') {
+      return segmentsOf(row.left?.text ?? '', [], 0, GONE);
+    }
+    if (row.kind !== 'changed') {
+      return segmentsOf(row.right?.text ?? '', colours, 0, '');
+    }
+    const out: Segment[] = [];
+    let at = 0;
+    for (const part of wordDiff(row.left?.text ?? '', row.right?.text ?? '')) {
+      if (part.kind === 'removed') {
+        out.push(...segmentsOf(part.text, [], 0, `${GONE} mr-[1ch] bg-hot-wash`));
+        continue;
+      }
+      out.push(
+        ...segmentsOf(part.text, colours, at, part.kind === 'added' ? 'bg-wash-orange' : ''),
+      );
+      at += part.text.length;
+    }
+    return out;
+  }
 
   /** Where each change sits down the file, as a share of its height, for the overview ruler. */
   protected readonly ticks = computed(() => {
