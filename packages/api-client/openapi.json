@@ -17801,6 +17801,12 @@
             "type": "string",
             "example": "Claude Code on my laptop",
             "maxLength": 80
+          },
+          "returnUrl": {
+            "type": "string",
+            "description": "Where the approval page sends the browser after the answer: HTTPS, or HTTP on loopback",
+            "example": "https://mcp.example.net/oauth/return?attempt=0f6c…",
+            "maxLength": 2048
           }
         }
       },
@@ -17901,9 +17907,14 @@
           "expiresAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "returnUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where to go once answered"
           }
         },
-        "required": ["clientName", "expiresAt"]
+        "required": ["clientName", "expiresAt", "returnUrl"]
       },
       "AiGrantDto": {
         "type": "object",

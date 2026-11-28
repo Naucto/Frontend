@@ -12,7 +12,9 @@
       "refuse": "Refuse",
       "done": "Connected: you can go back to your assistant.",
       "manage": "Manage assistants",
-      "refused": "Refused: the assistant is told."
+      "refused": "Refused: the assistant is told.",
+      "after": "Then you go back to {{host}}.",
+      "returning": "Taking you back to {{host}}…"
     }
   },
   "count": "{{n}} of {{max}}",

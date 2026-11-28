@@ -27,6 +27,9 @@
         {{ t('assistant.connect.asks', { name: asking()?.clientName ?? '' }) }}
       </p>
       <nc-notice tone="warn">{{ t('assistant.connect.reach') }}</nc-notice>
+      @if (returnHost(); as host) {
+        <p class="text-small text-ink-2">{{ t('assistant.connect.after', { host }) }}</p>
+      }
       <div class="flex gap-1">
         <button ncButton variant="jade" [disabled]="busy()" (click)="answer(true)">
           {{ t('assistant.connect.approve') }}
@@ -44,6 +47,11 @@
     }
     @case ('refused') {
       <nc-notice tone="info">{{ t('assistant.connect.refused') }}</nc-notice>
+    }
+    @case ('returning') {
+      <p class="text-body text-ink-2" role="status">
+        {{ t('assistant.connect.returning', { host: returnHost() ?? '' }) }}
+      </p>
     }
   }
 </section>

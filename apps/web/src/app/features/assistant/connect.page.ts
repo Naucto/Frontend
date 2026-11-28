@@ -1,9 +1,12 @@
+import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   input,
   linkedSignal,
+  type OnInit,
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -18,7 +21,7 @@ import { ButtonDirective, FieldComponent, InputDirective, NoticeComponent } from
 
 import { unwrap } from '../../core/api/api-errors';
 
-type Step = 'enter' | 'confirm' | 'connected' | 'refused';
+type Step = 'enter' | 'confirm' | 'connected' | 'refused' | 'returning';
 
 /** Eight letters in two groups, as an assistant shows them; typed in any case, with or without the dash. */
 const normalise = (raw: string): string => {
@@ -29,10 +32,32 @@ const normalise = (raw: string): string => {
   return letters.length > 4 ? `${letters.slice(0, 4)}-${letters.slice(4)}` : letters;
 };
 
+const LOOPBACK = new Set(['127.0.0.1', '[::1]', 'localhost']);
+
+/**
+ * The page an assistant's server asked to come back to once answered. The server names it when it
+ * creates the code, so only HTTPS, or HTTP on this machine, is followed; anything else stays here.
+ */
+const returnOf = (raw: string | null | undefined): URL | null => {
+  if (!raw) {
+    return null;
+  }
+  try {
+    const url = new URL(raw);
+    const secure =
+      url.protocol === 'https:' || (url.protocol === 'http:' && LOOPBACK.has(url.hostname));
+    return secure && !url.username && !url.password ? url : null;
+  } catch {
+    return null;
+  }
+};
+
 /**
  * Where an assistant is connected to the account: the code it shows is typed here (or arrives in
  * the address it gave), the page says what asks, and the owner connects it or refuses. The
- * assistant, waiting on its side, gets its tokens on its next poll.
+ * assistant, waiting on its side, gets its tokens on its next poll. A code that arrives in the
+ * address goes straight to the question, and when the assistant's server named a page to return
+ * to, the browser goes back there with the answer, in the same tab.
  */
 @Component({
   selector: 'nc-assistant-connect-page',
@@ -47,7 +72,8 @@ const normalise = (raw: string): string => {
   templateUrl: './connect.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export default class AssistantConnectPage {
+export default class AssistantConnectPage implements OnInit {
+  private readonly window = inject(DOCUMENT).defaultView;
   /** The code from the address an assistant gave, `?code=ACDE-FGHJ`. */
   readonly code = input<string>();
   protected readonly typed = linkedSignal(() => normalise(this.code() ?? ''));
@@ -56,6 +82,14 @@ export default class AssistantConnectPage {
   protected readonly failed = signal(false);
   protected readonly busy = signal(false);
   protected readonly complete = computed(() => /^[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(this.typed()));
+  /** The host the browser goes back to after the answer, when the assistant named one. */
+  protected readonly returnHost = computed(() => returnOf(this.asking()?.returnUrl)?.host ?? null);
+
+  ngOnInit(): void {
+    if (this.complete()) {
+      void this.look();
+    }
+  }
 
   protected type(value: string): void {
     this.typed.set(normalise(value));
@@ -83,6 +117,12 @@ export default class AssistantConnectPage {
           ? await aiGrantsControllerApprove({ path })
           : await aiGrantsControllerDeny({ path }),
       );
+      const back = returnOf(this.asking()?.returnUrl);
+      if (back && this.window) {
+        this.step.set('returning');
+        this.window.location.assign(back.href);
+        return;
+      }
       this.step.set(approve ? 'connected' : 'refused');
     } catch {
       this.failed.set(true);
