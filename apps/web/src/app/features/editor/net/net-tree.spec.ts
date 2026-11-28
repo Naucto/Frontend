@@ -1,7 +1,7 @@
 import { type TableScalar } from '@naucto/engine';
+import { PERM_CLIENT_READ, PERM_CLIENT_WRITE } from '@naucto/engine';
 import { describe, expect, it } from 'vitest';
 
-import { PERM_CLIENT_READ, PERM_CLIENT_WRITE } from '../../../core/net/net-permissions';
 import { buildRows, type Row, type TreeSession } from './net-tree';
 
 /** A session holding `values` at their dotted paths, every ancestor of one a container. */

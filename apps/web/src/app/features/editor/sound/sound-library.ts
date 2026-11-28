@@ -5,6 +5,8 @@ import {
   type EditableGame,
   type Instrument,
   type InstrumentPreset,
+  type MidiSong,
+  nextPatternSlot,
   type Note,
   type Pattern,
   patternBars,
@@ -351,6 +353,27 @@ export class SoundLibrary {
     this.game.transact(() => {
       this.game.setSong(slot, song);
     });
+  }
+
+  /**
+   * A music imported from a file, with the instruments and patterns it plays, as one edit: one
+   * undo takes the whole import back.
+   */
+  importMusic(slot: number, music: MidiSong): void {
+    this.game.transact(() => {
+      for (const instrument of music.instruments) {
+        this.game.setInstrument(instrument);
+      }
+      for (const pattern of music.patterns) {
+        this.game.setPattern(pattern);
+      }
+      this.game.setSong(slot, music.song);
+    });
+  }
+
+  /** The first pattern number past every one taken, so an import's patterns stay together. */
+  patternSlotAfterAll(): number {
+    return nextPatternSlot(this.patterns().values());
   }
 
   removeSong(slot: number): void {

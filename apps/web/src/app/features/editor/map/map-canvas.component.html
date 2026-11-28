@@ -13,4 +13,6 @@
     (pointerleave)="onLeave()"
     (contextmenu)="$event.preventDefault()"></canvas>
   <nc-presence-layer [marks]="marks()" [viewport]="viewPx()" />
+  <!-- What another layer draws over the map at its scale, such as the changes of diff mode. -->
+  <ng-content />
 </div>

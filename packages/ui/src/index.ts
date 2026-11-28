@@ -4,6 +4,7 @@ export * from './components/avatar.component';
 export * from './components/bit-flags.component';
 export * from './components/brand-mark.component';
 export * from './components/button.directive';
+export * from './components/change-chip.component';
 export * from './components/checkbox.component';
 export * from './components/chip.component';
 export * from './components/confirm-dialog.component';

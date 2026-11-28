@@ -17,6 +17,7 @@ import {
 } from '@angular/core';
 
 import { type MarkName } from '../icons/glyphs';
+import { ChangeChipComponent, type ChangeKind } from './change-chip.component';
 import { closedBy } from './disabled-scope.directive';
 import { IconComponent } from './icon.component';
 import { MarkComponent } from './mark.component';
@@ -31,6 +32,10 @@ export interface TabItem<T extends string> {
   index?: number;
   /** A colour the tab is marked with, as a CSS colour. Nothing is drawn without one. */
   colour?: string;
+  /** How what the tab opens differs from another version of it, drawn after the name. */
+  change?: ChangeKind;
+  /** Drawn struck through and faded: what it opens is gone once a change is kept. */
+  struck?: boolean;
 }
 
 /** Which strip this is; the design draws them quite differently. */
@@ -122,7 +127,7 @@ export const TAB_LOOKS: Record<
  */
 @Component({
   selector: 'nc-tabs',
-  imports: [IconComponent, MarkComponent, CdkDrag, CdkDropList],
+  imports: [ChangeChipComponent, IconComponent, MarkComponent, CdkDrag, CdkDropList],
   templateUrl: './tabs.component.html',
   // Positioned, so the chosen tab is drawn over the top edge of a frame pulled up under the rule.
   host: { class: 'relative block' },
@@ -156,6 +161,11 @@ export class TabsComponent<T extends string = string> {
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
 
   protected readonly look = computed(() => TAB_LOOKS[this.variant()]);
+
+  /** The name's own look, struck and faded where what the tab opens is gone. */
+  protected labelClass(tab: TabItem<T>): string {
+    return tab.struck ? `${this.look().label} line-through opacity-50` : this.look().label;
+  }
   /** How far the run of tabs is scrolled, and how far it could be. Measured, not derived. */
   private readonly scrolled = signal(0);
   private readonly overflow = signal(0);

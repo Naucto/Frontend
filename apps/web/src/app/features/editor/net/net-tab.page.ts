@@ -12,9 +12,11 @@ import {
 } from '@angular/core';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { multiplayerControllerInvite } from '@naucto/api-client';
-import { type PlayerNumber, type SharedTableSession } from '@naucto/engine';
+import { type NetChange, type PlayerNumber, type SharedTableSession } from '@naucto/engine';
+import { NET_PATH, NET_SEGMENT, readNetRules } from '@naucto/engine';
 import {
   ButtonDirective,
+  ChangeChipComponent,
   CheckboxComponent,
   ChipComponent,
   DisclosureComponent,
@@ -36,15 +38,13 @@ import {
 import { unwrap } from '../../../core/api/api-errors';
 import { AuthStore } from '../../../core/auth/auth.store';
 import type { NetUiBridgeService, SessionInvite } from '../../../core/net/net-bridge.service';
-import {
-  PERM_CLIENT_READ,
-  PERM_CLIENT_WRITE,
-  readNetRules,
-} from '../../../core/net/net-permissions';
 import { GameScreenComponent } from '../../../shared/game-screen/game-screen.component';
 import { RuntimeHostService } from '../../../shared/game-screen/runtime-host.service';
 import { UserAvatarComponent } from '../../../shared/user-avatar.component';
 import { yVersion } from '../../../shared/yjs/y-signal';
+import { DiffStore } from '../diff/diff.store';
+import { DiffChangesComponent } from '../diff/diff-changes.component';
+import { HunkActionsComponent } from '../diff/hunk-actions.component';
 import { EditorModeService } from '../state/editor-mode.service';
 import { EditorRuntimeService } from '../state/editor-runtime.service';
 import { PANEL_WIDTH } from '../state/editor-ui.store';
@@ -60,11 +60,6 @@ import { buildRows, type Row } from './net-tree';
 function relayedBytes(usage: readonly { bytesSent: number; bytesReceived: number }[]): number {
   return usage.reduce((sum, entry) => sum + entry.bytesSent + entry.bytesReceived, 0);
 }
-
-/** One key of a path. */
-const SEGMENT = /^[a-z0-9_]+$/i;
-/** A whole dotted path, which a declaration may give in one go. */
-const PATH = /^[a-z0-9_]+(\.[a-z0-9_]+)*$/i;
 
 /** Someone the session panel lists: a player at the table, or a collaborator who is not. */
 interface RosterEntry {
@@ -85,6 +80,9 @@ interface RosterEntry {
 @Component({
   selector: 'nc-net-tab-page',
   imports: [
+    ChangeChipComponent,
+    DiffChangesComponent,
+    HunkActionsComponent,
     NgTemplateOutlet,
     StatComponent,
     TranslocoDirective,
@@ -117,6 +115,7 @@ interface RosterEntry {
 export default class NetTabPage {
   protected readonly PANEL_WIDTH = PANEL_WIDTH;
   protected readonly work = inject(WorkSessionService);
+  protected readonly diff = inject(DiffStore);
   protected readonly mode = inject(EditorModeService);
   protected readonly presence = inject(SessionPresenceService);
   private readonly runtime = inject(EditorRuntimeService);
@@ -221,8 +220,34 @@ export default class NetTabPage {
 
   private readonly rules = computed(() => {
     this.permsVersion();
-    return readNetRules(this.work.game.netPermissions);
+    this.diff.decisions();
+    return readNetRules(this.diff.shown().netPermissions);
   });
+
+  /** The change on each path while diff mode is on. */
+  protected readonly netChanges = computed(
+    () =>
+      new Map(
+        this.diff
+          .itemsOf('net')
+          .flatMap((change) => (change.type === 'net' ? [[change.path, change] as const] : [])),
+      ),
+  );
+  protected readonly changeList = computed(() => this.diff.itemsOf('net'));
+  protected readonly wash: Record<string, string> = {
+    NEW: 'bg-jade-wash',
+    EDIT: 'bg-wash-orange',
+    DELETED: 'bg-hot-wash line-through',
+  };
+
+  /** What a changed path's rule was, read as R and W, for the struck old value beside the new. */
+  protected wasRule(change: NetChange): string {
+    const flags = change.before?.flags;
+    if (flags === undefined) {
+      return this.transloco.translate('editor.net.openByDefault');
+    }
+    return `${flags & 1 ? 'R' : '-'}${flags & 2 ? 'W' : '-'}`;
+  }
 
   protected readonly rows = computed(() => {
     this.tick();
@@ -393,12 +418,7 @@ export default class NetTabPage {
 
   /** A click on R or W gives the path a rule of its own, from the flags it showed. */
   protected setRule(row: Row, which: 'read' | 'write', on: boolean): void {
-    const read = which === 'read' ? on : row.read;
-    const write = which === 'write' ? on : row.write;
-    this.work.game.setNetPermission(
-      row.path,
-      (read ? PERM_CLIENT_READ : 0) | (write ? PERM_CLIENT_WRITE : 0),
-    );
+    this.work.game.setNetAccess(row.path, { [which]: on });
   }
 
   /** How many children a container has. Transloco has no plural rule, so the key carries both. */
@@ -439,7 +459,7 @@ export default class NetTabPage {
   protected commitAdd(row: Row): void {
     const key = this.draft().trim();
     this.cancelEdit();
-    if (!PATH.test(key)) {
+    if (!NET_PATH.test(key)) {
       return;
     }
     this.work.game.declareNetPath(row.path ? `${row.path}.${key}` : key);
@@ -449,7 +469,7 @@ export default class NetTabPage {
     const key = this.draft().trim();
     const parent = row.path.slice(0, Math.max(0, row.path.lastIndexOf('.')));
     this.cancelEdit();
-    if (!SEGMENT.test(key) || key === row.key) {
+    if (!NET_SEGMENT.test(key) || key === row.key) {
       return;
     }
     this.work.game.moveNetPermissions(row.path, parent ? `${parent}.${key}` : key);

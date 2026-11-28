@@ -14,6 +14,11 @@
       {{ current().name }}
     </span>
     <nc-presence-dots [peers]="peersOf()(current().key)" />
+    @if (changed()) {
+      <span
+        class="pixel-cut flex h-[15px] min-w-[18px] items-center justify-center bg-sky px-[3px] font-mono text-micro text-on-accent"
+        [textContent]="changed()"></span>
+    }
     <nc-mark name="chevron-down" />
   </button>
   <ng-template #menu>
@@ -72,6 +77,9 @@
                 <nc-presence-dots
                   class="group-focus-within:hidden group-hover:hidden"
                   [peers]="peersOf()(item.key)" />
+                @if (item.change) {
+                  <nc-change-chip [kind]="item.change" />
+                }
               </button>
               <span
                 class="absolute top-1/2 right-0.5 hidden -translate-y-1/2 gap-0.5 group-focus-within:flex group-hover:flex"

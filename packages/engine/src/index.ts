@@ -9,6 +9,11 @@ export type {
   SoundPort,
   SysPort,
 } from './api/ports';
+export * from './diff/changes';
+export * from './diff/decisions';
+export * from './diff/lines';
+export { displayState, mergeAccepted } from './diff/merge';
+export * from './game/cells';
 export * from './game/defaults';
 export { EditableGame, type ResizePreview } from './game/EditableGame';
 export {
@@ -75,6 +80,7 @@ export {
 } from './migrations';
 export { ALLOW_ALL, type NetPermissions } from './net/NetPermissions';
 export type { NetHostOptions, NetInvite, NetUi } from './net/NetUi';
+export * from './net/rules';
 export type {
   PlayerNumber,
   RelayUsage,
@@ -86,6 +92,14 @@ export { SharedTableSession, type TableScalar } from './net/SharedTableSession';
 export { Engine, type EngineOptions, type EngineState } from './runtime/Engine';
 export type { EngineError, EnginePhase } from './runtime/EngineError';
 export { type EngineFault, type FaultListener, isHostBug } from './runtime/EngineFault';
+export {
+  chipInstrument,
+  type MidiInstrument,
+  type MidiTrack,
+  type ParsedMidi,
+  readMidi,
+} from './sound/midi';
+export { type MidiSong, midiToSong, type MidiTrackReport } from './sound/midi-song';
 export * from './sound/model';
 export {
   type Bound,

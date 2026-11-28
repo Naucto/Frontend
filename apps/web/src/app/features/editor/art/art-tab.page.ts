@@ -14,9 +14,11 @@ import {
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { FIRST_SHEET_ID, MAX_SHEET_SIZE, type ResizePreview, SIZE_STEP } from '@naucto/engine';
 import { BUBBLEGUM_16, PICO8_PALETTE, SPRITE_SIZE } from '@naucto/engine';
+import { type Transform } from '@naucto/engine';
 import {
   BitFlagsComponent,
   ButtonDirective,
+  type ChangeKind,
   DialogService,
   HelpDotComponent,
   IconComponent,
@@ -37,10 +39,13 @@ import {
 
 import { collectionsSignal } from '../../../shared/pixel/collections.signal';
 import { geometrySignal } from '../../../shared/pixel/geometry.signal';
-import { type Pt, type Transform } from '../../../shared/pixel/pixel-tools';
+import { type Pt } from '../../../shared/pixel/pixel-tools';
 import { SheetPainter } from '../../../shared/pixel/sheet-painter';
 import { TransformBarComponent } from '../../../shared/pixel/transform-bar.component';
 import { injectCollectionActions } from '../collection-actions';
+import { DiffStore } from '../diff/diff.store';
+import { DiffChangesComponent } from '../diff/diff-changes.component';
+import { SheetDiffLayerComponent } from '../diff/sheet-diff-layer.component';
 import { logZoomScale } from '../log-zoom-scale';
 import {
   type SizeCost,
@@ -70,6 +75,8 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
 @Component({
   selector: 'nc-art-tab-page',
   imports: [
+    DiffChangesComponent,
+    SheetDiffLayerComponent,
     UpperCasePipe,
     TranslocoDirective,
     ButtonDirective,
@@ -107,6 +114,25 @@ export default class ArtTabPage {
   private readonly i18n = inject(TranslocoService);
   private readonly dialogs = inject(DialogService);
   protected readonly painter = new SheetPainter(this.session.game);
+  protected readonly diff = inject(DiffStore);
+  /** The same sheet, drawn from what diff mode shows: the changes as they would land. */
+  private readonly viewPainter = new SheetPainter(this.diff.viewGame);
+  protected readonly shownPainter = computed(() =>
+    this.diff.shown() === this.diff.viewGame ? this.viewPainter : this.painter,
+  );
+  /** The whole sheet in hand, which the small sheet map always shows. */
+  protected readonly sheetFrame = computed(() => {
+    const sheet = this.sheet();
+    return { x: 0, y: 0, w: sheet?.width ?? 128, h: sheet?.height ?? 128 };
+  });
+  protected readonly sheetChanges = computed(() =>
+    this.diff
+      .itemsOf('art')
+      .filter(
+        (change) =>
+          change.container === `art:${this.art.sheetId()}` || change.container === 'palette',
+      ),
+  );
   protected readonly geometry = geometrySignal(signal(this.session.game));
   /** Ticks when the document's sheets change, so everything derived from them agrees. */
   private readonly sheetsVersion = collectionsSignal(signal(this.session.game));
@@ -133,11 +159,20 @@ export default class ArtTabPage {
   protected readonly sheetTabs = computed<TabItem<string>[]>(() => {
     this.geometry();
     this.sheetsVersion();
-    return this.session.game.sheets.map((sheet, i) => ({
+    const game = this.diff.shown();
+    const changes = this.diff.itemsOf('art');
+    const kindOf = (id: string): ChangeKind | undefined => {
+      const own = changes.filter((change) => change.container === `art:${id}`);
+      return (
+        own.find((change) => change.type === 'sheet')?.kind ?? (own.length ? 'EDIT' : undefined)
+      );
+    };
+    return game.sheets.map((sheet, i) => ({
       value: sheet.id,
       label: sheet.name,
       index: i + 1,
-      colour: sheet.colour === null ? undefined : this.session.game.palette[sheet.colour],
+      colour: sheet.colour === null ? undefined : game.palette[sheet.colour],
+      change: kindOf(sheet.id),
     }));
   });
   /** The sheet the tabs chose. Everything the panel shows is about this one. */
@@ -276,6 +311,8 @@ export default class ArtTabPage {
       untracked(() => {
         this.painter.sheetId.set(id);
         this.painter.follow();
+        this.viewPainter.sheetId.set(id);
+        this.viewPainter.follow();
       });
     });
     // The store clamps the region against the sheet, so it has to be told when the sheet changes.
@@ -297,6 +334,7 @@ export default class ArtTabPage {
     inject(DestroyRef).onDestroy(() => {
       unsubFlags();
       this.painter.destroy();
+      this.viewPainter.destroy();
       this.presence.setCursor(null);
     });
     effect(() => {

@@ -1,0 +1,56 @@
+<ng-container *transloco="let t">
+  <span class="font-mono text-small text-ink-3" role="status">
+    @if (diff.loading()) {
+      {{ t('editor.diff.loading') }}
+    } @else if (diff.loadFailed()) {
+      <span class="text-hot-ink">{{ t('editor.diff.loadFailed') }}</span>
+    } @else if (diff.to() === 'ai' && diff.aiEmpty()) {
+      {{ t('editor.diff.aiNothing') }}
+    } @else if (diff.mode() === 'review') {
+      {{ t('editor.diff.reviewed', { n: diff.reviewed(), max: diff.total() }) }}
+    } @else {
+      {{ t('editor.diff.diffs', { n: diff.total() }) }}
+    }
+  </span>
+  <button
+    ncButton
+    size="sm"
+    iconOnly
+    [disabled]="!diff.total()"
+    [attr.aria-label]="t('editor.diff.previous')"
+    [attr.title]="t('editor.diff.previous')"
+    (click)="diff.step(-1)">
+    <nc-mark name="chevron-left" />
+  </button>
+  <button
+    ncButton
+    size="sm"
+    iconOnly
+    [disabled]="!diff.total()"
+    [attr.aria-label]="t('editor.diff.next')"
+    [attr.title]="t('editor.diff.next')"
+    (click)="diff.step(1)">
+    <nc-mark name="chevron-right" />
+  </button>
+  @if (diff.mode() === 'review') {
+    <button
+      ncButton
+      variant="danger"
+      size="bar"
+      [disabled]="!diff.pending().length"
+      (click)="diff.decideAll('no')">
+      {{ t('editor.diff.rejectAll') }}
+    </button>
+    @if (settled()) {
+      <button ncButton variant="jade" size="bar" (click)="apply()">
+        {{ t('editor.diff.apply') }}
+      </button>
+    } @else {
+      <button ncButton variant="jade" size="bar" [disabled]="!diff.total()" (click)="acceptAll()">
+        {{ t('editor.diff.acceptAll') }}
+      </button>
+    }
+  } @else {
+    <nc-chip>{{ t('editor.diff.readOnly') }}</nc-chip>
+  }
+</ng-container>

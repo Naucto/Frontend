@@ -8,6 +8,11 @@
       </button>
     </div>
   }
+  @if (diff.on()) {
+    <div class="shrink-0 border-b-3 border-line bg-panel">
+      <nc-diff-changes [items]="soundChanges()" />
+    </div>
+  }
   <nc-dock-workspace
     class="min-h-0 flex-1"
     [windows]="windows()"

@@ -12,6 +12,7 @@ import {
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   ButtonDirective,
+  type ChangeKind,
   DialogService,
   IconComponent,
   LooksOnlyDirective,
@@ -22,6 +23,8 @@ import {
 
 import { RuntimeHostService } from '../../../shared/game-screen/runtime-host.service';
 import { ySignal } from '../../../shared/yjs/y-signal';
+import { CodeDiffComponent } from '../diff/code-diff.component';
+import { DiffStore } from '../diff/diff.store';
 import { EditorModeService } from '../state/editor-mode.service';
 import { EditorRuntimeService } from '../state/editor-runtime.service';
 import { SessionPresenceService } from '../work-session/session-presence.service';
@@ -48,6 +51,7 @@ import { localSignatures } from './signature-help';
     MarkComponent,
     SearchBarComponent,
     CodeEditorComponent,
+    CodeDiffComponent,
   ],
   templateUrl: './code-tab.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -78,6 +82,7 @@ export default class CodeTabPage implements OnInit {
   });
   protected readonly session = inject(WorkSessionService);
   protected readonly mode = inject(EditorModeService);
+  protected readonly diff = inject(DiffStore);
   protected readonly presence = inject(SessionPresenceService);
   private readonly saves = inject(SessionSaveService);
   protected readonly runtime = inject(RuntimeHostService);
@@ -104,6 +109,14 @@ export default class CodeTabPage implements OnInit {
     effect(() => {
       if (this.searching()) {
         this.bar()?.focus();
+      }
+    });
+    // A step to a change in another file opens that file.
+    effect(() => {
+      const key = this.diff.currentKey();
+      const change = this.diff.itemsOf('code').find((item) => item.key === key);
+      if (change) {
+        this.activeId.set(change.container.slice('code:'.length));
       }
     });
     inject(DestroyRef).onDestroy(() => {
@@ -166,14 +179,50 @@ export default class CodeTabPage implements OnInit {
    * The rank the engine loads a file in. It is the position in the strip rather than a stored
    * field, so dragging a tab renumbers it and changes what runs first.
    */
-  protected readonly fileTabs = computed<TabItem<string>[]>(() =>
-    this.files().map((file, i) => ({
+  protected readonly fileTabs = computed<TabItem<string>[]>(() => {
+    const changes = this.diff.itemsOf('code');
+    const kinds = new Map<string, ChangeKind>();
+    const struck = new Set<string>();
+    for (const change of changes) {
+      if (change.type === 'code-file') {
+        kinds.set(change.fileId, change.kind);
+        if (change.kind === 'DELETED' && this.diff.decisionOf(change.key) === 'ok') {
+          struck.add(change.fileId);
+        }
+      } else if (change.type === 'code-hunk' || change.type === 'code-name') {
+        kinds.set(change.fileId, kinds.get(change.fileId) ?? 'EDIT');
+      }
+    }
+    const tabs: TabItem<string>[] = this.files().map((file, i) => ({
       value: file.id,
       label: file.name,
       index: i + 1,
       colour: file.colour === null ? undefined : (this.palette()[file.colour] ?? undefined),
-    })),
-  );
+      change: kinds.get(file.id),
+      struck: struck.has(file.id),
+    }));
+    // A file only the other side has: new in a proposal, or gone since a version.
+    for (const change of changes) {
+      if (change.type === 'code-file' && !tabs.some((tab) => tab.value === change.fileId)) {
+        tabs.push({
+          value: change.fileId,
+          label: change.name,
+          change: change.kind,
+          struck: struck.has(change.fileId),
+        });
+      }
+    }
+    return tabs;
+  });
+
+  /** Whether the open file is drawn as a diff: diff mode is on and the file differs. */
+  protected readonly diffShown = computed(() => {
+    const id = this.activeId();
+    return (
+      this.diff.on() &&
+      this.diff.itemsOf('code').some((change) => change.container === `code:${id ?? ''}`)
+    );
+  });
 
   protected addFile(): void {
     this.dialogs

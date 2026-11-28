@@ -18,4 +18,6 @@
   <div class="pointer-events-none absolute inset-0 overflow-hidden">
     <nc-presence-layer [marks]="marks()" [viewport]="viewPx()" />
   </div>
+  <!-- What another layer draws over the sheet at its scale, such as the changes of diff mode. -->
+  <ng-content />
 </div>

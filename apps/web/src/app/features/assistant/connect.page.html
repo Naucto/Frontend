@@ -1,0 +1,57 @@
+<section *transloco="let t" class="mx-auto grid w-full max-w-[520px] gap-2 py-4">
+  <h1 class="font-display text-display text-ink">{{ t('assistant.connect.title') }}</h1>
+  @switch (step()) {
+    @case ('enter') {
+      <p class="text-body text-ink-2">{{ t('assistant.connect.lead') }}</p>
+      <nc-field for="assistant-code" [label]="t('assistant.connect.code')">
+        <input
+          ncInput
+          id="assistant-code"
+          class="font-mono text-title tracking-wide uppercase"
+          autocomplete="one-time-code"
+          [value]="typed()"
+          (input)="type($any($event.target).value)"
+          (keydown.enter)="complete() && look()" />
+      </nc-field>
+      @if (failed()) {
+        <nc-notice tone="danger">{{ t('assistant.connect.unknown') }}</nc-notice>
+      }
+      <div>
+        <button ncButton variant="primary" [disabled]="!complete() || busy()" (click)="look()">
+          {{ t('assistant.connect.next') }}
+        </button>
+      </div>
+    }
+    @case ('confirm') {
+      <p class="text-body text-ink-2">
+        {{ t('assistant.connect.asks', { name: asking()?.clientName ?? '' }) }}
+      </p>
+      <nc-notice tone="warn">{{ t('assistant.connect.reach') }}</nc-notice>
+      @if (returnHost(); as host) {
+        <p class="text-small text-ink-2">{{ t('assistant.connect.after', { host }) }}</p>
+      }
+      <div class="flex gap-1">
+        <button ncButton variant="jade" [disabled]="busy()" (click)="answer(true)">
+          {{ t('assistant.connect.approve') }}
+        </button>
+        <button ncButton variant="secondary" [disabled]="busy()" (click)="answer(false)">
+          {{ t('assistant.connect.refuse') }}
+        </button>
+      </div>
+    }
+    @case ('connected') {
+      <nc-notice tone="success">{{ t('assistant.connect.done') }}</nc-notice>
+      <a ncButton variant="secondary" routerLink="/settings/assistant">
+        {{ t('assistant.connect.manage') }}
+      </a>
+    }
+    @case ('refused') {
+      <nc-notice tone="info">{{ t('assistant.connect.refused') }}</nc-notice>
+    }
+    @case ('returning') {
+      <p class="text-body text-ink-2" role="status">
+        {{ t('assistant.connect.returning', { host: returnHost() ?? '' }) }}
+      </p>
+    }
+  }
+</section>

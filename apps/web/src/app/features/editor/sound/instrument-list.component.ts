@@ -1,20 +1,23 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { type Instrument } from '@naucto/engine';
 import {
   ButtonDirective,
+  ChangeChipComponent,
   MarkComponent,
   type PresenceDot,
   PresenceDotsComponent,
   TooltipDirective,
 } from '@naucto/ui';
 
+import { DiffStore } from '../diff/diff.store';
 import { WaveGlyphComponent } from './wave-glyph.component';
 
 /** The instruments, listed beside the editors that paint or tune with them. */
 @Component({
   selector: 'nc-instrument-list',
   imports: [
+    ChangeChipComponent,
     TranslocoDirective,
     ButtonDirective,
     MarkComponent,
@@ -28,6 +31,7 @@ import { WaveGlyphComponent } from './wave-glyph.component';
 })
 export class InstrumentListComponent {
   readonly list = input.required<Instrument[]>();
+  protected readonly diff = inject(DiffStore);
   readonly selectedId = input<string | null>(null);
   readonly palette = input.required<readonly string[]>();
   readonly peersOf = input<(id: string) => readonly PresenceDot[]>(() => []);

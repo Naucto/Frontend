@@ -18,6 +18,8 @@ import {
   MarkComponent,
 } from '@naucto/ui';
 
+import { DiffStore } from '../diff/diff.store';
+import { DiffChangesComponent } from '../diff/diff-changes.component';
 import { HostElectionService } from '../work-session/host-election.service';
 import { InstrumentEditorComponent } from './editors/instrument-editor.component';
 import { PatternEditorComponent } from './editors/pattern-editor.component';
@@ -37,6 +39,7 @@ const ICONS = {
 @Component({
   selector: 'nc-sound-tab-page',
   imports: [
+    DiffChangesComponent,
     TranslocoDirective,
     ButtonDirective,
     MarkComponent,
@@ -54,6 +57,8 @@ const ICONS = {
 })
 export default class SoundTabPage {
   protected readonly deck = inject(SoundDeck);
+  protected readonly diff = inject(DiffStore);
+  protected readonly soundChanges = computed(() => this.diff.itemsOf('sound'));
   protected readonly store = this.deck.store;
   private readonly election = inject(HostElectionService);
   private readonly transloco = inject(TranslocoService);

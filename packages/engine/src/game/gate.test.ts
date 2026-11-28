@@ -22,6 +22,7 @@ function seeded(): { game: EditableGame; doc: Y.Doc; close: () => void } {
   game.addFile('helpers', 'return 1', 'file-2');
   game.plugInput('pause', TAB);
   game.setNetPermission('players.score', 1);
+  game.setInstrument(defaultInstrument('bell'));
   game.sheets[0]?.setFlag(1, 0b1);
   game.maps[0]?.setTile(2, 2, 1);
 
@@ -128,6 +129,18 @@ const MUTATORS: Record<string, Mutation> = {
   },
   addAction: { on: seeded, run: (game) => game.addAction({ name: 'dash' }) },
   updateAction: { on: seeded, run: (game) => game.updateAction('pause', { label: 'Menu' }) },
+  putAction: {
+    on: seeded,
+    run: (game) =>
+      game.putAction({
+        id: 'a-1',
+        name: 'dash',
+        label: '',
+        description: '',
+        order: 9,
+        inputs: [],
+      }),
+  },
   removeAction: {
     on: seeded,
     run: (game) => {
@@ -158,6 +171,24 @@ const MUTATORS: Record<string, Mutation> = {
       game.applyPreset('platformer');
     },
   },
+  removeSound: {
+    on: seeded,
+    run: (game) => {
+      game.removeSound('instruments', 'bell');
+    },
+  },
+  setNetAccess: {
+    on: seeded,
+    run: (game) => {
+      game.setNetAccess('fresh', { write: false });
+    },
+  },
+  dropNetRule: {
+    on: seeded,
+    run: (game) => {
+      game.dropNetRule('players.score');
+    },
+  },
   setPaletteColour: {
     on: seeded,
     run: (game) => {
@@ -171,6 +202,7 @@ const MUTATORS: Record<string, Mutation> = {
     },
   },
   addFile: { on: seeded, run: (game) => game.addFile('extra', 'return 3') },
+  setFileText: { on: seeded, run: (game) => game.setFileText('file-2', 'return 4') },
   renameFile: {
     on: seeded,
     run: (game) => {

@@ -1,12 +1,6 @@
 import { type SharedTableSession, type TableScalar } from '@naucto/engine';
+import { type NetRules, PERM_CLIENT_READ, PERM_CLIENT_WRITE, ruleOrigin } from '@naucto/engine';
 import { formatCount } from '@naucto/ui';
-
-import {
-  type NetRules,
-  PERM_CLIENT_READ,
-  PERM_CLIENT_WRITE,
-  ruleOrigin,
-} from '../../../core/net/net-permissions';
 
 /** Where a path's flags come from: a rule of its own, an ancestor's, or no rule anywhere (open). */
 export type RuleSource = 'own' | 'inherited' | 'none';

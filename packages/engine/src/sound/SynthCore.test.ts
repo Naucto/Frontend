@@ -449,3 +449,20 @@ describe('Sequencer', () => {
     expect(synth.voices.filter((voice) => voice.active).map((voice) => voice.pitch)).toEqual([67]);
   });
 });
+
+describe('a bright filter', () => {
+  it('stays stable near Nyquist with little resonance', () => {
+    const synth = new SynthCore(48000);
+    const bright = {
+      ...defaultInstrument('bright'),
+      osc: 'saw' as const,
+      filter: { type: 'lp' as const, cutoff: 8000, resonance: 0.2, envAmount: 1 },
+    };
+    synth.noteOn(bright, 72, 1, 0);
+    const left = new Float32Array(4096);
+    const right = new Float32Array(4096);
+    synth.render(left, right, 4096);
+    expect(left.every(Number.isFinite)).toBe(true);
+    expect(left.some((value) => Math.abs(value) > 0.05)).toBe(true);
+  });
+});

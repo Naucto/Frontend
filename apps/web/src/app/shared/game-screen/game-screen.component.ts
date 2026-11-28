@@ -18,6 +18,7 @@ import {
 } from '@angular/core';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { type Game, type TouchControl, touchControlsOf } from '@naucto/engine';
+import { netPermissionsOf } from '@naucto/engine';
 import {
   ButtonDirective,
   ChipComponent,
@@ -34,7 +35,6 @@ import {
   NetUiBridgeService,
   type SessionInvite,
 } from '../../core/net/net-bridge.service';
-import { netPermissionsOf } from '../../core/net/net-permissions';
 import { ThemeService } from '../../core/theme/theme.service';
 import { coarsePointer } from '../input/coarse-pointer';
 import { GoodStandingAction } from '../moderation/good-standing-action';

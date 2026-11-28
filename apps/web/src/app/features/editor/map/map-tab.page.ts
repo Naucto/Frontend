@@ -11,8 +11,10 @@ import {
 } from '@angular/core';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { FIRST_MAP_ID, MAX_MAP_SIZE, SPRITE_SIZE } from '@naucto/engine';
+import { type Transform } from '@naucto/engine';
 import {
   ButtonDirective,
+  type ChangeKind,
   DialogService,
   IconComponent,
   LooksOnlyDirective,
@@ -30,12 +32,15 @@ import {
 
 import { collectionsSignal } from '../../../shared/pixel/collections.signal';
 import { geometrySignal } from '../../../shared/pixel/geometry.signal';
-import { type Pt, type Transform } from '../../../shared/pixel/pixel-tools';
+import { type Pt } from '../../../shared/pixel/pixel-tools';
 import { SheetAtlas } from '../../../shared/pixel/sheet-atlas';
 import { SheetPainter } from '../../../shared/pixel/sheet-painter';
 import { TransformBarComponent } from '../../../shared/pixel/transform-bar.component';
 import { SheetViewComponent } from '../art/sheet-view.component';
 import { injectCollectionActions } from '../collection-actions';
+import { DiffStore } from '../diff/diff.store';
+import { DiffChangesComponent } from '../diff/diff-changes.component';
+import { MapDiffLayerComponent } from '../diff/map-diff-layer.component';
 import { logZoomScale } from '../log-zoom-scale';
 import { SizeDialog, type SizeDialogData, type SizeDialogResult } from '../size.dialog';
 import { ClipboardStore } from '../state/clipboard.store';
@@ -70,6 +75,8 @@ const ZOOM_SCALE = logZoomScale(MAP_MIN_ZOOM, MAP_MAX_ZOOM);
     MapCanvasComponent,
     TransformBarComponent,
     MinimapComponent,
+    DiffChangesComponent,
+    MapDiffLayerComponent,
   ],
   templateUrl: './map-tab.page.html',
   host: { class: 'block h-full', '(keydown)': 'onKey($event)' },
@@ -81,6 +88,7 @@ export default class MapTabPage {
   protected readonly mode = inject(EditorModeService);
   protected readonly presence = inject(SessionPresenceService);
   protected readonly map = inject(MapStore);
+  protected readonly diff = inject(DiffStore);
   private readonly clipboard = inject(ClipboardStore);
   private readonly i18n = inject(TranslocoService);
   private readonly dialogs = inject(DialogService);
@@ -126,7 +134,8 @@ export default class MapTabPage {
   private readonly gameMap = computed(() => {
     this.collectionsVersion();
     this.geometry();
-    const maps = this.session.game.maps;
+    this.diff.decisions();
+    const maps = this.diff.shown().maps;
 
     return maps.find((candidate) => candidate.id === this.map.mapId()) ?? maps[0];
   });
@@ -166,13 +175,26 @@ export default class MapTabPage {
   protected readonly mapTabs = computed<TabItem<string>[]>(() => {
     this.geometry();
     this.collectionsVersion();
-    return this.session.game.maps.map((entry, i) => ({
+    const game = this.diff.shown();
+    const changes = this.diff.itemsOf('map');
+    // A map waiting to be removed is still drawn; one whose removal is kept is struck.
+    const kindOf = (id: string): ChangeKind | undefined => {
+      const own = changes.filter((change) => change.container === `map:${id}`);
+      return own.find((change) => change.type === 'map')?.kind ?? (own.length ? 'EDIT' : undefined);
+    };
+    return game.maps.map((entry, i) => ({
       value: entry.id,
       label: entry.name,
       index: i + 1,
-      colour: entry.colour === null ? undefined : this.session.game.palette[entry.colour],
+      colour: entry.colour === null ? undefined : game.palette[entry.colour],
+      change: kindOf(entry.id),
     }));
   });
+
+  /** The changes of the map in hand, which the panel lists and the canvas marks. */
+  protected readonly mapChanges = computed(() =>
+    this.diff.itemsOf('map').filter((change) => change.container === `map:${this.map.mapId()}`),
+  );
   protected readonly mapW = computed(() => this.gameMap()?.width ?? 0);
   protected readonly mapH = computed(() => this.gameMap()?.height ?? 0);
   protected readonly zoomAt = computed(() => ZOOM_SCALE.positionOf(this.map.zoom()));

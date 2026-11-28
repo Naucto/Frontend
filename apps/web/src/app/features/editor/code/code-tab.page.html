@@ -39,7 +39,9 @@
     </span>
   </nc-tabs>
   <div class="min-h-0 flex-1">
-    @if (active(); as file) {
+    @if (diffShown()) {
+      <nc-code-diff [fileId]="activeId() ?? ''" />
+    } @else if (active(); as file) {
       <nc-code-editor
         #editor
         [text]="file.text"

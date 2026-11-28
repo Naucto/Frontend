@@ -1,0 +1,73 @@
+<ng-container *transloco="let t">
+  @if (diff.on()) {
+    <span class="flex items-center gap-1">
+      <button
+        type="button"
+        class="flex h-[34px] cursor-pointer items-center gap-1 well px-1.5 font-mono text-small text-ink"
+        [ncPopover]="fromMenu"
+        [(popoverOpen)]="fromOpen"
+        [attr.aria-label]="t('editor.diff.from')">
+        <span class="max-w-[18ch] truncate">{{ titleOf(diff.from()) }}</span>
+        <nc-mark name="chevron-down" class="text-ink-3" />
+      </button>
+      <nc-mark name="arrow-right" class="text-ink-3" />
+      <button
+        type="button"
+        class="flex h-[34px] cursor-pointer items-center gap-1 well px-1.5 font-mono text-small text-ink"
+        [ncPopover]="toMenu"
+        [(popoverOpen)]="toOpen"
+        [attr.aria-label]="t('editor.diff.to')">
+        <span class="max-w-[18ch] truncate">{{ titleOf(diff.to()) }}</span>
+        <nc-mark name="chevron-down" class="text-ink-3" />
+      </button>
+    </span>
+  }
+  <span class="mx-0.5 h-[28px] w-[3px] bg-line-strong"></span>
+  <nc-toggle
+    variant="bare"
+    [checked]="diff.on()"
+    (checkedChange)="diff.setOn($event)"
+    [label]="t('editor.diff.toggle')">
+    <span class="ml-1 text-small tracking-[0.08em] uppercase">{{ t('editor.diff.toggle') }}</span>
+  </nc-toggle>
+
+  <ng-template #fromMenu>
+    <nc-popover-panel [title]="t('editor.diff.from')" [header]="false" class="w-[260px] p-[6px]">
+      @for (row of fromRows(); track row.ref) {
+        <ng-container
+          [ngTemplateOutlet]="pickerRow"
+          [ngTemplateOutletContext]="{ row, side: 'from', chosen: diff.from() }" />
+      }
+    </nc-popover-panel>
+  </ng-template>
+  <ng-template #toMenu>
+    <nc-popover-panel [title]="t('editor.diff.to')" [header]="false" class="w-[260px] p-[6px]">
+      @for (row of toRows(); track row.ref) {
+        <ng-container
+          [ngTemplateOutlet]="pickerRow"
+          [ngTemplateOutletContext]="{ row, side: 'to', chosen: diff.to() }" />
+      }
+    </nc-popover-panel>
+  </ng-template>
+  <ng-template #pickerRow let-row="row" let-side="side" let-chosen="chosen">
+    <button
+      type="button"
+      class="flex w-full cursor-pointer items-start gap-1 px-[10px] py-[8px] text-left hover:bg-raised"
+      [attr.aria-pressed]="row.ref === chosen"
+      (click)="pick(side, row.ref)">
+      <span
+        class="mt-[4px] size-[9px] shrink-0"
+        [class]="row.ref === chosen ? 'bg-gold' : 'bg-line-strong'"></span>
+      <span class="min-w-0">
+        <span class="block truncate text-small text-ink">{{ row.title }}</span>
+        <span class="block font-mono text-micro text-ink-3">
+          @if (row.when) {
+            {{ row.when | ncRelativeTime }}
+          } @else if (row.hint) {
+            {{ t(row.hint) }}
+          }
+        </span>
+      </span>
+    </button>
+  </ng-template>
+</ng-container>

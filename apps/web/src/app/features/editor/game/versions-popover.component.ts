@@ -10,10 +10,8 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   projectContentControllerDeleteCheckpoint,
   projectContentControllerDeleteVersion,
-  projectContentControllerGetCheckpoint,
-  projectContentControllerGetVersion,
 } from '@naucto/api-client';
-import { computeSizeReport, isFromFutureSchema, migrateGame } from '@naucto/engine';
+import { computeSizeReport } from '@naucto/engine';
 import {
   ButtonDirective,
   DialogService,
@@ -40,14 +38,25 @@ import { SessionSaveService } from '../work-session/session-save.service';
 import { WorkSessionService } from '../work-session/work-session.service';
 import { PUBLISH_CEILING, sizeSegments } from './publish.dialog';
 import { SaveVersionDialog, type SaveVersionDialogData } from './save-version.dialog';
+import { loadVersionDoc } from './version-snapshot';
 
-interface HistoryRow extends VersionRow {
+export interface HistoryRow extends VersionRow {
   /** v1, v2 … for releases; 0 for autosaves. */
   index: number;
 }
 
 /** Newest first; entries with no date sort last. */
 const byWhen = (a: VersionRow, b: VersionRow): number => (b.when ?? '').localeCompare(a.when ?? '');
+
+/** Releases and autosaves in one list, newest first, releases numbered v1, v2, … */
+export function historyOf(
+  releases: readonly VersionRow[],
+  autosaves: readonly VersionRow[],
+): HistoryRow[] {
+  const sorted = [...releases].sort(byWhen);
+  const numbered = sorted.map((release, i) => ({ ...release, index: sorted.length - i }));
+  return [...numbered, ...autosaves.map((autosave) => ({ ...autosave, index: 0 }))].sort(byWhen);
+}
 
 /** Header chip "Platformer v3 · 942 KB" → versions, autosaves and the size budget. */
 @Component({
@@ -86,13 +95,7 @@ export class VersionsPopoverComponent {
   protected readonly restoring = signal(false);
 
   /** Releases and autosaves in one list, newest first, releases numbered v1, v2, … */
-  protected readonly history = computed<HistoryRow[]>(() => {
-    const releases = [...this.releases()].sort(byWhen);
-    const numbered = releases.map((release, i) => ({ ...release, index: releases.length - i }));
-    return [...numbered, ...this.autosaves().map((autosave) => ({ ...autosave, index: 0 }))].sort(
-      byWhen,
-    );
-  });
+  protected readonly history = computed(() => historyOf(this.releases(), this.autosaves()));
   /** The newest named version — what the chip calls the game; nothing, while none has a name. */
   protected readonly newest = computed(() => this.history().find((row) => row.release));
   protected readonly size = computed(() => {
@@ -159,29 +162,8 @@ export class VersionsPopoverComponent {
     }
     this.restoring.set(true);
     try {
-      const path = { id: this.session.id };
-      const res = row.release
-        ? await projectContentControllerGetCheckpoint({
-            path: { ...path, name: row.name },
-            parseAs: 'blob',
-          })
-        : await projectContentControllerGetVersion({
-            path: { ...path, version: row.name },
-            parseAs: 'blob',
-          });
-      const blob = res.data;
-      if (!blob || blob.size === 0) {
-        throw new Error('empty version');
-      }
-      // A version saved under an older schema is brought forward first: the restore copies only
-      // the current schema's shape and would drop whatever sits in the old one.
-      const scratch = new Y.Doc();
+      const scratch = await loadVersionDoc(this.session.id, row);
       try {
-        Y.applyUpdate(scratch, new Uint8Array(await blob.arrayBuffer()));
-        if (isFromFutureSchema(scratch)) {
-          throw new Error('version from a newer schema');
-        }
-        migrateGame(scratch);
         this.session.game.restoreFrom(Y.encodeStateAsUpdate(scratch));
       } finally {
         scratch.destroy();

@@ -1,7 +1,8 @@
 import { signal } from '@angular/core';
+import { type Transform, transformBlock } from '@naucto/engine';
 import type * as Y from 'yjs';
 
-import { type Pt, type Rect, type Transform, transformBlock, withinBounds } from './pixel-tools';
+import { type Pt, type Rect, withinBounds } from './pixel-tools';
 
 type Cells = Uint8Array | Uint16Array;
 

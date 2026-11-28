@@ -14,6 +14,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import {
   addTrack,
   defaultSong,
+  type MidiSong,
   notesAtOnce,
   type Pattern,
   patternBars,
@@ -47,10 +48,12 @@ import {
   TransportComponent,
 } from '@naucto/ui';
 
+import { DiffStore } from '../../diff/diff.store';
 import { MetronomeButtonComponent } from '../controls/metronome-button.component';
 import { SoundHelpComponent } from '../controls/sound-help.component';
 import { type PickerItem, SoundPickerComponent } from '../controls/sound-picker.component';
 import { SoundZoomComponent } from '../controls/sound-zoom.component';
+import { MidiImportDialog, type MidiImportDialogData } from '../midi-import.dialog';
 import { OscilloscopeComponent } from '../oscilloscope.component';
 import { BAR_DIVISIONS, MAX_BAR_ZOOM, MIN_BAR_ZOOM } from '../sound.store';
 import { SoundDeck } from '../sound-deck';
@@ -108,6 +111,7 @@ interface Mini {
 })
 export class TimelineEditorComponent {
   protected readonly deck = inject(SoundDeck);
+  private readonly diff = inject(DiffStore);
   protected readonly store = this.deck.store;
   private readonly library = this.deck.library;
   private readonly lane = viewChild<ElementRef<HTMLElement>>('lane');
@@ -393,6 +397,7 @@ export class TimelineEditorComponent {
       free: !song,
       canDuplicate: !!song,
       canRemove: !!song,
+      change: this.diff.soundKind('songs', String(slot)),
     };
   }
 
@@ -485,6 +490,23 @@ export class TimelineEditorComponent {
 
   protected pickSong(key: string): void {
     this.selectSong(Number(key));
+  }
+
+  /** A MIDI file as a new music, opened once it is in. */
+  protected importMidi(): void {
+    this.deck.dialogs
+      .open<MidiImportDialog, MidiImportDialogData, MidiSong | undefined>(MidiImportDialog, {
+        data: { firstSlot: this.library.patternSlotAfterAll() },
+        ariaLabel: this.deck.transloco.translate('editor.sound.midi.title'),
+      })
+      .closed.subscribe((music) => {
+        if (!music) {
+          return;
+        }
+        const slot = this.library.nextSongSlot();
+        this.library.importMusic(slot, music);
+        this.selectSong(slot);
+      });
   }
 
   protected duplicateSong(key: string): void {

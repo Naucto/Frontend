@@ -68,7 +68,7 @@
       <nc-map-canvas
         #canvas
         class="h-full bg-page"
-        [game]="session.game"
+        [game]="diff.shown()"
         [mapId]="map.mapId()"
         [painter]="painter"
         [atlas]="atlas"
@@ -86,7 +86,11 @@
         (zoomBy)="map.zoomBy($event)"
         (viewport)="viewport.set($event)"
         [undo]="undo.manager"
-        (pasted)="map.setTool('move')" />
+        (pasted)="map.setTool('move')">
+        @if (diff.on()) {
+          <nc-map-diff-layer [mapId]="map.mapId()" [tilePx]="8 * map.zoom()" />
+        }
+      </nc-map-canvas>
       <!-- In the corner rather than beside the selection: the map is far wider than its well,
            so the selection's edge is as often as not scrolled out of view. -->
       @if (tool() === 'select' && map.selection()) {
@@ -170,6 +174,9 @@
       <span class="w-[38px] shrink-0 text-right text-label text-ink-3">×{{ zoomLabel() }}</span>
     </div>
 
+    @if (diff.on()) {
+      <nc-diff-changes [items]="mapChanges()" />
+    }
     <nc-section banded [title]="t('editor.map.tilePicker')">
       <!-- Read-only here: a sheet is named, coloured and deleted in the ART tab. -->
       <nc-tabs
@@ -224,7 +231,7 @@
         </span>
       </nc-tabs>
       <nc-minimap
-        [game]="session.game"
+        [game]="diff.shown()"
         [mapId]="map.mapId()"
         [atlas]="atlas"
         [viewport]="viewport()"

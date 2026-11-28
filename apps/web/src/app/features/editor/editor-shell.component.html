@@ -12,7 +12,10 @@
       <nc-logo />
     </a>
     @if (live()) {
-      <nc-versions-popover />
+      @if (!diff.on()) {
+        <nc-versions-popover />
+      }
+      <nc-diff-bar />
     }
     <span class="flex-1"></span>
     @if (live()) {
@@ -28,7 +31,9 @@
         }
       </div>
       <!-- The narrow screen offers a link to a laptop instead: nothing here to share or publish from. -->
-      @if (!ui.tooNarrow()) {
+      @if (diff.on()) {
+        <nc-diff-review />
+      } @else if (!ui.tooNarrow()) {
         <button ncButton variant="secondary" size="bar" (click)="share()">
           {{ t('editor.share') }}
         </button>
