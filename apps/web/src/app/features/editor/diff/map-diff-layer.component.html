@@ -1,0 +1,40 @@
+@for (area of areas(); track area.item.key) {
+  @if (area.decision === 'pending') {
+    @for (tile of area.tiles; track $index) {
+      <span
+        class="absolute"
+        [class]="tileLook[tile.look]"
+        [style.left.px]="tile.x * tilePx()"
+        [style.top.px]="tile.y * tilePx()"
+        [style.width.px]="tilePx()"
+        [style.height.px]="tilePx()"></span>
+    }
+    <button
+      type="button"
+      class="pointer-events-auto absolute cursor-pointer outline-offset-0 hover:bg-ink/10"
+      [class]="
+        area.selected
+          ? 'outline-3 outline-ink outline-solid'
+          : 'outline-2 outline-ink-3 outline-dashed'
+      "
+      [style.left.px]="area.item.bounds.x * tilePx() - 3"
+      [style.top.px]="area.item.bounds.y * tilePx() - 3"
+      [style.width.px]="area.item.bounds.w * tilePx() + 6"
+      [style.height.px]="area.item.bounds.h * tilePx() + 6"
+      [attr.aria-label]="area.item.key"
+      (click)="select(area, $event)"></button>
+  }
+}
+@if (selected(); as area) {
+  @if (diff.mode() === 'review') {
+    <div
+      class="pointer-events-auto absolute flex -translate-y-full items-center gap-1 pb-1"
+      [style.left.px]="area.item.bounds.x * tilePx() - 3"
+      [style.top.px]="area.item.bounds.y * tilePx() - 3">
+      <nc-hunk-actions
+        iconOnly
+        [decision]="area.decision"
+        (decided)="diff.decide([area.item.key], $event)" />
+    </div>
+  }
+}

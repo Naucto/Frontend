@@ -98,9 +98,9 @@
       <nc-sprite-canvas
         #canvas
         class="absolute inset-0"
-        [game]="session.game"
+        [game]="diff.shown()"
         [sheetId]="art.sheetId()"
-        [painter]="painter"
+        [painter]="shownPainter()"
         [region]="art.region()"
         [clip]="art.clip()"
         [crop]="art.crop()"
@@ -116,7 +116,11 @@
         (pointer)="onPointer($event)"
         (pick)="art.setColour($event)"
         [undo]="undo.manager"
-        (pasted)="art.setTool('move')" />
+        (pasted)="art.setTool('move')">
+        @if (diff.on()) {
+          <nc-sheet-diff-layer [sheetId]="art.sheetId()" [frame]="canvas.frame()" />
+        }
+      </nc-sprite-canvas>
       <!-- In the corner rather than beside the selection: at a zoom worth turning a sprite at,
            the selection's edge is as often as not scrolled out of view. -->
       @if (tool() === 'select' && art.selection()) {
@@ -217,6 +221,9 @@
       </button>
     </div>
 
+    @if (diff.on()) {
+      <nc-diff-changes [items]="sheetChanges()" />
+    }
     <nc-section banded [title]="t('editor.art.sheet')">
       <nc-tabs
         ncLooksOnly
@@ -254,13 +261,18 @@
           </button>
         </span>
       </nc-tabs>
-      <nc-sheet-view
-        [painter]="painter"
-        [region]="art.region()"
-        (regionChange)="art.setRegion($event)"
-        [viewport]="canvas.view()"
-        (panTo)="canvas.scrollToCell($event.x, $event.y)"
-        [label]="t('editor.art.pickSprite')" />
+      <div class="relative">
+        <nc-sheet-view
+          [painter]="shownPainter()"
+          [region]="art.region()"
+          (regionChange)="art.setRegion($event)"
+          [viewport]="canvas.view()"
+          (panTo)="canvas.scrollToCell($event.x, $event.y)"
+          [label]="t('editor.art.pickSprite')" />
+        @if (diff.on()) {
+          <nc-sheet-diff-layer [sheetId]="art.sheetId()" [frame]="sheetFrame()" [chips]="false" />
+        }
+      </div>
     </nc-section>
 
     <!-- Presence goes where the shared document is written; the sheet map and the zoom above are

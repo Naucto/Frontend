@@ -12,7 +12,7 @@ export type {
 export * from './diff/changes';
 export * from './diff/decisions';
 export * from './diff/lines';
-export { mergeAccepted } from './diff/merge';
+export { displayState, mergeAccepted } from './diff/merge';
 export * from './game/defaults';
 export { EditableGame, type ResizePreview } from './game/EditableGame';
 export {

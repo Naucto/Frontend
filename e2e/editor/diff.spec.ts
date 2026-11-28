@@ -50,6 +50,10 @@ function savedGame(
   });
   game.addFile(extra.name, extra.text, extra.id);
   game.maps.find((map) => map.id === FIRST_MAP_ID)?.setTile(3, 3, tile);
+  // A sprite drawn since the version: a pixel of sprite 1 the version does not have.
+  if (tile) {
+    game.sheets[0]?.setPixel(9, 1, 4);
+  }
   return Buffer.from(Y.encodeStateAsUpdate(doc));
 }
 
@@ -99,7 +103,7 @@ test('compares the project with a saved version, read only', async ({ page }) =>
   await page.getByRole('button', { name: 'Compare to' }).click();
   await page.getByRole('button', { name: /Current project/ }).click();
 
-  await expect(page.getByRole('status').filter({ hasText: '6 diffs' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: '7 diffs' })).toBeVisible();
   // Five in CODE, the tile in MAP.
   await expect(page.getByRole('button', { name: '5 Code' })).toBeVisible();
   await expect(page.getByText('Read only')).toBeVisible();
@@ -122,7 +126,7 @@ test('takes back part of a saved version, change by change', async ({ page }) =>
   await expect(page.getByText(/0 of \d+ reviewed/)).toBeVisible();
   // Take back the version's first change to main (`y = 80`, no `speed`) and refuse the rest.
   await page.getByRole('button', { name: 'Accept', exact: true }).first().click();
-  await expect(page.getByText('1 of 6 reviewed')).toBeVisible();
+  await expect(page.getByText('1 of 7 reviewed')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible();
   await page.screenshot({ path: 'test-results/diff-review.png' });
   await page.getByRole('button', { name: 'Reject all' }).click();
@@ -143,9 +147,9 @@ test('reviews what the assistant made, and tells it what is left', async ({ page
   await page.getByRole('switch', { name: 'Diff' }).click();
 
   await expect(page.getByRole('button', { name: 'Compare to' })).toContainText('AI changes');
-  await expect(page.getByText('0 of 6 reviewed')).toBeVisible();
+  await expect(page.getByText('0 of 7 reviewed')).toBeVisible();
   await page.getByRole('button', { name: 'Accept', exact: true }).first().click();
-  await expect(page.getByText('1 of 6 reviewed')).toBeVisible();
+  await expect(page.getByText('1 of 7 reviewed')).toBeVisible();
   await page.getByRole('button', { name: 'Accept all' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Apply' }).click();
 
@@ -155,4 +159,36 @@ test('reviews what the assistant made, and tells it what is left', async ({ page
     categories: expect.arrayContaining(['CODE', 'MAPS']),
   });
   await expect(page.getByText('y = 80').first()).toBeVisible();
+});
+
+test('MAP marks the changed areas and takes one back', async ({ page }) => {
+  await mockAssistant(page);
+  await page.goto(editorUrl('map'));
+  await page.getByRole('switch', { name: 'Diff' }).click();
+  await page.getByRole('button', { name: 'Compare to' }).click();
+  await page.getByRole('button', { name: /first level/ }).click();
+
+  const changes = page.getByRole('list', { name: 'Changes' });
+  await expect(changes.getByText('Area at 3, 3')).toBeVisible();
+  await expect(page.getByRole('button', { name: '1 Map' })).toBeVisible();
+  await changes.getByText('Area at 3, 3').click();
+  await page.screenshot({ path: 'test-results/diff-map.png' });
+  await changes.getByRole('button', { name: 'Accept', exact: true }).click();
+  await expect(page.getByRole('button', { name: '1 Map' })).toHaveCount(0);
+});
+
+test('ART frames the sprites that changed and shows each before and after', async ({ page }) => {
+  await mockAssistant(page);
+  await page.goto(editorUrl('art'));
+  await page.getByRole('switch', { name: 'Diff' }).click();
+  await page.getByRole('button', { name: 'Compare to' }).click();
+  await page.getByRole('button', { name: /first level/ }).click();
+
+  const changes = page.getByRole('list', { name: 'Changes' });
+  await expect(changes.getByText('Sprite 001')).toBeVisible();
+  await page.getByRole('button', { name: 'Sprite 1' }).first().dispatchEvent('pointerdown');
+  await expect(page.getByText('Before', { exact: true })).toBeVisible();
+  await page.screenshot({ path: 'test-results/diff-art.png' });
+  await page.getByRole('button', { name: 'Accept', exact: true }).last().click();
+  await expect(page.getByRole('button', { name: '1 Art' })).toHaveCount(0);
 });

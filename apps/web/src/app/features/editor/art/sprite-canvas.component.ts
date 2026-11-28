@@ -277,6 +277,10 @@ export class SpriteCanvasComponent {
   protected readonly pxW = computed(() => this.sheet()?.width ?? this.geometry().sheetWidth);
   protected readonly pxH = computed(() => this.sheet()?.height ?? this.geometry().sheetHeight);
   /** The region in sheet pixels: what the tools are held to, and what is outlined on the canvas. */
+  /** The part of the sheet the surface shows, in sheet pixels: what a layer over it is placed in. */
+  readonly frame = computed<PixelRect>(() =>
+    this.crop() ? this.regionPx() : { x: 0, y: 0, w: this.pxW(), h: this.pxH() },
+  );
   private readonly regionPx = computed<PixelRect>(() => {
     const region = this.region();
     return {

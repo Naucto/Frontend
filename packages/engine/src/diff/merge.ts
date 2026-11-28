@@ -219,3 +219,21 @@ export function mergeAccepted(
     doc.destroy();
   }
 }
+
+/**
+ * What the editors draw while diff mode is on: every change not refused, as it would be once
+ * kept, so a change is seen where it lands. A removal still waiting is not taken: what it would
+ * remove stays drawn, for the hatch over it to say it goes.
+ */
+export function displayState(
+  current: Y.Doc,
+  proposed: EditableGame,
+  items: readonly ChangeItem[],
+  decisions: ReadonlyMap<string, 'pending' | 'ok' | 'no'>,
+): Uint8Array {
+  const shown = items.filter((item) => {
+    const decision = decisions.get(item.key) ?? 'pending';
+    return decision === 'ok' || (decision === 'pending' && item.kind !== 'DELETED');
+  });
+  return mergeAccepted(current, proposed, items, new Set(shown.map((item) => item.key)));
+}

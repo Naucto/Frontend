@@ -1,0 +1,67 @@
+<ng-container *transloco="let t">
+  @for (cell of cells(); track cell.key) {
+    @if (cell.decision === 'pending') {
+      <button
+        type="button"
+        class="pointer-events-auto absolute cursor-pointer"
+        [class]="frameOf[cell.kind]"
+        [style.left.%]="cell.left"
+        [style.top.%]="cell.top"
+        [style.width.%]="cell.width"
+        [style.height.%]="cell.height"
+        [attr.aria-label]="
+          t('editor.diff.item.sprite', { n: cell.pixels?.sprite ?? cell.flags?.sprite })
+        "
+        (pointerenter)="hovered.set(cell.key)"
+        (pointerleave)="hovered.set(null)"
+        (pointerdown)="pin(cell, $event)">
+        @if (cell.kind === 'DELETED') {
+          <span class="pixel-hatch absolute inset-[3px]"></span>
+        }
+        @if (chips() && cell.pixels) {
+          <nc-change-chip small class="absolute -top-[3px] -right-[3px]" [kind]="cell.kind" />
+        }
+        @if (cell.flags) {
+          <span
+            class="pixel-cut absolute right-[3px] bottom-[3px] flex size-[14px] items-center justify-center bg-orange font-mono text-[10px] leading-none text-on-accent">
+            F
+          </span>
+        }
+      </button>
+    }
+  }
+  @if (card(); as cell) {
+    <div
+      class="pointer-events-auto absolute z-20 flex w-[196px] flex-col gap-1 flat-lg bevel-fill-panel p-1"
+      [style.left.%]="cell.left + cell.width"
+      [style.top.%]="cell.top"
+      (pointerdown)="$event.stopPropagation()">
+      @if (cell.pixels; as change) {
+        <div class="grid grid-cols-2 gap-1">
+          <span class="label text-ink-3">{{ t('editor.diff.before') }}</span>
+          <span class="label text-ink-3">{{ t('editor.diff.after') }}</span>
+          <span class="relative aspect-square">
+            <nc-sprite-thumb class="size-full" [pixels]="change.before" [palette]="palette()" />
+          </span>
+          <span class="relative aspect-square">
+            <nc-sprite-thumb
+              class="size-full"
+              [pixels]="change.kind === 'DELETED' ? empty : change.after"
+              [palette]="palette()" />
+          </span>
+        </div>
+      }
+      @if (cell.flags; as flags) {
+        <span class="font-mono text-micro text-ink-3">
+          {{ t('editor.diff.item.flags', { n: flags.sprite }) }}:
+          {{ t('editor.diff.item.flagBits', { before: flags.before, after: flags.after }) }}
+        </span>
+      }
+      @if (diff.mode() === 'review' && pinned() === cell.key) {
+        <nc-hunk-actions
+          [decision]="cell.decision"
+          (decided)="diff.decide(keysOf(cell), $event); pinned.set(null)" />
+      }
+    </div>
+  }
+</ng-container>

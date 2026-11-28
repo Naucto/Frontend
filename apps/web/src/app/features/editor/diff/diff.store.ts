@@ -13,6 +13,7 @@ import {
   decisionOf,
   DIFF_EDITORS,
   type DiffEditor,
+  displayState,
   EditableGame,
   type FileDiff,
   fileDiffs,
@@ -107,6 +108,19 @@ export class DiffStore {
 
   /** Saved versions loaded so far, by key. A version never changes once saved. */
   private readonly loaded = signal<ReadonlyMap<string, EditableGame>>(new Map());
+  /** The documents under `loaded`, which a display is merged from. */
+  private readonly docs = new Map<string, Y.Doc>();
+  /**
+   * What the editors draw while the mode is on: the changes not refused, as they would land.
+   * A document of its own, written only here and never saved, so a canvas follows it as it
+   * follows the project.
+   */
+  readonly viewGame = new EditableGame(new Y.Doc());
+  private readonly viewReady = signal(false);
+  /** The game an editor draws: the display in diff mode, the project otherwise. */
+  readonly shown = computed(() =>
+    this.on() && this.viewReady() ? this.viewGame : this.session.game,
+  );
   readonly loading = signal(false);
   readonly loadFailed = signal(false);
   /** The assistant has written nothing to review yet. */
@@ -178,6 +192,18 @@ export class DiffStore {
         void this.load(this.to());
       }
     });
+    effect(() => {
+      const after = this.after();
+      const items = this.items();
+      const decisions = this.decisions();
+      const from = this.from() === 'current' ? this.session.doc : this.docs.get(this.from());
+      if (!this.on() || !after || !from) {
+        this.viewReady.set(false);
+        return;
+      }
+      this.viewGame.restoreFrom(displayState(from, after, items, decisions));
+      this.viewReady.set(true);
+    });
     let timer: ReturnType<typeof setTimeout> | null = null;
     const onUpdate = (): void => {
       if (!this.on() || timer) {
@@ -197,6 +223,7 @@ export class DiffStore {
       for (const game of this.loaded().values()) {
         game.destroy();
       }
+      this.viewGame.destroy();
     });
   }
 
@@ -240,6 +267,7 @@ export class DiffStore {
       }
       // Looked at only: nothing in a saved version is ever written from here.
       const game = new EditableGame(doc, () => false);
+      this.docs.set(ref, doc);
       this.loaded.update((held) => new Map(held).set(ref, game));
     } catch {
       this.loadFailed.set(true);
@@ -349,6 +377,7 @@ export class DiffStore {
       this.loaded.update((held) => {
         const next = new Map(held);
         next.get(AI_REF)?.destroy();
+        this.docs.delete(AI_REF);
         next.delete(AI_REF);
         return next;
       });

@@ -8,7 +8,7 @@ import type { Instrument, Pattern } from '../sound/model';
 import { type ChangeItem, computeChanges, connectedAreas } from './changes';
 import { decide } from './decisions';
 import { lineDiff, lineHunks, mergeLines, wordDiff } from './lines';
-import { mergeAccepted } from './merge';
+import { displayState, mergeAccepted } from './merge';
 
 /** A copy of `game` as a second, unrelated document, the way a proposal or a version arrives. */
 function fork(doc: Y.Doc): { doc: Y.Doc; game: EditableGame } {
@@ -172,5 +172,26 @@ describe('merge', () => {
     expect(merged.maps.find((held) => held.id === FIRST_MAP_ID)?.getTile(2, 2)).toBe(7);
     // The current document is read, never written.
     expect(current.game.files.find((file) => file.id === 'player')).toBeUndefined();
+  });
+});
+
+describe('display', () => {
+  it('draws what is waiting as kept, except a removal, and leaves out what was refused', () => {
+    const current = base();
+    current.game.maps.find((held) => held.id === FIRST_MAP_ID)?.setTile(9, 9, 4);
+    const proposed = fork(current.doc);
+    const map = proposed.game.maps.find((held) => held.id === FIRST_MAP_ID);
+    map?.setTile(2, 2, 7);
+    map?.setTile(9, 9, 0);
+    proposed.game.addFile('player', 'p = {}', 'player');
+    const items = computeChanges(current.game, proposed.game);
+    const shown = new EditableGame(new Y.Doc());
+    shown.restoreFrom(
+      displayState(current.doc, proposed.game, items, new Map([['code:player', 'no' as const]])),
+    );
+    const tiles = shown.maps.find((held) => held.id === FIRST_MAP_ID);
+    expect(tiles?.getTile(2, 2)).toBe(7);
+    expect(tiles?.getTile(9, 9)).toBe(4);
+    expect(shown.files.find((file) => file.id === 'player')).toBeUndefined();
   });
 });
