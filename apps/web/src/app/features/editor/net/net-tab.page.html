@@ -75,7 +75,10 @@
         </thead>
         <tbody>
           @for (row of rows(); track row.path) {
-            <tr class="h-(--nc-h-lg) border-b-3 border-line-faint hover:bg-sunken">
+            @let change = diff.on() ? netChanges().get(row.path) : undefined;
+            <tr
+              class="h-(--nc-h-lg) border-b-3 border-line-faint hover:bg-sunken"
+              [class]="change ? wash[change.kind] : ''">
               <td
                 class="truncate pr-2 font-mono"
                 [attr.title]="row.path || row.key"
@@ -109,6 +112,22 @@
                       {{ t('editor.net.own') }}
                     </nc-chip>
                   }
+                }
+                @if (change) {
+                  <span class="float-right flex items-center gap-0.5 pl-1">
+                    @if (change.kind === 'EDIT') {
+                      <span
+                        class="font-mono text-micro text-ink-4 line-through decoration-2"
+                        [textContent]="wasRule(change)"></span>
+                    }
+                    @if (diff.mode() === 'review') {
+                      <nc-hunk-actions
+                        iconOnly
+                        [decision]="diff.decisionOf(change.key)"
+                        (decided)="diff.decide([change.key], $event)" />
+                    }
+                    <nc-change-chip [kind]="change.kind" />
+                  </span>
                 }
               </td>
               <td class="hidden truncate @min-[720px]/centre:table-cell">
@@ -151,7 +170,7 @@
                 </td>
               }
               <td class="pr-[12px]">
-                <span class="flex items-center justify-end">
+                <span class="flex items-center justify-end gap-0.5">
                   @if (row.rule === 'own' && row.path) {
                     <button
                       type="button"
@@ -260,6 +279,9 @@
   <!-- Let through whole: the session, its players and the test rig are a game being played,
        and nothing of them is in the document. -->
   <nc-panel-column ncLooksOnly [width]="PANEL_WIDTH" [title]="t('editor.net.session')">
+    @if (diff.on()) {
+      <nc-diff-changes [items]="changeList()" />
+    }
     <span
       actions
       class="text-micro uppercase tracking-tag"
