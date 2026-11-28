@@ -94,7 +94,7 @@ export class DiffChangesComponent {
         case 'net':
           return {
             ...base,
-            tag: '•',
+            tag: 'N',
             title: item.path || say('root'),
             detail: say(`kind${item.kind}`),
           };
