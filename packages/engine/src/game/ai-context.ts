@@ -2,13 +2,6 @@ import * as Y from 'yjs';
 
 import { Game } from './Game';
 
-/** Keys of the document the assistant's tooling owns beside the game itself. */
-export const AI_KEYS = {
-  catalog: 'ai.catalog',
-  levels: 'ai.levels',
-  locks: 'ai.locks',
-} as const;
-
 const asJson = (entries: ReadonlyMap<string, unknown>): Record<string, string> =>
   Object.fromEntries([...entries].map(([key, value]) => [key, JSON.stringify(value)]));
 
@@ -22,7 +15,8 @@ const hexPixels = (pixels: Uint8Array): string => {
 };
 
 /**
- * The game as the assistant reads it: plain data, every part of the document a tool can name. It
+ * The game as the assistant reads it: plain data, every part of the document a tool can name, and
+ * nothing beside the game: the assistant's working save is a copy of the project. It
  * carries no credentials and nothing in it is run; the assistant is told to treat it as data.
  */
 export function aiContext(doc: Y.Doc): Record<string, unknown> {
@@ -53,9 +47,6 @@ export function aiContext(doc: Y.Doc): Record<string, unknown> {
         height: map.height,
         tiles: Array.from(map.tiles),
       })),
-      catalog: doc.getMap(AI_KEYS.catalog).toJSON(),
-      levels: doc.getMap(AI_KEYS.levels).toJSON(),
-      locks: doc.getMap(AI_KEYS.locks).toJSON(),
       // Each entry as one JSON string, the way a tool passes it back: decoded, so an entry stored in
       // an older or a compact form reads the same as a new one.
       instruments: asJson(game.getInstruments()),
