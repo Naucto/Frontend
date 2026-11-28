@@ -1,0 +1,94 @@
+import * as Y from 'yjs';
+
+import { Game } from './Game';
+
+/** Keys of the document the assistant's tooling owns beside the game itself. */
+export const AI_KEYS = {
+  catalog: 'ai.catalog',
+  levels: 'ai.levels',
+  locks: 'ai.locks',
+} as const;
+
+/** One palette index a hex digit: a 128×128 sheet is 16 KiB of text rather than ~40 KiB of JSON. */
+const hexPixels = (pixels: Uint8Array): string => {
+  let out = '';
+  for (const value of pixels) {
+    out += (value & 15).toString(16);
+  }
+  return out;
+};
+
+/**
+ * The game as the assistant reads it: plain data, every part of the document a tool can name. It
+ * carries no credentials and nothing in it is run; the assistant is told to treat it as data.
+ */
+export function aiContext(doc: Y.Doc): Record<string, unknown> {
+  const game = new Game(doc);
+  try {
+    return {
+      schemaVersion: game.schemaVersion,
+      palette: game.palette,
+      encoding: { sheetPixels: 'one hex digit per pixel, row-major' },
+      code: game.files.map((file) => ({
+        id: file.id,
+        name: file.name,
+        text: file.text.toString(),
+      })),
+      sheets: game.sheets.map((sheet) => ({
+        id: sheet.id,
+        name: sheet.name,
+        width: sheet.width,
+        height: sheet.height,
+        base: sheet.base,
+        pixels: hexPixels(sheet.pixels),
+        flags: Array.from(sheet.flags),
+      })),
+      maps: game.maps.map((map) => ({
+        id: map.id,
+        name: map.name,
+        width: map.width,
+        height: map.height,
+        tiles: Array.from(map.tiles),
+      })),
+      catalog: doc.getMap(AI_KEYS.catalog).toJSON(),
+      levels: doc.getMap(AI_KEYS.levels).toJSON(),
+      locks: doc.getMap(AI_KEYS.locks).toJSON(),
+      instruments: Object.fromEntries(game.getInstruments()),
+      patterns: Object.fromEntries(game.getPatterns()),
+      songs: Object.fromEntries(game.getSongs()),
+      sfx: Object.fromEntries(game.getSfx()),
+      samples: [...game.getSamples().keys()],
+      netPermissions: Object.fromEntries(
+        (() => {
+          const rules: [string, unknown][] = [];
+          game.netPermissions.forEach((rule, path) => {
+            rules.push([path, rule]);
+          });
+          return rules;
+        })(),
+      ),
+    };
+  } finally {
+    game.destroy();
+  }
+}
+
+/** A document's whole state, as base64: how the server and the tools pass a save around. */
+export function encodeState(doc: Y.Doc): string {
+  const update = Y.encodeStateAsUpdate(doc);
+  let binary = '';
+  for (let i = 0; i < update.length; i += 8192) {
+    binary += String.fromCharCode(...update.subarray(i, i + 8192));
+  }
+  return btoa(binary);
+}
+
+/** A document from a base64 state; the caller destroys it. */
+export function decodeState(state: string): Y.Doc {
+  const doc = new Y.Doc();
+  Y.applyUpdate(
+    doc,
+    Uint8Array.from(atob(state), (char) => char.charCodeAt(0)),
+  );
+  return doc;
+}

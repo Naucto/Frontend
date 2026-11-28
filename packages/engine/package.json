@@ -7,14 +7,25 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./version": "./src/version.ts"
+    "./version": "./src/version.ts",
+    "./headless": {
+      "types": "./dist/types/headless.d.ts",
+      "import": "./dist/headless.js",
+      "require": "./dist/headless.cjs"
+    },
+    "./sound": {
+      "types": "./dist/types/sound.d.ts",
+      "import": "./dist/sound.js",
+      "require": "./dist/sound.cjs"
+    }
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "bench": "vitest bench --run",
     "build:worklet": "node scripts/build-worklet.mjs",
-    "prepare": "node scripts/build-worklet.mjs"
+    "prepare": "node scripts/build-worklet.mjs",
+    "pack:node": "node scripts/pack-node.mjs"
   },
   "dependencies": {
     "fengari": "^0.1.5",
