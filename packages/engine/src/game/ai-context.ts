@@ -9,6 +9,9 @@ export const AI_KEYS = {
   locks: 'ai.locks',
 } as const;
 
+const asJson = (entries: ReadonlyMap<string, unknown>): Record<string, string> =>
+  Object.fromEntries([...entries].map(([key, value]) => [key, JSON.stringify(value)]));
+
 /** One palette index a hex digit: a 128×128 sheet is 16 KiB of text rather than ~40 KiB of JSON. */
 const hexPixels = (pixels: Uint8Array): string => {
   let out = '';
@@ -53,10 +56,12 @@ export function aiContext(doc: Y.Doc): Record<string, unknown> {
       catalog: doc.getMap(AI_KEYS.catalog).toJSON(),
       levels: doc.getMap(AI_KEYS.levels).toJSON(),
       locks: doc.getMap(AI_KEYS.locks).toJSON(),
-      instruments: Object.fromEntries(game.getInstruments()),
-      patterns: Object.fromEntries(game.getPatterns()),
-      songs: Object.fromEntries(game.getSongs()),
-      sfx: Object.fromEntries(game.getSfx()),
+      // Each entry as one JSON string, the way a tool passes it back: decoded, so an entry stored in
+      // an older or a compact form reads the same as a new one.
+      instruments: asJson(game.getInstruments()),
+      patterns: asJson(game.getPatterns()),
+      songs: asJson(game.getSongs()),
+      sfx: asJson(game.getSfx()),
       samples: [...game.getSamples().keys()],
       netPermissions: Object.fromEntries(
         (() => {
