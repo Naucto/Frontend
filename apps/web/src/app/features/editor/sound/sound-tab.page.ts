@@ -18,8 +18,8 @@ import {
   MarkComponent,
 } from '@naucto/ui';
 
-import { DiffChangesComponent } from '../diff/diff-changes.component';
 import { DiffStore } from '../diff/diff.store';
+import { DiffChangesComponent } from '../diff/diff-changes.component';
 import { HostElectionService } from '../work-session/host-election.service';
 import { InstrumentEditorComponent } from './editors/instrument-editor.component';
 import { PatternEditorComponent } from './editors/pattern-editor.component';
