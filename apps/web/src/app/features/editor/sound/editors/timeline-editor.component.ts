@@ -48,6 +48,7 @@ import {
   TransportComponent,
 } from '@naucto/ui';
 
+import { DiffStore } from '../../diff/diff.store';
 import { MetronomeButtonComponent } from '../controls/metronome-button.component';
 import { SoundHelpComponent } from '../controls/sound-help.component';
 import { type PickerItem, SoundPickerComponent } from '../controls/sound-picker.component';
@@ -110,6 +111,7 @@ interface Mini {
 })
 export class TimelineEditorComponent {
   protected readonly deck = inject(SoundDeck);
+  private readonly diff = inject(DiffStore);
   protected readonly store = this.deck.store;
   private readonly library = this.deck.library;
   private readonly lane = viewChild<ElementRef<HTMLElement>>('lane');
@@ -395,6 +397,7 @@ export class TimelineEditorComponent {
       free: !song,
       canDuplicate: !!song,
       canRemove: !!song,
+      change: this.diff.soundKind('songs', String(slot)),
     };
   }
 

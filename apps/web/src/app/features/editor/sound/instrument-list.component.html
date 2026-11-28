@@ -30,7 +30,14 @@
         (keydown.space)="$event.preventDefault(); selected.emit(instrument.id)">
         <!-- Inherits the row's colour, which is the instrument's own. -->
         <nc-wave-glyph [type]="instrument.osc" class="mr-1" />
-        <div class="min-w-0 flex-1 truncate text-body text-ink">{{ instrument.name }}</div>
+        <div
+          class="min-w-0 flex-1 truncate text-body text-ink"
+          [class.line-through]="diff.soundKind('instruments', instrument.id) === 'DELETED'">
+          {{ instrument.name }}
+        </div>
+        @if (diff.soundKind('instruments', instrument.id); as kind) {
+          <nc-change-chip [kind]="kind" />
+        }
         <nc-presence-dots
           class="group-focus-within:hidden group-hover:hidden"
           [peers]="peersOf()(instrument.id)" />

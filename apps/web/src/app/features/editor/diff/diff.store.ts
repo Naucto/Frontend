@@ -13,6 +13,7 @@ import {
   decisionOf,
   DIFF_EDITORS,
   type DiffEditor,
+  type DiffKind,
   displayState,
   EditableGame,
   type FileDiff,
@@ -20,6 +21,7 @@ import {
   keepLive,
   mergeAccepted,
   migrateGame,
+  type SoundPart,
 } from '@naucto/engine';
 import * as Y from 'yjs';
 
@@ -312,6 +314,13 @@ export class DiffStore {
       this.pending().map((item) => item.key),
       decision,
     );
+  }
+
+  /** How a sound entry differs, while diff mode is on: what its list row and picker show. */
+  soundKind(part: SoundPart, id: string): DiffKind | undefined {
+    return this.on()
+      ? this.items().find((item) => item.key === `sound:${part}:${id}`)?.kind
+      : undefined;
   }
 
   itemsOf(editor: DiffEditor): ChangeItem[] {

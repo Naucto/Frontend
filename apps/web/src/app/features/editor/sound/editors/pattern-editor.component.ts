@@ -3,6 +3,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { type Note, type Pattern, stepsAfterEdit } from '@naucto/engine';
 import { type PresenceDot } from '@naucto/ui';
 
+import { DiffStore } from '../../diff/diff.store';
 import { type PickerItem, SoundPickerComponent } from '../controls/sound-picker.component';
 import { SoundDeck } from '../sound-deck';
 import { blankPattern, pad2, patternLabel, patternTint } from '../sound-library';
@@ -17,6 +18,7 @@ import { NoteSheetEditorComponent } from './note-sheet-editor.component';
 })
 export class PatternEditorComponent {
   protected readonly deck = inject(SoundDeck);
+  private readonly diff = inject(DiffStore);
   protected readonly store = this.deck.store;
   private readonly library = this.deck.library;
   private readonly blanks = new Map<number, Pattern>();
@@ -118,6 +120,7 @@ export class PatternEditorComponent {
       swatch: this.tint(pattern),
       canDuplicate: removable,
       canRemove: removable,
+      change: this.diff.soundKind('patterns', pattern.id),
     };
   }
 

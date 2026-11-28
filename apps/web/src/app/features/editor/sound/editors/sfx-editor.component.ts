@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { TranslocoDirective } from '@jsverse/transloco';
 import { defaultSfx, type Note, type Pattern, type Sfx, stepsAfterEdit } from '@naucto/engine';
 
+import { DiffStore } from '../../diff/diff.store';
 import { type PickerItem, SoundPickerComponent } from '../controls/sound-picker.component';
 import { SoundDeck } from '../sound-deck';
 import { pad2 } from '../sound-library';
@@ -18,6 +19,7 @@ const SFX_NAME_MAX = 16;
 })
 export class SfxEditorComponent {
   protected readonly deck = inject(SoundDeck);
+  private readonly diff = inject(DiffStore);
   protected readonly store = this.deck.store;
   private readonly library = this.deck.library;
   protected readonly pad = pad2;
@@ -100,6 +102,7 @@ export class SfxEditorComponent {
       free: !sfx,
       canDuplicate: !!sfx,
       canRemove: !!sfx,
+      change: this.diff.soundKind('sfx', String(slot)),
     };
   }
 

@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   type ElementRef,
   inject,
@@ -12,6 +13,8 @@ import {
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
   ButtonDirective,
+  ChangeChipComponent,
+  type ChangeKind,
   LooksOnlyDirective,
   MarkComponent,
   OptionDirective,
@@ -32,6 +35,8 @@ export interface PickerItem {
   free?: boolean;
   canDuplicate?: boolean;
   canRemove?: boolean;
+  /** How it differs in diff mode, drawn at the end of its row. */
+  change?: ChangeKind;
 }
 
 @Component({
@@ -40,6 +45,7 @@ export interface PickerItem {
     TranslocoDirective,
     ButtonDirective,
     LooksOnlyDirective,
+    ChangeChipComponent,
     MarkComponent,
     OptionDirective,
     PopoverDirective,
@@ -55,6 +61,8 @@ export class SoundPickerComponent {
   readonly title = input.required<string>();
   readonly addLabel = input.required<string>();
   readonly items = input.required<readonly PickerItem[]>();
+  /** How many of the items differ in diff mode, counted on the button as the rail counts. */
+  protected readonly changed = computed(() => this.items().filter((item) => item.change).length);
   readonly current = input.required<PickerItem>();
   readonly maxName = input(24);
   readonly peersOf = input<(key: string) => readonly PresenceDot[]>(() => []);
